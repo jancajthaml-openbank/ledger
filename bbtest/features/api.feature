@@ -4,10 +4,6 @@ Feature: REST
     Given vault is empty
     And   tenant APITRN is onbdoarded
     And   ledger is reconfigured with
-    """
-      LOG_LEVEL=DEBUG
-      HTTP_PORT=443
-    """
     And   pasive account APITRN/xxx with currency XXX exist
     And   pasive account APITRN/yyy with currency XXX exist
 

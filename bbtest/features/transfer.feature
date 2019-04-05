@@ -4,13 +4,9 @@ Feature: High level Transfer workflow
     Given vault is empty
     And   tenant FORWARD is onbdoarded
     And   ledger is reconfigured with
-    """
-      LOG_LEVEL=DEBUG
-      HTTP_PORT=443
-    """
-    And pasive account FORWARD/OriginCredit with currency EUR exist
-    And pasive account FORWARD/OriginDebit with currency EUR exist
-    And pasive account FORWARD/Target with currency EUR exist
+    And   pasive account FORWARD/OriginCredit with currency EUR exist
+    And   pasive account FORWARD/OriginDebit with currency EUR exist
+    And   pasive account FORWARD/Target with currency EUR exist
 
     When following transaction is created from tenant FORWARD
     """

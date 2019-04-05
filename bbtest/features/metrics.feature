@@ -5,8 +5,6 @@ Feature: Metrics test
     And   tenant M1 is onbdoarded
     And   ledger is reconfigured with
     """
-      LOG_LEVEL=DEBUG
-      HTTP_PORT=443
       METRICS_REFRESHRATE=1s
     """
 
@@ -22,8 +20,6 @@ Feature: Metrics test
     And   tenant M2 is onbdoarded
     And   ledger is reconfigured with
     """
-      LOG_LEVEL=DEBUG
-      HTTP_PORT=443
       METRICS_REFRESHRATE=1s
     """
 

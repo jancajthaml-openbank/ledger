@@ -38,8 +38,8 @@ end
 step "tenant :tenant is onbdoarded" do |tenant|
   params = [
     "LEDGER_STORAGE=/data",
-    "LEDGER_LOG_LEVEL=INFO",
-    "LEDGER_HTTP_PORT=4401",
+    "LEDGER_LOG_LEVEL=DEBUG",
+    "LEDGER_HTTP_PORT=443",
     "LEDGER_SECRETS=/opt/ledger/secrets",
     "LEDGER_LAKE_HOSTNAME=localhost",
     "LEDGER_TRANSACTION_INTEGRITY_SCANINTERVAL=120s",
@@ -59,12 +59,12 @@ step "tenant :tenant is onbdoarded" do |tenant|
   }
 end
 
-step "ledger is reconfigured with" do |configuration|
+step "ledger is reconfigured with" do |configuration = ""|
   params = Hash[configuration.split("\n").map(&:strip).reject(&:empty?).map {|el| el.split '='}]
   defaults = {
     "STORAGE" => "/data",
-    "LOG_LEVEL" => "INFO",
-    "HTTP_PORT" => "4401",
+    "LOG_LEVEL" => "DEBUG",
+    "HTTP_PORT" => "443",
     "SECRETS" => "/opt/ledger/secrets",
     "LAKE_HOSTNAME" => "localhost",
     "TRANSACTION_INTEGRITY_SCANINTERVAL" => "120s",
