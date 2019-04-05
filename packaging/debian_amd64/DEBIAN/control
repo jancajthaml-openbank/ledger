@@ -1,0 +1,9 @@
+Package: ledger
+Version: 0.0.0+initial-skeleton
+Architecture: amd64
+Maintainer: Jan Cajthaml <jan.cajthaml@gmail.com>
+Depends: init-system-helpers (>= 1.18~), libzmq5 (>= 4.2.1~), openssl (>= 1.1~)
+Section: openbank
+Priority: extra
+Vcs-Git: git@github.com:jancajthaml-openbank/ledger.git
+Description: Openbank transaction ledger

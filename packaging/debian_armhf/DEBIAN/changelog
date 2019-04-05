@@ -1,0 +1,72 @@
+vault (1.1.2) unstable; urgency=low
+
+  * 
+
+ -- Jan Cajthaml <jan.cajthaml@gmail.com>  Fri, 30 Nov 2018 17:55:53 +0100
+
+vault (1.1.1) unstable; urgency=low
+
+  * using dedicated actor system library to dedup code from services (#59)
+  * switched from volatile sync.Map to clasic map with RW mutex (#58)
+  * increased journal saturation to 200 events, switched to new LakeClien… (#57)
+  * updated logging (#53)
+  * gosec included and more linting rules (#56)
+  * updated README.md about contributing and security disclosure (#52)
+  * inlined env constants (#51)
+  * gosec included and more linting rules (#50)
+  * using faster json marshaller for metrics (#48)
+  * using jq image (#47)
+
+ -- Jan Cajthaml <jan.cajthaml@gmail.com>  Fri, 30 Nov 2018 17:55:53 +0100
+
+vault (1.1.0) unstable; urgency=low
+
+  * changed debian arm target to armhf, better changelog, notifying account activity in broadcast (#46)
+
+ -- Jan Cajthaml <jan.cajthaml@gmail.com>  Thu, 18 Oct 2018 12:17:25 +0200
+
+vault (1.0.5) unstable; urgency=low
+
+  * metrics fixed, hangs during bootstrap fixed (#45)
+
+ -- Jan Cajthaml <jan.cajthaml@gmail.com>  Tue, 2 Oct 2018 23:24:59 +0200
+
+vault (1.0.4) unstable; urgency=low
+
+  * flat and more controlled structure and lifecycle of sub routines (#44)
+  * debian improvements (#43)
+  * no need to load environment from config file into postinstall (#42)
+  * codacy fixes (#41)
+  * faster bbtests with more scenarios, merged meta and snapshot into one account state, faster hydration and persistence of account (#40)
+  * logging creation of new account (#38)
+
+ -- Jan Cajthaml <jan.cajthaml@gmail.com>  Tue, 2 Oct 2018 08:24:00 +0200
+
+vault (1.0.3) unstable; urgency=low
+
+  * logging creation of new account
+  * debian packaging and multiple per-tenant vaults on single machine (#37)
+  * updated to new lake client (#36)
+
+ -- Jan Cajthaml <jan.cajthaml@gmail.com>  Sat, 18 Aug 2018 18:09:11 +0200
+
+vault (1.0.2) unstable; urgency=low
+
+  * unified bbtests, reduced flakes, arm platform now supported as target architecture (#35)
+  * restructuring project, benchmarking and optimising storage functions (#33)
+
+ -- Jan Cajthaml <jan.cajthaml@gmail.com>  Tue, 14 Aug 2018 17:52:48 +0200
+
+vault (1.0.1) unstable; urgency=low
+
+  * restructuring project, benchmarking and optimising storage functions
+  * release pipeline (#32)
+
+ -- Jan Cajthaml <jan.cajthaml@gmail.com>  Tue, 31 Jul 2018 13:54:34 +0200
+
+vault (1.0.0) unstable; urgency=low
+
+  * release pipeline
+
+ -- Jan Cajthaml <jan.cajthaml@gmail.com>  Fri, 27 Jul 2018 18:33:21 +0200
+

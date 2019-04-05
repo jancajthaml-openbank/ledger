@@ -1,0 +1,91 @@
+version: '2.1'
+
+# ---------------------------------------------------------------------------- #
+
+services:
+
+  # -------------------------------------------------------------------------- #
+
+  go:
+    build:
+      dockerfile: dev/Dockerfile
+      context: .
+    image: openbankdev/ledger_base
+    volumes:
+      - .:/project
+      - ./services/ledger-unit:/go/src/github.com/jancajthaml-openbank/ledger-unit
+      - ./services/ledger-rest:/go/src/github.com/jancajthaml-openbank/ledger-rest
+    working_dir: /project
+    environment:
+      - GOOS
+      - GOARCH
+      - GOPATH=/go
+      - COMPOSE_PROJECT_NAME
+    entrypoint: ["go"]
+    privileged: true
+
+  # -------------------------------------------------------------------------- #
+
+  sync:
+    extends: go
+    entrypoint: ["/project/dev/lifecycle/sync"]
+
+  # -------------------------------------------------------------------------- #
+
+  update:
+    extends: go
+    entrypoint: ["/project/dev/lifecycle/update"]
+
+  # -------------------------------------------------------------------------- #
+
+  lint:
+    extends: go
+    entrypoint: ["/project/dev/lifecycle/lint"]
+
+  # -------------------------------------------------------------------------- #
+
+  sec:
+    extends: go
+    entrypoint: ["/project/dev/lifecycle/sec"]
+
+  # -------------------------------------------------------------------------- #
+
+  package:
+    extends: go
+    entrypoint: ["/project/dev/lifecycle/package"]
+
+  # -------------------------------------------------------------------------- #
+
+  release:
+    extends: go
+    entrypoint: ["/project/dev/lifecycle/release"]
+
+  # -------------------------------------------------------------------------- #
+
+  debian:
+    extends: go
+    entrypoint: ["/project/dev/lifecycle/debian"]
+
+  # -------------------------------------------------------------------------- #
+
+  test:
+    extends: go
+    entrypoint: ["/project/dev/lifecycle/test"]
+
+  # -------------------------------------------------------------------------- #
+
+  bbtest:
+    build:
+      context: .
+      dockerfile: bbtest/Dockerfile
+    image: openbankdev/ledger_bbtest
+
+  # -------------------------------------------------------------------------- #
+
+  artifacts:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    image: openbank/ledger
+
+# ---------------------------------------------------------------------------- #

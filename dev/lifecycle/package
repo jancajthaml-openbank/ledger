@@ -1,0 +1,95 @@
+#!/bin/bash
+
+set -eu
+trap exit INT TERM
+
+TARGET_ARCHITECTURE="linux/amd64"
+TARGET_PACKAGE=""
+
+package_service() {
+  local working_dir=/go/src/github.com/jancajthaml-openbank/${TARGET_PACKAGE}
+  local arch=${TARGET_ARCHITECTURE#*/}
+  local platform=${TARGET_ARCHITECTURE%%/*}
+  local output=$(pwd)/packaging/bin/${TARGET_PACKAGE}-${platform}-${arch}
+
+  if [ -f ${output} ] ; then
+    rm -f ${output}
+  fi
+
+  cd ${working_dir}
+
+  echo "[info] cleaning"
+  go clean
+
+  echo "[info] packaging ${TARGET_PACKAGE} for ${platform}/${arch}"
+
+  case ${arch} in
+
+    armhf)
+      GOOS=${platform} \
+      GOARM=7 \
+      CC=arm-linux-gnueabihf-gcc \
+      GOARCH=arm \
+      CGO_ENABLED=1 \
+      \
+      go build -a -o ${output} || {
+        (>&2 echo "[error] unable to build for ${platform}/armhf")
+        exit 1
+      }
+    ;;
+
+    amd64)
+      GOOS=${platform} \
+      CC=gcc \
+      GOARCH=amd64 \
+      CGO_ENABLED=1 \
+      \
+      go build -a -o ${output} || {
+        (>&2 echo "[error] unable to build for ${platform}/amd64")
+        exit 1
+      }
+    ;;
+
+    *)
+      (>&2 echo "[error] unsupported target ${platform}/${arch}")
+      exit 1
+    ;;
+
+  esac
+
+  chmod +x ${output}
+  file ${output}
+}
+
+while [ $# -gt 0 ] ; do
+key="$1"
+
+case $key in
+
+  --arch)
+    TARGET_ARCHITECTURE="$2"
+    shift
+    shift
+  ;;
+
+  --pkg)
+    TARGET_PACKAGE="$2"
+    shift
+    shift
+  ;;
+
+  *)
+    shift
+  ;;
+
+esac
+done
+
+if [ ! "${TARGET_PACKAGE}" ] ; then
+  (>&2 echo "[error] target package not provided")
+  exit 1
+fi
+
+package_service
+
+echo "[info] done"

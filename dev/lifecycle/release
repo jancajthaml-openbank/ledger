@@ -1,0 +1,111 @@
+#!/bin/sh
+
+set -eu
+trap exit INT TERM
+
+VERSION=""
+ACCESS_TOKEN=""
+
+while [ $# -gt 0 ] ; do
+key="$1"
+
+case $key in
+
+  -v|--version)
+    VERSION="$2"
+    shift
+    shift
+  ;;
+
+  -t|--token)
+    ACCESS_TOKEN="$2"
+    shift
+    shift
+  ;;
+
+  *)
+    shift
+  ;;
+
+esac
+done
+
+if [ ! "${VERSION}" ] ; then
+  (>&2 echo "[error] version not provided")
+  exit 1
+fi
+
+if [ ! "${ACCESS_TOKEN}" ] ; then
+  (>&2 echo "[error] github access token not provided")
+  exit 1
+fi
+
+REPO=$(git ls-remote --get-url)
+REPO=${REPO%.git}
+REPO=${REPO#*:}
+REPO=${REPO#/}
+REPO=${REPO#/}
+REPO=${REPO#/}
+REPO=${REPO#github.com}
+REPO=${REPO#/}
+REPO=${REPO}
+
+echo "[info] start release of ${REPO}:${VERSION}"
+
+RELEASE_INFO="https://api.github.com/repos/${REPO}/releases/tags/${VERSION}"
+response=$(
+  curl \
+    --silent \
+    -H "Authorization: token ${ACCESS_TOKEN}" \
+    ${RELEASE_INFO} \
+)
+
+RELEASE_ID=$(echo "${response}" | jq -r .id)
+RELEASE_URI="https://api.github.com/repos/${REPO}/releases"
+
+if [ "${RELEASE_ID}" != "null" ] ; then
+  (>&2 echo "[error] release ${VERSION} already exists")
+  exit 1
+else
+  echo "[info] creating new release ${VERSION}"
+fi
+
+PAYLOAD=$(cat <<-END
+{
+  "tag_name": "${VERSION}",
+  "target_commitish": "master",
+  "name": "${VERSION}",
+  "body": "final ${VERSION} public release",
+  "draft": false,
+  "prerelease": false
+}
+END
+)
+
+response=$(
+  curl \
+    -X POST \
+    -H "Authorization: token ${ACCESS_TOKEN}" \
+    --fail \
+    --silent \
+    --data "$(echo ${PAYLOAD})" \
+    ${RELEASE_URI}
+)
+
+UPLOAD_URL=$(echo ${response} | jq -r .upload_url | sed -e "s/{?name,label}//")
+
+for asset in $(ls -d -1 $(pwd)/packaging/bin/*.*) ; do
+  echo "[info] uploading ${asset}"
+
+  curl \
+    --fail \
+    -X POST \
+    -# \
+    --output /dev/null \
+    --data-binary "@${asset}" \
+    -H "Authorization: token $ACCESS_TOKEN" \
+    -H "Content-Type: application/binary" \
+    "${UPLOAD_URL}?name=$(basename ${asset})"
+done
+
+echo "[info] released ${VERSION}"
