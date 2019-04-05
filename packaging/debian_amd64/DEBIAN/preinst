@@ -1,0 +1,55 @@
+#!/bin/sh
+
+set -e
+
+case "$1" in
+
+  install|upgrade)
+    if [ ! -f "/etc/init/ledger.conf" ] ; then
+      mkdir -p /etc/init
+      touch /etc/init/ledger.conf
+
+      echo "LEDGER_STORAGE=/data" > /etc/init/ledger.conf
+      echo "LEDGER_LOG_LEVEL=INFO" >> /etc/init/ledger.conf
+      echo "LEDGER_HTTP_PORT=4401" >> /etc/init/ledger.conf
+      echo "LEDGER_SECRETS=/opt/ledger/secrets" >> /etc/init/ledger.conf
+      echo "LEDGER_LAKE_HOSTNAME=localhost" >> /etc/init/ledger.conf
+      echo "LEDGER_TRANSACTION_INTEGRITY_SCANINTERVAL=120s" >> /etc/init/ledger.conf
+      echo "LEDGER_METRICS_REFRESHRATE=1s" >> /etc/init/ledger.conf
+      echo "LEDGER_METRICS_OUTPUT=/opt/ledger/metrics/metrics.json" >> /etc/init/ledger.conf
+    fi
+
+    secrets=$(sed -n -e 's/^.*LEDGER_SECRETS=//p' /etc/init/ledger.conf 2>/dev/null | awk '{gsub(/^ +| +$/,"")} {print $0}')
+
+    if [ -z "${secrets}" ] ; then
+      (>&2 echo "LEDGER_SECRETS are not defined at /etc/init/ledger.conf")
+      exit 1
+    fi
+
+    if [ ! -f "${secrets}/domain.local.crt" ] || [ ! -f "${secrets}/domain.local.key" ] ; then
+      mkdir -p "${secrets}"
+
+      openssl req \
+        -x509 \
+        -nodes \
+        -newkey rsa:2048 \
+        -keyout "${secrets}/domain.local.key" \
+        -out "${secrets}/domain.local.crt" \
+        -days 1 \
+        -subj "/C=CZ/ST=Czechia/L=Prague/O=OpenBanking/OU=IT/CN=localhost/emailAddress=jan.cajthaml@gmail.com"
+      echo "generated temporary certificates at ${secrets} valid for 24 hours"
+    fi
+
+  ;;
+
+  abort-upgrade)
+  ;;
+
+  *)
+    (>&2 echo "preinst called with unknown argument \`$1'")
+    exit 1
+  ;;
+
+esac
+
+exit 0

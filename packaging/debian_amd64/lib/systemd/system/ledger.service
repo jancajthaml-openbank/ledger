@@ -1,0 +1,12 @@
+[Unit]
+Description=openbank transaction ledger services namespace
+After=inetd.service
+ConditionPathExists=/etc/init/ledger.conf
+
+[Service]
+Type=oneshot
+ExecStart=/bin/true
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

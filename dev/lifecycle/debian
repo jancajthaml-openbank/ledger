@@ -1,0 +1,154 @@
+#!/bin/bash
+
+set -eu
+trap exit INT TERM
+
+VERSION=""
+TARGET_ARCHITECTURE=""
+
+while [ $# -gt 0 ] ; do
+key="$1"
+
+case $key in
+
+  --arch)
+    TARGET_ARCHITECTURE="$2"
+    shift
+    shift
+  ;;
+
+  -v|--version)
+    VERSION="$2"
+    shift
+    shift
+  ;;
+
+  *)
+    shift
+  ;;
+
+esac
+done
+
+if [ ! "${VERSION}" ] ; then
+  (>&2 echo "version not provided")
+  exit 1
+fi
+
+if [ ! "${TARGET_ARCHITECTURE}" ] ; then
+  (>&2 echo "target architecture not provided (use e.g. --arch amd64)")
+  exit 1
+fi
+
+generate_changelog() {
+  VER="${VERSION}"
+  tag=HEAD
+  ADDS=$(echo ${VER} | sed -e 's/~.*//' | cut -s -d- -f2 | sed '/^[[:space:]]*$/d')
+  if [ -f ${CHANGELOG} ] ; then
+    rm -f ${CHANGELOG}
+  fi
+
+  touch ${CHANGELOG}
+
+  if [[ -z "${ADDS// }" ]] ; then
+    DATE=$(git log -1 --format=%cD ${tag})
+    echo "ledger (${VER}) ${DIST}; urgency=low" >> ${CHANGELOG}
+    echo "" >> ${CHANGELOG}
+    echo "  * Includes non-released commits" >> ${CHANGELOG}
+    echo "" >> ${CHANGELOG}
+    echo " -- Jan Cajthaml <jan.cajthaml@gmail.com>  ${DATE}" >> ${CHANGELOG}
+    echo "" >> ${CHANGELOG}
+  fi
+
+  PAIRS=()
+  prev_tag=HEAD
+  for tag in $(git tag --sort=-v:refname | awk '{arr[i++]=$0} END {while (i>0) print arr[--i] }') ; do
+    PAIRS+=("${prev_tag} ${tag}")
+    prev_tag=${tag}
+  done
+
+  idx=( ${!PAIRS[@]} )
+  for ((i=${#idx[@]} - 1; i >= 0; i--)) ; do
+    tag_from=${PAIRS[idx[i]]%% *}
+    tag_to=${PAIRS[idx[i]]#* }
+
+    DATE=$(git log -1 --format=%cD ${tag_to})
+
+    commits=$(echo "$(git log --no-merges --pretty=oneline --pretty=format:%s ^${tag_from} ${tag_to})" | sed '/^[[:space:]]*$/d' | uniq)
+
+    if [[ -n "${commits// }" ]] ; then
+
+      echo "ledger (${tag_to#v}) ${DIST}; urgency=low" >> ${CHANGELOG}
+      echo "" >> ${CHANGELOG}
+
+      echo "${commits}" | \
+      while read note ; do
+        echo "  * $(tr '[:lower:]' '[:upper:]' <<< ${note:0:1})${note:1}" >> ${CHANGELOG}
+      done
+
+      echo "" >> ${CHANGELOG}
+
+      echo " -- Jan Cajthaml <jan.cajthaml@gmail.com>  ${DATE}" >> ${CHANGELOG}
+      echo "" >> ${CHANGELOG}
+    fi
+  done
+}
+
+################################################################################
+
+PKGS="$(pwd)/packaging"
+DEB_SOURCES="${PKGS}/debian_${TARGET_ARCHITECTURE}"
+BIN_SOURCES="${PKGS}/bin"
+
+if [ ! -d "${DEB_SOURCES}" ] ; then
+  (>&2 echo "packaging for ${TARGET_ARCHITECTURE} is not supported")
+  exit 1
+fi
+
+CHANGELOG=${DEB_SOURCES}/DEBIAN/changelog
+CONTROL=${DEB_SOURCES}/DEBIAN/control
+DIST=unstable
+FIRST=1
+
+if [ ! -f "${BIN_SOURCES}/ledger-unit-linux-${TARGET_ARCHITECTURE}" ] ; then
+  (>&2 echo "did not found binary to package at ${BIN_SOURCES}/ledger-unit-linux-${TARGET_ARCHITECTURE}")
+  exit 1
+fi
+
+if [ ! -f "${BIN_SOURCES}/ledger-rest-linux-${TARGET_ARCHITECTURE}" ] ; then
+  (>&2 echo "did not found binary to package at ${BIN_SOURCES}/ledger-rest-linux-${TARGET_ARCHITECTURE}")
+  exit 1
+fi
+
+mkdir -p ${DEB_SOURCES}/openbank/services/ledger
+
+if [ -f "${DEB_SOURCES}/openbank/services/ledger/ledger-unit" ] ; then
+  rm -f ${DEB_SOURCES}/openbank/services/ledger/ledger-unit
+fi
+
+if [ -f "${DEB_SOURCES}/openbank/services/ledger/ledger-rest" ] ; then
+  rm -f ${DEB_SOURCES}/openbank/services/ledger/ledger-rest
+fi
+
+du -hs "${BIN_SOURCES}/ledger-unit-linux-${TARGET_ARCHITECTURE}"
+du -hs "${BIN_SOURCES}/ledger-rest-linux-${TARGET_ARCHITECTURE}"
+
+cp \
+  "${BIN_SOURCES}/ledger-unit-linux-${TARGET_ARCHITECTURE}" \
+  "${DEB_SOURCES}/openbank/services/ledger/ledger-unit"
+
+cp \
+  "${BIN_SOURCES}/ledger-rest-linux-${TARGET_ARCHITECTURE}" \
+  "${DEB_SOURCES}/openbank/services/ledger/ledger-rest"
+
+file "${DEB_SOURCES}/openbank/services/ledger/ledger-unit"
+file "${DEB_SOURCES}/openbank/services/ledger/ledger-rest"
+
+generate_changelog
+sed -i 's/Version.*/Version: '${VERSION#v}'/' ${CONTROL}
+
+find "${BIN_SOURCES}" -type f -name "ledger_*_${TARGET_ARCHITECTURE}.deb" -exec rm {} \;
+
+dpkg-deb --build "${DEB_SOURCES}" "${BIN_SOURCES}"
+
+find "${BIN_SOURCES}" -name "ledger_*_${TARGET_ARCHITECTURE}.deb" -exec du -hs {} \;

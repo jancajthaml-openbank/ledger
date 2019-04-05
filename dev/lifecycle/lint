@@ -1,0 +1,52 @@
+#!/bin/bash
+
+set -eu
+trap exit INT TERM
+
+TARGET_PACKAGE=""
+
+while [ $# -gt 0 ] ; do
+key="$1"
+
+case $key in
+
+  --pkg)
+    TARGET_PACKAGE="$2"
+    shift
+    shift
+  ;;
+
+  *)
+    shift
+  ;;
+
+esac
+done
+
+if [ ! "${TARGET_PACKAGE}" ] ; then
+  (>&2 echo "[error] target package not provided")
+  exit 1
+fi
+
+scan() {
+  if [ ! -f ${1} ] ; then
+    return
+  fi
+  (gofmt -s -w ${1} || :)
+  (/go/bin/golint -min_confidence 0.5 ${1} || :)
+  (/go/bin/misspell ${1} || :)
+  (/go/bin/prealloc ${1} || :)
+  (/go/bin/gocyclo -over 15 ${1} || :)
+  (/go/bin/prealloc ${1} || :)
+  (/go/bin/goconst ${1} || :)
+}
+
+find /go/src/github.com/jancajthaml-openbank/${TARGET_PACKAGE} \
+  -name "*.go" \
+  -not \
+  -path "*vendor/*" \
+\
+| sort -u \
+| while read f ; do
+  scan ${f}
+done

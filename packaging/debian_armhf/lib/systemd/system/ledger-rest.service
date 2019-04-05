@@ -1,0 +1,23 @@
+[Unit]
+Description=openbank transaction ledger REST service
+PartOf=ledger.service
+After=ledger.service
+ConditionPathExists=/etc/init/ledger.conf
+
+[Service]
+Type=notify
+EnvironmentFile=/etc/init/ledger.conf
+StartLimitBurst=0
+ExecStart=/openbank/services/ledger/ledger-rest
+StandardInput=null
+LimitNOFILE=1048576
+LimitNPROC=infinity
+LimitCORE=infinity
+Restart=always
+RestartSec=0
+TimeoutStartSec=0
+TimeoutSec=infinity
+KillMode=process
+
+[Install]
+WantedBy=ledger.service

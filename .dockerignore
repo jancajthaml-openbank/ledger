@@ -1,0 +1,4 @@
+.git
+.circleci
+.dependabot
+packaging/debian_*/openbank
