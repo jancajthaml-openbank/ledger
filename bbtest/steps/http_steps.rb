@@ -4,6 +4,7 @@ require 'json'
 
 step "I request curl :http_method :url" do |http_method, url, body = nil|
   cmd = ["curl --insecure"]
+  cmd << ["--retry 2"]
   cmd << ["-X #{http_method.upcase}"] unless http_method.upcase == "GET"
   cmd << ["#{url} -sw \"%{http_code}\""]
   cmd << ["-d \'#{JSON.parse(body).to_json}\'"] unless body.nil? or http_method.upcase == "GET"

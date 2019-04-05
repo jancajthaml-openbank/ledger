@@ -66,9 +66,9 @@ step ":id :id :side side is forwarded to :account from tenant :tenant" do |trans
 end
 
 step "request should succeed" do ||
-  expect(@resp[:code]).to eq(200), "#{@resp[:code]} #{@resp[:body]}"
+  expect(@resp[:code]).to eq(200), "#{@http_req} -> #{@resp[:code]} #{@resp[:body]}"
 end
 
 step "request should fail" do ||
-  expect(@resp[:code]).to_not eq(200), "#{@resp[:code]} #{@resp[:body]}"
+  expect(@resp[:code]).to_not eq(200), "#{@http_req} -> #{@resp[:code]} #{@resp[:body]}"
 end
