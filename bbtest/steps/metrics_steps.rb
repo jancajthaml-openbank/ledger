@@ -12,16 +12,14 @@ step "metrics for tenant :tenant should report :count :transaction_status transa
   }
 end
 
-step "metrics for tenant :tenant should have following keys:" do |tenant, keys|
+step "metrics file :path should have following keys:" do |path, keys|
   expected_keys = keys.split("\n").map(&:strip).reject { |x| x.empty? }
 
-  metrics_file = "/reports/metrics.#{tenant}.json"
-
   eventually(timeout: 3) {
-    expect(File.file?(metrics_file)).to be(true)
+    expect(File.file?(path)).to be(true)
   }
 
-  metrics_keys = File.open(metrics_file, 'rb') { |f| JSON.parse(f.read).keys }
+  metrics_keys = File.open(path, 'rb') { |f| JSON.parse(f.read).keys }
 
   expect(metrics_keys).to match_array(expected_keys)
 end

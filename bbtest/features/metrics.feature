@@ -27,10 +27,17 @@ Feature: Metrics test
       METRICS_REFRESHRATE=1s
     """
 
-    Then metrics for tenant M2 should have following keys:
+    Then metrics file /reports/metrics.M2.json should have following keys:
     """
       promisedTransactions
       committedTransactions
       rollbackedTransactions
       forwardedTransactions
+    """
+    And metrics file /reports/metrics.json should have following keys:
+    """
+      createTransactionLatency
+      forwardTransferLatency
+      getTransactionLatency
+      getTransactionsLatency
     """
