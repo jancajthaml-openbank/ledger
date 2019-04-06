@@ -1,9 +1,5 @@
 require_relative 'placeholders'
 
-step "tenant is :tenant" do |tenant|
-  $tenant_id = (tenant == "random" ? (0...8).map { ('A'..'Z').to_a[rand(26)] }.join : tenant)
-end
-
 step "ledger is restarted" do ||
   ids = %x(systemctl -t service --no-legend | awk '{ print $1 }')
   expect($?).to be_success, ids

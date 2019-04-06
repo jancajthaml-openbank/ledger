@@ -223,6 +223,7 @@ func CommitingForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 
 		log.Debugf("~ %v (FWD) Commit->Accept", state.Transaction.IDTransaction)
 		s.SendRemote(context.Sender.Region, TransactionProcessedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction))
+
 		s.Metrics.TransactionCommitted()
 		state.ResetMarks()
 		context.Receiver.Become(state, AcceptingForward(s))
@@ -266,6 +267,7 @@ func RollbackingForward(s *daemon.ActorSystem) func(interface{}, system.Context)
 
 		log.Debugf("~ %v (FWD) Rollback->End", state.Transaction.IDTransaction)
 		s.SendRemote(context.Sender.Region, TransactionRejectedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction, rollBackReason))
+
 		s.Metrics.TransactionRollbacked()
 		s.UnregisterActor(context.Sender.Name)
 		return

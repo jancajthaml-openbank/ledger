@@ -8,6 +8,8 @@ module LakeMock
   def self.start
     raise "cannot start when shutting down" if self.poisonPill
     self.poisonPill = false
+    self.mutex = Mutex.new
+    self.recv_backlog = []
 
     begin
       ctx = ZMQ::Context.new
@@ -42,6 +44,10 @@ module LakeMock
           next
         end
 
+        self.mutex.synchronize do
+          self.recv_backlog << data
+        end
+
         unless data.start_with?("VaultUnit/")
           self.send(data)
           next
@@ -52,12 +58,36 @@ module LakeMock
     }
   end
 
+  def self.mailbox()
+    return self.recv_backlog
+  end
+
+  def self.pulled_message?(expected)
+    copy = self.recv_backlog.dup
+    copy.each { |item|
+      return true if item == expected
+    }
+    return false
+  end
+
+  def self.ack(data)
+    self.mutex.synchronize do
+      self.recv_backlog.reject! { |v| v == data }
+    end
+  end
+
+  def self.reset()
+    self.mutex.synchronize do
+      self.recv_backlog = []
+    end
+  end
+
   def self.process_next_message(data)
-    if groups = data.match(/^VaultUnit\/([^\s]{1,100}) LedgerUnit\/([^\s]{1,100}) ([^\s]{1,100}) (transaction|forward)\/([^\s]{1,100}) ([012]{1})X ([^\s]{1,100}) (-?\d{1,100}\.\d{1,100}|-?\d{1,100}) ([A-Z]{3})$/i)
-      tenant, sender, account, req_kind, req_id, kind, transaction, amount, currency = groups.captures
+    if groups = data.match(/^VaultUnit\/([^\s]{1,100}) LedgerUnit\/([^\s]{1,100}) ([^\s]{1,100}) ([^\s]{1,100}) ([012]{1})X ([^\s]{1,100}) (-?\d{1,100}\.\d{1,100}|-?\d{1,100}) ([A-Z]{3})$/i)
+      tenant, sender, account, req_id, kind, transaction, amount, currency = groups.captures
       ok = VaultHelper.process_account_event(tenant, account, kind, transaction, amount, currency)
 
-      self.reply(sender, tenant, account, "#{req_kind}/#{req_id}", ok ? "X#{kind}" : "EE")
+      self.reply(sender, tenant, account, req_id, ok ? "X#{kind}" : "EE")
     else
       puts "!!!!!! unknown message received !!!!!! #{data}"
     end
@@ -93,7 +123,9 @@ module LakeMock
                   :pull_channel,
                   :pub_channel,
                   :pull_daemon,
-                  :poisonPill
+                  :poisonPill,
+                  :mutex,
+                  :recv_backlog
   end
 
 end

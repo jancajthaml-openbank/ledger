@@ -179,6 +179,7 @@ func CommitingTransaction(s *daemon.ActorSystem) func(interface{}, system.Contex
 
 		log.Debugf("~ %v Commit->End", state.Transaction.IDTransaction)
 		s.SendRemote(context.Sender.Region, TransactionProcessedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction))
+
 		s.Metrics.TransactionCommitted()
 		s.UnregisterActor(context.Sender.Name)
 		return
@@ -221,6 +222,7 @@ func RollbackingTransaction(s *daemon.ActorSystem) func(interface{}, system.Cont
 
 		log.Debugf("~ %v Rollback->End", state.Transaction.IDTransaction)
 		s.SendRemote(context.Sender.Region, TransactionRejectedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction, rollBackReason))
+
 		s.Metrics.TransactionRollbacked()
 		s.UnregisterActor(context.Sender.Name)
 		return

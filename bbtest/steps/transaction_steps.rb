@@ -42,7 +42,6 @@ step "following transaction is created from tenant :tenant" do |tenant, data = n
   end
 end
 
-
 step ":id :id :side side is forwarded to :account from tenant :tenant" do |transaction, transfer, side, account, tenant|
   (tenant, account) = account.split('/')
 
