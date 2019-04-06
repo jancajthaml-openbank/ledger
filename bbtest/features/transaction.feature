@@ -3,6 +3,7 @@ Feature: High level Transaction workflow
   Scenario: integrity
     Given vault is empty
     And   tenant TRN is onbdoarded
+    And   ledger is restarted
 
     Given pasive account TRN/A with currency EUR exist
     And   pasive account TRN/B with currency EUR exist

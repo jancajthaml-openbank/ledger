@@ -4,7 +4,6 @@ require 'json'
 
 step "I request curl :http_method :url" do |http_method, url, body = nil|
   cmd = ["curl --insecure"]
-  cmd << ["--retry 2"]
   cmd << ["-X #{http_method.upcase}"] unless http_method.upcase == "GET"
   cmd << ["#{url} -sw \"%{http_code}\""]
   cmd << ["-d \'#{JSON.parse(body).to_json}\'"] unless body.nil? or http_method.upcase == "GET"
@@ -16,12 +15,13 @@ step "curl responds with :http_status" do |http_status, body = nil|
   raise if @http_req.nil?
 
   @resp = Hash.new
-  resp = %x(#{@http_req})
+  resp = resp = %x(#{@http_req})
 
   @resp[:code] = resp[resp.length-3...resp.length].to_i
   @resp[:body] = resp[0...resp.length-3] unless resp.nil?
 
-  expect(@resp[:code]).to eq(http_status), "#{@resp[:code]} #{@resp[:body]}"
+  http_status = [http_status] unless http_status.kind_of?(Array)
+  expect(http_status).to include(@resp[:code]), "#{@http_req} -> #{@resp[:code]} #{@resp[:body]}"
 
   return if body.nil?
 

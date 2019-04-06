@@ -2,21 +2,21 @@ Feature: REST
 
   Scenario: Transaction API
     Given vault is empty
-    And   tenant APITRN is onbdoarded
-    And   ledger is reconfigured with
-    And   pasive account APITRN/xxx with currency XXX exist
-    And   pasive account APITRN/yyy with currency XXX exist
+    And   tenant API is onbdoarded
+    And   ledger is restarted
+    And   pasive account API/xxx with currency XXX exist
+    And   pasive account API/yyy with currency XXX exist
 
-    When I request curl POST https://localhost/transaction/APITRN
+    When I request curl POST https://127.0.0.1/transaction/API
     """
       {
         "transfers": [{
           "credit": {
-            "tenant": "APITRN",
+            "tenant": "API",
             "name": "Credit"
           },
           "debit": {
-            "tenant": "APITRN",
+            "tenant": "API",
             "name": "Debit"
           },
           "amount": "1",
@@ -29,13 +29,13 @@ Feature: REST
       {}
     """
 
-    When I request curl GET https://localhost/transaction/APITRN/unique_transaction_id
+    When I request curl GET https://127.0.0.1/transaction/API/unique_transaction_id
     Then curl responds with 404
     """
       {}
     """
 
-    When I request curl POST https://localhost/transaction/APITRN
+    When I request curl POST https://127.0.0.1/transaction/API
     """
       {
         "id": "unique_transaction_id",
@@ -43,11 +43,11 @@ Feature: REST
           "id": "unique_transfer_id",
           "valueDate": "2018-03-04T17:08:22Z",
           "credit": {
-            "tenant": "APITRN",
+            "tenant": "API",
             "name": "xxx"
           },
           "debit": {
-            "tenant": "APITRN",
+            "tenant": "API",
             "name": "yyy"
           },
           "amount": "1",
@@ -63,11 +63,11 @@ Feature: REST
           "id": "unique_transfer_id",
           "valueDate": "2018-03-04T17:08:22Z",
           "credit": {
-            "tenant": "APITRN",
+            "tenant": "API",
             "name": "xxx"
           },
           "debit": {
-            "tenant": "APITRN",
+            "tenant": "API",
             "name": "yyy"
           },
           "amount": "1",
@@ -76,7 +76,7 @@ Feature: REST
       }
     """
 
-    When I request curl GET https://localhost/transaction/APITRN/unique_transaction_id
+    When I request curl GET https://127.0.0.1/transaction/API/unique_transaction_id
     Then curl responds with 200
     """
       {
@@ -85,11 +85,11 @@ Feature: REST
           "id": "unique_transfer_id",
           "valueDate": "2018-03-04T17:08:22Z",
           "credit": {
-            "tenant": "APITRN",
+            "tenant": "API",
             "name": "xxx"
           },
           "debit": {
-            "tenant": "APITRN",
+            "tenant": "API",
             "name": "yyy"
           },
           "amount": "1",
@@ -98,7 +98,7 @@ Feature: REST
       }
     """
 
-    When I request curl POST https://localhost/transaction/APITRN
+    When I request curl POST https://127.0.0.1/transaction/API
     """
       {
         "id": "unique_transaction_id",
@@ -106,11 +106,11 @@ Feature: REST
           "id": "unique_transfer_id",
           "valueDate": "2018-03-04T17:08:22Z",
           "credit": {
-            "tenant": "APITRN",
+            "tenant": "API",
             "name": "xxx"
           },
           "debit": {
-            "tenant": "APITRN",
+            "tenant": "API",
             "name": "yyy"
           },
           "amount": "1",
@@ -126,11 +126,11 @@ Feature: REST
           "id": "unique_transfer_id",
           "valueDate": "2018-03-04T17:08:22Z",
           "credit": {
-            "tenant": "APITRN",
+            "tenant": "API",
             "name": "xxx"
           },
           "debit": {
-            "tenant": "APITRN",
+            "tenant": "API",
             "name": "yyy"
           },
           "amount": "1",
@@ -139,7 +139,7 @@ Feature: REST
       }
     """
 
-    When I request curl POST https://localhost/transaction/APITRN
+    When I request curl POST https://127.0.0.1/transaction/API
     """
       {
         "id": "unique_transaction_id",
@@ -147,11 +147,11 @@ Feature: REST
           "id": "unique_transfer_id",
           "valueDate": "2018-03-04T17:08:22Z",
           "credit": {
-            "tenant": "APITRN",
+            "tenant": "API",
             "name": "xxx"
           },
           "debit": {
-            "tenant": "APITRN",
+            "tenant": "API",
             "name": "yyy"
           },
           "amount": "2",

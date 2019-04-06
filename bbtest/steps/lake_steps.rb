@@ -1,17 +1,20 @@
 
-step "tenant :tenant receives :data" do |tenant, data|
-  LakeMock.send("VaultUnit/#{tenant} Wall/bbtest #{data}")
+step "lake is empty" do ||
+  LakeMock.reset()
 end
 
-step "tenant :tenant responds with :data" do |_, data|
-  expected = LakeMock.parse_message(data)
+step "lake recieves :data" do |data|
+  LakeMock.send(data)
+end
+
+step "lake responds with :data" do |data|
   eventually() {
-    ok = LakeMock.pulled_message?(expected)
-    expect(ok).to be(true), "message #{expected} was not found in #{LakeMock.parsed_mailbox()}"
+    ok = LakeMock.pulled_message?(data)
+    expect(ok).to be(true), "message #{data} was not found in #{LakeMock.mailbox()}"
   }
-  LakeMock.ack(expected)
+  LakeMock.ack(data)
 end
 
-step "no other messages were received" do ||
+step "no other messages were relayed" do ||
   expect(LakeMock.mailbox()).to be_empty, "expected empty mailbox but got dangling messages: #{LakeMock.mailbox()}"
 end
