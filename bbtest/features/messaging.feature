@@ -19,5 +19,3 @@ Feature: Messaging behaviour
     When  lake recieves "VaultUnit/MSG1 req_id B X1"
     And   lake recieves "LedgerUnit/MSG1 VaultUnit/MSG1 req_id A X1"
     Then  lake responds with "LedgerRest LedgerUnit/MSG1 req_id req_id T0 trn_id"
-
-    And   no other messages were relayed

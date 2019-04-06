@@ -14,7 +14,3 @@ step "lake responds with :data" do |data|
   }
   LakeMock.ack(data)
 end
-
-step "no other messages were relayed" do ||
-  expect(LakeMock.mailbox()).to be_empty, "expected empty mailbox but got dangling messages: #{LakeMock.mailbox()}"
-end
