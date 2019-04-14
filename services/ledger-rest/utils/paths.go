@@ -23,3 +23,8 @@ func TransactionsPath(tenant string) string {
 func TransactionPath(tenant, id string) string {
 	return "t_" + tenant + "/transaction/" + id
 }
+
+// TransactionStatePath returns path for transaction state file
+func TransactionStatePath(tenant, id string) string {
+	return "t_" + tenant + "/transaction_state/" + id
+}
