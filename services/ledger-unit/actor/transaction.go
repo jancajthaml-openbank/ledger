@@ -71,7 +71,7 @@ func InitialTransaction(s *daemon.ActorSystem) func(interface{}, system.Context)
 		log.Debugf("~ %v Start->Promise", state.Transaction.IDTransaction)
 		state.ResetMarks()
 		context.Receiver.Become(state, PromisingTransaction(s))
-		s.Metrics.TransactionPromised()
+		s.Metrics.TransactionPromised(len(state.Transaction.Transfers))
 
 		for account, task := range state.Negotiation {
 			s.SendRemote("VaultUnit/"+account.Tenant, PromiseOrderMessage(context.Receiver.Name, account.Name, task))
@@ -180,7 +180,7 @@ func CommitingTransaction(s *daemon.ActorSystem) func(interface{}, system.Contex
 		log.Debugf("~ %v Commit->End", state.Transaction.IDTransaction)
 		s.SendRemote(context.Sender.Region, TransactionProcessedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction))
 
-		s.Metrics.TransactionCommitted()
+		s.Metrics.TransactionCommitted(len(state.Transaction.Transfers))
 		s.UnregisterActor(context.Sender.Name)
 		return
 	}
@@ -223,7 +223,7 @@ func RollbackingTransaction(s *daemon.ActorSystem) func(interface{}, system.Cont
 		log.Debugf("~ %v Rollback->End", state.Transaction.IDTransaction)
 		s.SendRemote(context.Sender.Region, TransactionRejectedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction, rollBackReason))
 
-		s.Metrics.TransactionRollbacked()
+		s.Metrics.TransactionRollbacked(len(state.Transaction.Transfers))
 		s.UnregisterActor(context.Sender.Name)
 		return
 	}
