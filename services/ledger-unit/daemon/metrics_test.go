@@ -23,31 +23,39 @@ func TestMetricsPersist(t *testing.T) {
 
 	entity := NewMetrics(ctx, cfg)
 
-	t.Log("TransactionPromised properly increments number of created accounts")
+	t.Log("TransactionPromised properly increments number of promised transactions and transfers")
 	{
 		require.Equal(t, int64(0), entity.promisedTransactions.Count())
-		entity.TransactionPromised()
+		require.Equal(t, int64(0), entity.promisedTransfers.Count())
+		entity.TransactionPromised(2)
 		assert.Equal(t, int64(1), entity.promisedTransactions.Count())
+		assert.Equal(t, int64(2), entity.promisedTransfers.Count())
 	}
 
-	t.Log("TransactionCommitted properly increments number of created accounts")
+	t.Log("TransactionCommitted properly increments number of committed transactions and transfers")
 	{
 		require.Equal(t, int64(0), entity.committedTransactions.Count())
-		entity.TransactionCommitted()
+		require.Equal(t, int64(0), entity.committedTransfers.Count())
+		entity.TransactionCommitted(2)
 		assert.Equal(t, int64(1), entity.committedTransactions.Count())
+		assert.Equal(t, int64(2), entity.committedTransfers.Count())
 	}
 
-	t.Log("TransactionRollbacked properly increments number of created accounts")
+	t.Log("TransactionRollbacked properly increments number of rollbacked transactions and transfers")
 	{
 		require.Equal(t, int64(0), entity.rollbackedTransactions.Count())
-		entity.TransactionRollbacked()
+		require.Equal(t, int64(0), entity.rollbackedTransfers.Count())
+		entity.TransactionRollbacked(2)
 		assert.Equal(t, int64(1), entity.rollbackedTransactions.Count())
+		assert.Equal(t, int64(2), entity.rollbackedTransfers.Count())
 	}
 
-	t.Log("TransactionForwarded properly increments number of created accounts")
+	t.Log("TransactionForwarded properly increments number of forwarded transactions and transfers")
 	{
 		require.Equal(t, int64(0), entity.forwardedTransactions.Count())
-		entity.TransactionForwarded()
+		require.Equal(t, int64(0), entity.forwardedTransfers.Count())
+		entity.TransactionForwarded(2)
 		assert.Equal(t, int64(1), entity.forwardedTransactions.Count())
+		assert.Equal(t, int64(2), entity.forwardedTransfers.Count())
 	}
 }

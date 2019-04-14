@@ -108,7 +108,7 @@ func InitialForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 			log.Debugf("~ %v (FWD) Start->Promise", state.Transaction.IDTransaction)
 			state.ResetMarks()
 			context.Receiver.Become(state, PromisingForward(s))
-			s.Metrics.TransactionPromised()
+			s.Metrics.TransactionPromised(1)
 
 			for account, task := range state.Negotiation {
 				s.SendRemote("VaultUnit/"+account.Tenant, PromiseOrderMessage(context.Receiver.Name, account.Name, task))
@@ -224,7 +224,7 @@ func CommitingForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 		log.Debugf("~ %v (FWD) Commit->Accept", state.Transaction.IDTransaction)
 		s.SendRemote(context.Sender.Region, TransactionProcessedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction))
 
-		s.Metrics.TransactionCommitted()
+		s.Metrics.TransactionCommitted(1)
 		state.ResetMarks()
 		context.Receiver.Become(state, AcceptingForward(s))
 		return
@@ -268,7 +268,7 @@ func RollbackingForward(s *daemon.ActorSystem) func(interface{}, system.Context)
 		log.Debugf("~ %v (FWD) Rollback->End", state.Transaction.IDTransaction)
 		s.SendRemote(context.Sender.Region, TransactionRejectedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction, rollBackReason))
 
-		s.Metrics.TransactionRollbacked()
+		s.Metrics.TransactionRollbacked(1)
 		s.UnregisterActor(context.Sender.Name)
 		return
 	}
@@ -297,7 +297,7 @@ func AcceptingForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 
 		log.Debugf("~ %v (FWD) Accept->End", state.Transaction.IDTransaction)
 		s.SendRemote(context.Sender.Region, TransactionProcessedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction))
-		s.Metrics.TransactionForwarded()
+		s.Metrics.TransactionForwarded(1)
 		s.UnregisterActor(context.Sender.Name)
 		return
 	}

@@ -26,9 +26,13 @@ Feature: Metrics test
     Then metrics file /reports/metrics.M2.json should have following keys:
     """
       promisedTransactions
+      promisedTransfers
       committedTransactions
+      committedTransfers
       rollbackedTransactions
+      rollbackedTransfers
       forwardedTransactions
+      forwardedTransfers
     """
     And metrics file /reports/metrics.json should have following keys:
     """

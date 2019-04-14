@@ -35,9 +35,13 @@ type Metrics struct {
 	tenant                 string
 	refreshRate            time.Duration
 	promisedTransactions   metrics.Counter
+	promisedTransfers      metrics.Counter
 	committedTransactions  metrics.Counter
+	committedTransfers     metrics.Counter
 	rollbackedTransactions metrics.Counter
+	rollbackedTransfers    metrics.Counter
 	forwardedTransactions  metrics.Counter
+	forwardedTransfers     metrics.Counter
 }
 
 // NewMetrics returns metrics fascade
@@ -48,48 +52,64 @@ func NewMetrics(ctx context.Context, cfg config.Configuration) Metrics {
 		tenant:                 cfg.Tenant,
 		refreshRate:            cfg.MetricsRefreshRate,
 		promisedTransactions:   metrics.NewCounter(),
+		promisedTransfers:      metrics.NewCounter(),
 		committedTransactions:  metrics.NewCounter(),
+		committedTransfers:     metrics.NewCounter(),
 		rollbackedTransactions: metrics.NewCounter(),
+		rollbackedTransfers:    metrics.NewCounter(),
 		forwardedTransactions:  metrics.NewCounter(),
+		forwardedTransfers:     metrics.NewCounter(),
 	}
 }
 
 // Snapshot holds metrics snapshot status
 type Snapshot struct {
 	PromisedTransactions   int64 `json:"promisedTransactions"`
+	PromisedTransfers      int64 `json:"promisedTransfers"`
 	CommittedTransactions  int64 `json:"committedTransactions"`
+	CommittedTransfers     int64 `json:"committedTransfers"`
 	RollbackedTransactions int64 `json:"rollbackedTransactions"`
+	RollbackedTransfers    int64 `json:"rollbackedTransfers"`
 	ForwardedTransactions  int64 `json:"forwardedTransactions"`
+	ForwardedTransfers     int64 `json:"forwardedTransfers"`
 }
 
 // NewSnapshot returns metrics snapshot
 func NewSnapshot(metrics Metrics) Snapshot {
 	return Snapshot{
 		PromisedTransactions:   metrics.promisedTransactions.Count(),
+		PromisedTransfers:      metrics.promisedTransfers.Count(),
 		CommittedTransactions:  metrics.committedTransactions.Count(),
+		CommittedTransfers:     metrics.committedTransfers.Count(),
 		RollbackedTransactions: metrics.rollbackedTransactions.Count(),
+		RollbackedTransfers:    metrics.rollbackedTransfers.Count(),
 		ForwardedTransactions:  metrics.forwardedTransactions.Count(),
+		ForwardedTransfers:     metrics.forwardedTransfers.Count(),
 	}
 }
 
 // TransactionPromised increments transactions promised by one
-func (metrics Metrics) TransactionPromised() {
+func (metrics Metrics) TransactionPromised(transfers int) {
 	metrics.promisedTransactions.Inc(1)
+	metrics.promisedTransfers.Inc(int64(transfers))
 }
 
 // TransactionCommitted increments transactions committed by one
-func (metrics Metrics) TransactionCommitted() {
+func (metrics Metrics) TransactionCommitted(transfers int) {
 	metrics.committedTransactions.Inc(1)
+	metrics.committedTransfers.Inc(int64(transfers))
 }
 
 // TransactionRollbacked increments transactions rollbacked by one
-func (metrics Metrics) TransactionRollbacked() {
+func (metrics Metrics) TransactionRollbacked(transfers int) {
 	metrics.rollbackedTransactions.Inc(1)
+	metrics.rollbackedTransfers.Inc(int64(transfers))
 }
 
 // TransactionForwarded increments transactions forwarded by one
-func (metrics Metrics) TransactionForwarded() {
+func (metrics Metrics) TransactionForwarded(transfers int) {
 	metrics.forwardedTransactions.Inc(1)
+	metrics.forwardedTransfers.Inc(int64(transfers))
 }
 
 func (metrics Metrics) persist(filename string) {
