@@ -46,6 +46,30 @@ workflows:
             branches:
               ignore: /.*/
 
+  rolling_contract:
+    triggers:
+      - schedule:
+          cron: "20,50 * * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - setup
+      - test:
+          requires:
+            - setup
+      - build:
+          requires:
+            - setup
+      - package:
+          requires:
+            - build
+            - test
+      - bbtest:
+          requires:
+            - package
+
 # ---------------------------------------------------------------------------- #
 
 jobs:
