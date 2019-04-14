@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2019, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,4 +22,9 @@ func TransactionsPath(tenant string) string {
 // TransactionsPath returns filepath for single transaction
 func TransactionPath(tenant, id string) string {
 	return "t_" + tenant + "/transaction/" + id
+}
+
+// TransactionStatePath returns path for transaction state file
+func TransactionStatePath(tenant, id string) string {
+	return "t_" + tenant + "/transaction_state/" + id
 }

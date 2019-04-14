@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2019, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,14 +34,20 @@ func LoadTransactions(storage *localfs.Storage, tenant string) ([]string, error)
 	return transactions, nil
 }
 
-func LoadTransaction(storage *localfs.Storage, tenant string, id string) (*model.Transaction, error) {
-	path := utils.TransactionPath(tenant, id)
-	data, err := storage.ReadFileFully(path)
+func LoadTransaction(storage *localfs.Storage, tenant, id string) (*model.Transaction, error) {
+	dataPath := utils.TransactionPath(tenant, id)
+	data, err := storage.ReadFileFully(dataPath)
+	if err != nil {
+		return nil, err
+	}
+
+	statusPath := utils.TransactionStatePath(tenant, id)
+	status, err := storage.ReadFileFully(statusPath)
 	if err != nil {
 		return nil, err
 	}
 
 	result := new(model.Transaction)
-	result.Deserialise(data)
+	result.Deserialise(data, status)
 	return result, nil
 }

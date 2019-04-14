@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2018, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2019, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ type TransactioMissing struct{}
 // Transaction represents egress message of transaction
 type Transaction struct {
 	IDTransaction string     `json:"id"`
+	Status        string     `json:"status,omitempty"`
 	Transfers     []Transfer `json:"transfers"`
 }
 
@@ -247,11 +248,13 @@ func (entity Transfer) MarshalJSON() ([]byte, error) {
 }
 
 // Deserialise transaction from binary data
-func (entity *Transaction) Deserialise(data []byte) {
-	// FIXME rename to hydrate
+func (entity *Transaction) Deserialise(data []byte, status []byte) {
 	lines := strings.Split(string(data), "\n")
 	entity.IDTransaction = lines[0]
 	entity.Transfers = make([]Transfer, len(lines)-2)
+
+	parts := strings.Split(string(status), " ")
+	entity.Status = parts[0]
 
 	for i := range entity.Transfers {
 		transfer := strings.SplitN(lines[i+1], " ", 8)

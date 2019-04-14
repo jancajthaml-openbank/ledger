@@ -81,6 +81,7 @@ Feature: REST
     """
       {
         "id": "unique_transaction_id",
+        "status": "committed",
         "transfers": [{
           "id": "unique_transfer_id",
           "valueDate": "2018-03-04T17:08:22Z",
