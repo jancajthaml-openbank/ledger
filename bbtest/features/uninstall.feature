@@ -1,5 +1,5 @@
 @uninstall
-Feature: Unnstall package
+Feature: Uninstall package
 
   Scenario: uninstall
     Given package "ledger" is uninstalled
