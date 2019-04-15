@@ -201,8 +201,8 @@ func (entity *Account) UnmarshalJSON(data []byte) error {
 	}
 
 	all := struct {
-		Tenant *string `json:"tenant"`
-		Name   *string `json:"name"`
+		Tenant string `json:"tenant"`
+		Name   string `json:"name"`
 	}{}
 
 	err := utils.JSON.Unmarshal(data, &all)
@@ -210,15 +210,15 @@ func (entity *Account) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	if all.Tenant == nil {
+	if all.Tenant == "" {
 		return fmt.Errorf("required field \"tenant\" is missing")
 	}
-	if all.Name == nil {
+	if all.Name == "" {
 		return fmt.Errorf("required field \"name\" is missing")
 	}
 
-	entity.Tenant = *all.Tenant
-	entity.Name = *all.Name
+	entity.Tenant = all.Tenant
+	entity.Name = strings.Replace(all.Name, " ", "_", -1)
 	return nil
 }
 
