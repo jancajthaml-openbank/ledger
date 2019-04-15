@@ -15,6 +15,8 @@
 package actor
 
 import (
+	"reflect"
+
 	"github.com/jancajthaml-openbank/ledger-unit/daemon"
 	"github.com/jancajthaml-openbank/ledger-unit/model"
 	"github.com/jancajthaml-openbank/ledger-unit/persistence"
@@ -88,7 +90,7 @@ func PromisingTransaction(s *daemon.ActorSystem) func(interface{}, system.Contex
 			log.Debugf("~ %v Promise Accepted", state.Transaction.IDTransaction)
 			state.MarkOk()
 		default:
-			log.Debugf("~ %v Promise Rejected %+v", state.Transaction.IDTransaction, context.Data)
+			log.Debugf("~ %v Promise Rejected %+v", state.Transaction.IDTransaction, reflect.ValueOf(context.Data).Type())
 			state.MarkFailed()
 		}
 
@@ -149,7 +151,7 @@ func CommitingTransaction(s *daemon.ActorSystem) func(interface{}, system.Contex
 			log.Debugf("~ %v Commit Accepted", state.Transaction.IDTransaction)
 			state.MarkOk()
 		default:
-			log.Debugf("~ %v Commit Rejected %+v", state.Transaction.IDTransaction, context.Data)
+			log.Debugf("~ %v Commit Rejected %+v", state.Transaction.IDTransaction, reflect.ValueOf(context.Data).Type())
 			state.MarkFailed()
 		}
 
@@ -159,8 +161,20 @@ func CommitingTransaction(s *daemon.ActorSystem) func(interface{}, system.Contex
 		}
 
 		if state.FailedResponses > 0 {
-			log.Debugf("~ %v Commit Rejected Some %d of %d", state.Transaction.IDTransaction, state.FailedResponses, state.NegotiationLen)
-			s.SendRemote(context.Sender.Region, TransactionRefusedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction))
+			log.Debugf("~ %v Commit Rejected %d of %d", state.Transaction.IDTransaction, state.FailedResponses, state.NegotiationLen)
+			if !persistence.RejectTransaction(s.Storage, state.Transaction.IDTransaction) {
+				log.Warnf("~ %v Commit failed to reject transaction", state.Transaction.IDTransaction)
+				s.SendRemote(context.Sender.Region, TransactionRefusedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction))
+				return
+			}
+
+			log.Debugf("~ %v Commit->Rollback", state.Transaction.IDTransaction)
+			state.ResetMarks()
+			context.Receiver.Become(state, RollbackingTransaction(s))
+
+			for account, task := range state.Negotiation {
+				s.SendRemote("VaultUnit/"+account.Tenant, RollbackOrderMessage(context.Receiver.Name, account.Name, task))
+			}
 			return
 		}
 
@@ -169,6 +183,7 @@ func CommitingTransaction(s *daemon.ActorSystem) func(interface{}, system.Contex
 		if !persistence.CommitTransaction(s.Storage, state.Transaction.IDTransaction) {
 			log.Warnf("~ %v Commit failed to commit transaction", state.Transaction.IDTransaction)
 			s.SendRemote(context.Sender.Region, TransactionRefusedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction))
+			s.UnregisterActor(context.Sender.Name)
 			return
 		}
 
@@ -195,7 +210,7 @@ func RollbackingTransaction(s *daemon.ActorSystem) func(interface{}, system.Cont
 			log.Debugf("~ %v Rollback Accepted", state.Transaction.IDTransaction)
 			state.MarkOk()
 		default:
-			log.Debugf("~ %v Rollback Rejected %+v", state.Transaction.IDTransaction, context.Data)
+			log.Debugf("~ %v Rollback Rejected %+v", state.Transaction.IDTransaction, reflect.ValueOf(context.Data).Type())
 			state.MarkFailed()
 		}
 
@@ -205,8 +220,9 @@ func RollbackingTransaction(s *daemon.ActorSystem) func(interface{}, system.Cont
 		}
 
 		if state.FailedResponses > 0 {
-			log.Debugf("~ %v Rollback Rejected Some %d of %d", state.Transaction.IDTransaction, state.FailedResponses, state.NegotiationLen)
+			log.Debugf("~ %v Rollback Rejected %d of %d", state.Transaction.IDTransaction, state.FailedResponses, state.NegotiationLen)
 			s.SendRemote(context.Sender.Region, TransactionRefusedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction))
+			s.UnregisterActor(context.Sender.Name)
 			return
 		}
 
@@ -217,6 +233,7 @@ func RollbackingTransaction(s *daemon.ActorSystem) func(interface{}, system.Cont
 		if !persistence.RollbackTransaction(s.Storage, state.Transaction.IDTransaction, rollBackReason) {
 			log.Warnf("~ %v Rollback failed to rollback transaction", state.Transaction.IDTransaction)
 			s.SendRemote(context.Sender.Region, TransactionRefusedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction))
+			s.UnregisterActor(context.Sender.Name)
 			return
 		}
 

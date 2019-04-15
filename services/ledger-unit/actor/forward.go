@@ -15,6 +15,8 @@
 package actor
 
 import (
+	"reflect"
+
 	"github.com/jancajthaml-openbank/ledger-unit/daemon"
 	"github.com/jancajthaml-openbank/ledger-unit/model"
 	"github.com/jancajthaml-openbank/ledger-unit/persistence"
@@ -132,7 +134,7 @@ func PromisingForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 			log.Debugf("~ %v (FWD) Promise Accepted", state.Transaction.IDTransaction)
 			state.MarkOk()
 		default:
-			log.Debugf("~ %v (FWD) Promise Rejected %+v", state.Transaction.IDTransaction, context.Data)
+			log.Debugf("~ %v (FWD) Promise Rejected %+v", state.Transaction.IDTransaction, reflect.ValueOf(context.Data).Type())
 			state.MarkFailed()
 		}
 
@@ -193,7 +195,7 @@ func CommitingForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 			log.Debugf("~ %v (FWD) Commit Accepted", state.Transaction.IDTransaction)
 			state.MarkOk()
 		default:
-			log.Debugf("~ %v (FWD) Commit Rejected %+v", state.Transaction.IDTransaction, context.Data)
+			log.Debugf("~ %v (FWD) Commit Rejected %+v", state.Transaction.IDTransaction, reflect.ValueOf(context.Data).Type())
 			state.MarkFailed()
 		}
 
@@ -204,7 +206,20 @@ func CommitingForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 
 		if state.FailedResponses > 0 {
 			log.Debugf("~ %v (FWD) Commit Rejected Some %d of %d", state.Transaction.IDTransaction, state.FailedResponses, state.NegotiationLen)
-			s.SendRemote(context.Sender.Region, TransactionRefusedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction))
+			if !persistence.RejectTransaction(s.Storage, state.Transaction.IDTransaction) {
+				log.Warnf("~ %v (FWD) Commit failed to reject transaction", state.Transaction.IDTransaction)
+				s.SendRemote(context.Sender.Region, TransactionRefusedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction))
+				return
+			}
+
+			log.Debugf("~ %v (FWD) Commit->Rollback", state.Transaction.IDTransaction)
+			state.ResetMarks()
+			context.Receiver.Become(state, RollbackingForward(s))
+
+			for account, task := range state.Negotiation {
+				s.SendRemote("VaultUnit/"+account.Tenant, RollbackOrderMessage(context.Receiver.Name, account.Name, task))
+			}
+
 			return
 		}
 
@@ -240,7 +255,7 @@ func RollbackingForward(s *daemon.ActorSystem) func(interface{}, system.Context)
 			log.Debugf("~ %v (FWD) Rollback Accepted", state.Transaction.IDTransaction)
 			state.MarkOk()
 		default:
-			log.Debugf("~ %v (FWD) Rollback Rejected %+v", state.Transaction.IDTransaction, context.Data)
+			log.Debugf("~ %v (FWD) Rollback Rejected %+v", state.Transaction.IDTransaction, reflect.ValueOf(context.Data).Type())
 			state.MarkFailed()
 		}
 
