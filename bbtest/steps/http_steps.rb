@@ -21,7 +21,7 @@ step "curl responds with :http_status" do |http_status, body = nil|
     @resp[:code] = resp[resp.length-3...resp.length].to_i
 
     if @resp[:code] === 0
-      raise "search is unreachable"
+      raise "endpoint #{@http_req} is unreachable"
     end
 
     http_status = [http_status] unless http_status.kind_of?(Array)

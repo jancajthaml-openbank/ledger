@@ -25,21 +25,29 @@ step ":amount :currency is transferred from :account to :account" do |amount, cu
 end
 
 step "following transaction is created from tenant :tenant" do |tenant, data = nil|
-  uri = "https://localhost/transaction/#{tenant}"
+  uri = "https://127.0.0.1/transaction/#{tenant}"
 
   send "I request curl :http_method :url", "POST", uri, data
 
-  @resp = Hash.new
-  resp = %x(#{@http_req})
+  @resp = { :code => 0 }
 
-  @resp[:code] = resp[resp.length-3...resp.length].to_i
-  @resp[:body] = resp[0...resp.length-3] unless resp.nil?
-  case @resp[:code]
-    when 200, 201
-      @transaction_id = JSON.parse(@resp[:body])["id"]
-    else
-      @transaction_id = nil
-  end
+  eventually(timeout: 60, backoff: 2) {
+    resp = %x(#{@http_req})
+    @resp[:code] = resp[resp.length-3...resp.length].to_i
+
+    if @resp[:code] === 0
+      raise "endpoint #{@http_req} is unreachable"
+    end
+
+    @resp[:body] = resp[0...resp.length-3] unless resp.nil?
+
+    case @resp[:code]
+      when 200, 201
+        @transaction_id = JSON.parse(@resp[:body])["id"]
+      else
+        @transaction_id = nil
+    end
+  }
 end
 
 step ":id :id :side side is forwarded to :account from tenant :tenant" do |transaction, transfer, side, account, tenant|
@@ -53,15 +61,22 @@ step ":id :id :side side is forwarded to :account from tenant :tenant" do |trans
     }
   }.to_json
 
-  uri = "https://localhost/transaction/#{tenant}/#{transaction}/#{transfer}"
+  uri = "https://127.0.0.1/transaction/#{tenant}/#{transaction}/#{transfer}"
 
   send "I request curl :http_method :url", "PATCH", uri, payload
 
-  @resp = Hash.new
-  resp = %x(#{@http_req})
+  @resp = { :code => 0 }
 
-  @resp[:code] = resp[resp.length-3...resp.length].to_i
-  @resp[:body] = resp[0...resp.length-3] unless resp.nil?
+  eventually(timeout: 60, backoff: 2) {
+    resp = %x(#{@http_req})
+    @resp[:code] = resp[resp.length-3...resp.length].to_i
+
+    if @resp[:code] === 0
+      raise "endpoint #{@http_req} is unreachable"
+    end
+
+    @resp[:body] = resp[0...resp.length-3] unless resp.nil?
+  }
 end
 
 step "request should succeed" do ||
