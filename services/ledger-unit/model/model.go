@@ -48,14 +48,14 @@ func (state *TransactionState) MarkOk() {
 	if state == nil {
 		return
 	}
-	state.OkResponses++
+	state.OkResponses += 1
 }
 
 func (state *TransactionState) MarkFailed() {
 	if state == nil {
 		return
 	}
-	state.FailedResponses++
+	state.FailedResponses += 1
 }
 
 func (state *TransactionState) ResetMarks() {
@@ -78,6 +78,8 @@ func (state *TransactionState) Prepare(transaction Transaction) {
 	negotiation := transaction.PrepareRemoteNegotiation()
 	state.Transaction = transaction
 	state.Negotiation = negotiation
+	state.OkResponses = 0
+	state.FailedResponses = 0
 	state.NegotiationLen = len(negotiation)
 	state.Ready = true
 }
