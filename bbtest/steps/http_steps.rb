@@ -14,14 +14,21 @@ end
 step "curl responds with :http_status" do |http_status, body = nil|
   raise if @http_req.nil?
 
-  @resp = Hash.new
-  resp = resp = %x(#{@http_req})
+  @resp = { :code => 0 }
 
-  @resp[:code] = resp[resp.length-3...resp.length].to_i
-  @resp[:body] = resp[0...resp.length-3] unless resp.nil?
+  eventually(timeout: 60, backoff: 2) {
+    resp = %x(#{@http_req})
+    @resp[:code] = resp[resp.length-3...resp.length].to_i
 
-  http_status = [http_status] unless http_status.kind_of?(Array)
-  expect(http_status).to include(@resp[:code]), "#{@http_req} -> #{@resp[:code]} #{@resp[:body]}"
+    if @resp[:code] === 0
+      raise "search is unreachable"
+    end
+
+    http_status = [http_status] unless http_status.kind_of?(Array)
+    expect(http_status).to include(@resp[:code])
+
+    @resp[:body] = resp[0...resp.length-3] unless resp.nil?
+  }
 
   return if body.nil?
 
@@ -32,25 +39,27 @@ step "curl responds with :http_status" do |http_status, body = nil|
     resp_body = JSON.parse(@resp[:body])
     resp_body.deep_sort!
 
-    diff = JsonDiff.diff(resp_body, expectation).select{ |item| item["op"] != "remove" }
+    diff = JsonDiff.diff(resp_body, expectation).select { |item| item["op"] == "add" }.map { |item| item["value"] or item }
     return if diff == []
 
-    raise "expectation failure:\ngot:\n#{JSON.pretty_generate(resp_body)}\nexpected:\n#{JSON.pretty_generate(expectation)}"
+    raise "expectation failure:\ngot:\n#{JSON.pretty_generate(resp_body)}\nexpected:\n#{JSON.pretty_generate(expectation)}\ndiff:#{JSON.pretty_generate(diff)}"
 
   rescue JSON::ParserError
     raise "invalid response got \"#{@resp[:body].strip}\", expected \"#{expectation.to_json}\""
   end
-
 end
 
 step "curl does not responds with :http_status" do |http_status|
   raise if @http_req.nil?
 
-  @resp = Hash.new
-  resp = %x(#{@http_req})
+  @resp = { :code => 0 }
 
-  @resp[:code] = resp[resp.length-3...resp.length].to_i
-  @resp[:body] = resp[0...resp.length-3] unless resp.nil?
+  eventually(timeout: 10, backoff: 1) {
+    resp = %x(#{@http_req})
+    @resp[:code] = resp[resp.length-3...resp.length].to_i
+    raise "endpoint unreachable" if @resp[:code] === 0
+    @resp[:body] = resp[0...resp.length-3] unless resp.nil?
+  }
 
-  expect(@resp[:code]).not_to eq(http_status), "#{@resp[:code]} #{@resp[:body]}"
+  expect(@resp[:code]).not_to eq(http_status)
 end
