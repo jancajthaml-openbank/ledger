@@ -1,5 +1,5 @@
 Package: ledger
-Version: 1.0.0+more-stable-agains-more-than-once-delivery
+Version: 1.0.0+canonise-account-name-no-spaces
 Architecture: amd64
 Maintainer: Jan Cajthaml <jan.cajthaml@gmail.com>
 Depends: init-system-helpers (>= 1.18~), libzmq5 (>= 4.2.1~), openssl (>= 1.1~)
