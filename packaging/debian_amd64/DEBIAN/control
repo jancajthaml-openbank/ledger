@@ -1,5 +1,5 @@
 Package: ledger
-Version: 1.0.0+canonise-account-name-no-spaces
+Version: 1.0.0+bbtest-transaction-ids-list
 Architecture: amd64
 Maintainer: Jan Cajthaml <jan.cajthaml@gmail.com>
 Depends: init-system-helpers (>= 1.18~), libzmq5 (>= 4.2.1~), openssl (>= 1.1~)
