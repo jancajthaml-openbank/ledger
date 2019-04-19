@@ -99,6 +99,14 @@ Feature: REST
       }
     """
 
+    When I request curl GET https://127.0.0.1/transaction/API
+    Then curl responds with 200
+    """
+      [
+        "unique_transaction_id"
+      ]
+    """
+
     When I request curl POST https://127.0.0.1/transaction/API
     """
       {
