@@ -11,12 +11,13 @@ module HTTPHelper
     cmd = ["curl"]
     cmd << ["--insecure"]
     cmd << ["--noproxy 'localhost,127.0.0.1'"]
-    unless options[:method].upcase == "GET"
-      cmd << ["-X #{options[:method].upcase}"]
-    end
     cmd << ["-ss"]
     cmd << ["-v"]
     cmd << ["-i"]
+    unless options[:body].nil? or options[:method].upcase == "GET"
+      cmd << ["-H \"Content-Type: application/json\""]
+      cmd << ["-X #{options[:method].upcase}"]
+    end
     cmd << [options[:url]]
     unless options[:body].nil? or options[:method].upcase == "GET"
       cmd << ["-d \'#{JSON.parse(options[:body]).to_json}\'"]
