@@ -3,7 +3,7 @@ require_relative 'placeholders'
 require 'json'
 
 step "transaction of tenant :tenant should be" do |tenant, expectation|
-  transaction = transaction(tenant, @transaction_id)
+  transaction = JournalHelper.transaction(tenant, @transaction_id)
   expectation = JSON.parse(expectation)
 
   expect(transaction["id"]).to eq(expectation["id"]) unless expectation["id"].nil?
@@ -30,10 +30,12 @@ end
 
 step "transaction of tenant :tenant should not exist" do |tenant|
   return if @transaction_id.nil?
-  expect(transaction_data(tenant, @transaction_id)).to be_nil, "transaction found #{tenant} #{@transaction_id}"
+  data = JournalHelper.transaction_data(tenant, @transaction_id)
+  expect(data).to be_nil, "transaction found #{tenant} #{@transaction_id}"
 end
 
 step "transaction of tenant :tenant should exist" do |tenant|
   expect(@transaction_id).not_to be_nil
-  expect(transaction_data(tenant, @transaction_id)).not_to be_nil, "transaction not found #{tenant} #{@transaction_id}"
+  data = JournalHelper.transaction_data(tenant, @transaction_id)
+  expect(data).not_to be_nil, "transaction not found #{tenant} #{@transaction_id}"
 end

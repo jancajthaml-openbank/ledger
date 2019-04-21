@@ -2,22 +2,14 @@ require 'date'
 
 module JournalHelper
 
-  def transaction(tenant, id)
-    transaction = JournalHelper.transaction_data(tenant, id)
-    state = JournalHelper.transaction_state(tenant, id)
+  def self.transaction(tenant, id)
+    transaction = self.transaction_data(tenant, id)
+    state = self.transaction_state(tenant, id)
 
     return nil if (transaction.nil? or state.nil?)
 
     transaction[:state] = state
     transaction
-  end
-
-  def transaction_data(tenant, id)
-    JournalHelper.transaction_data(tenant, id)
-  end
-
-  def transaction_state(tenant, id)
-    JournalHelper.transaction_state(tenant, id)
   end
 
   def self.transaction_state(tenant, id)

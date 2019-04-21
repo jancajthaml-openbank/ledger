@@ -70,7 +70,8 @@ func InitialTransaction(s *daemon.ActorSystem) func(interface{}, system.Context)
 			return
 		}
 
-		log.Debugf("~ %v Start->Promise", state.Transaction.IDTransaction)
+		log.Infof("~ %v Start->Promise", state.Transaction.IDTransaction)
+
 		state.ResetMarks()
 		context.Receiver.Become(state, PromisingTransaction(s))
 		s.Metrics.TransactionPromised(len(state.Transaction.Transfers))
@@ -111,7 +112,8 @@ func PromisingTransaction(s *daemon.ActorSystem) func(interface{}, system.Contex
 				return
 			}
 
-			log.Debugf("~ %v Promise->Rollback", state.Transaction.IDTransaction)
+			log.Infof("~ %v Promise->Rollback", state.Transaction.IDTransaction)
+
 			state.ResetMarks()
 			context.Receiver.Become(state, RollbackingTransaction(s))
 
@@ -131,7 +133,8 @@ func PromisingTransaction(s *daemon.ActorSystem) func(interface{}, system.Contex
 			return
 		}
 
-		log.Debugf("~ %v Promise->Commit", state.Transaction.IDTransaction)
+		log.Infof("~ %v Promise->Commit", state.Transaction.IDTransaction)
+
 		state.ResetMarks()
 		context.Receiver.Become(state, CommitingTransaction(s))
 
@@ -171,7 +174,8 @@ func CommitingTransaction(s *daemon.ActorSystem) func(interface{}, system.Contex
 				return
 			}
 
-			log.Debugf("~ %v Commit->Rollback", state.Transaction.IDTransaction)
+			log.Infof("~ %v Commit->Rollback", state.Transaction.IDTransaction)
+
 			state.ResetMarks()
 			context.Receiver.Become(state, RollbackingTransaction(s))
 
@@ -195,7 +199,8 @@ func CommitingTransaction(s *daemon.ActorSystem) func(interface{}, system.Contex
 			transfers = append(transfers, transfer.IDTransfer)
 		}
 
-		log.Debugf("~ %v Commit->End", state.Transaction.IDTransaction)
+		log.Infof("~ %v Commit->End", state.Transaction.IDTransaction)
+
 		s.SendRemote(context.Sender.Region, TransactionProcessedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction))
 
 		s.Metrics.TransactionCommitted(len(state.Transaction.Transfers))
@@ -243,7 +248,8 @@ func RollbackingTransaction(s *daemon.ActorSystem) func(interface{}, system.Cont
 			return
 		}
 
-		log.Debugf("~ %v Rollback->End", state.Transaction.IDTransaction)
+		log.Infof("~ %v Rollback->End", state.Transaction.IDTransaction)
+
 		s.SendRemote(context.Sender.Region, TransactionRejectedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction, rollBackReason))
 
 		s.Metrics.TransactionRollbacked(len(state.Transaction.Transfers))

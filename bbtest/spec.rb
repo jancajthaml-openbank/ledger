@@ -11,7 +11,6 @@ RSpec.configure do |config|
 
   Dir.glob("./helpers/*_helper.rb") { |f| load f }
   config.include EventuallyHelper, :type => :feature
-  config.include JournalHelper, :type => :feature
   Dir.glob("./steps/*_steps.rb") { |f| load f, true }
 
   config.register_ordering(:global) do |items|

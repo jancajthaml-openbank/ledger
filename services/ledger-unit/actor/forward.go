@@ -107,7 +107,7 @@ func InitialForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 			state.Forward = msg
 			state.Prepare(transaction)
 
-			log.Debugf("~ %v (FWD) Start->Promise", state.Transaction.IDTransaction)
+			log.Infof("~ %v (FWD) Start->Promise", state.Transaction.IDTransaction)
 			state.ResetMarks()
 			context.Receiver.Become(state, PromisingForward(s))
 			s.Metrics.TransactionPromised(1)
@@ -155,7 +155,7 @@ func PromisingForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 				return
 			}
 
-			log.Debugf("~ %v (FWD) Promise->Rollback", state.Transaction.IDTransaction)
+			log.Infof("~ %v (FWD) Promise->Rollback", state.Transaction.IDTransaction)
 			state.ResetMarks()
 			context.Receiver.Become(state, RollbackingForward(s))
 
@@ -175,7 +175,7 @@ func PromisingForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 			return
 		}
 
-		log.Debugf("~ %v (FWD) Promise->Commit", state.Transaction.IDTransaction)
+		log.Infof("~ %v (FWD) Promise->Commit", state.Transaction.IDTransaction)
 		state.ResetMarks()
 		context.Receiver.Become(state, CommitingForward(s))
 
@@ -212,7 +212,7 @@ func CommitingForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 				return
 			}
 
-			log.Debugf("~ %v (FWD) Commit->Rollback", state.Transaction.IDTransaction)
+			log.Infof("~ %v (FWD) Commit->Rollback", state.Transaction.IDTransaction)
 			state.ResetMarks()
 			context.Receiver.Become(state, RollbackingForward(s))
 
@@ -236,7 +236,8 @@ func CommitingForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 			transfers = append(transfers, transfer.IDTransfer)
 		}
 
-		log.Debugf("~ %v (FWD) Commit->Accept", state.Transaction.IDTransaction)
+		log.Infof("~ %v (FWD) Commit->Accept", state.Transaction.IDTransaction)
+
 		s.SendRemote(context.Sender.Region, TransactionProcessedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction))
 
 		s.Metrics.TransactionCommitted(1)
@@ -280,7 +281,7 @@ func RollbackingForward(s *daemon.ActorSystem) func(interface{}, system.Context)
 			return
 		}
 
-		log.Debugf("~ %v (FWD) Rollback->End", state.Transaction.IDTransaction)
+		log.Infof("~ %v (FWD) Rollback->End", state.Transaction.IDTransaction)
 		s.SendRemote(context.Sender.Region, TransactionRejectedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction, rollBackReason))
 
 		s.Metrics.TransactionRollbacked(1)
@@ -310,7 +311,8 @@ func AcceptingForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 			return
 		}
 
-		log.Debugf("~ %v (FWD) Accept->End", state.Transaction.IDTransaction)
+		log.Infof("~ %v (FWD) Accept->End", state.Transaction.IDTransaction)
+
 		s.SendRemote(context.Sender.Region, TransactionProcessedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction))
 		s.Metrics.TransactionForwarded(1)
 		s.UnregisterActor(context.Sender.Name)
