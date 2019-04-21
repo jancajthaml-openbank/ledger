@@ -24,43 +24,34 @@ step ":amount :currency is transferred from :account to :account" do |amount, cu
   send "following transaction is created from tenant :tenant", fromTenant, payload
 end
 
-step "following transaction is created from tenant :tenant" do |tenant, data = nil|
-  HTTPHelper.prepare_request({
-    :method => "POST",
-    :url => "https://127.0.0.1/transaction/#{tenant}",
-    :body => data
-  })
+step "following transaction is created from tenant :tenant" do |tenant, payload = nil|
+  uri = "https://127.0.0.1/transaction/#{tenant}"
 
-  eventually(timeout: 60, backoff: 2) {
-    HTTPHelper.perform_request()
+  send "I request curl :http_method :url", "POST", uri, payload
+  send "curl responds with :http_status", [200, 201, 417]
 
-    case HTTPHelper.response[:code]
-      when 200, 201
-        @transaction_id = JSON.parse(HTTPHelper.response[:body])["id"]
-      else
-        @transaction_id = nil
-    end
-  }
+  case HTTPHelper.response[:code]
+    when 200, 201
+      @transaction_id = JSON.parse(HTTPHelper.response[:body])["id"]
+    else
+      @transaction_id = nil
+  end
 end
 
 step ":id :id :side side is forwarded to :account from tenant :tenant" do |transaction, transfer, side, account, tenant|
   (tenant, account) = account.split('/')
 
-  HTTPHelper.prepare_request({
-    :method => "PATCH",
-    :url => "https://127.0.0.1/transaction/#{tenant}/#{transaction}/#{transfer}",
-    :body => {
-      side: side,
-      target: {
-        tenant: tenant,
-        name: account
-      }
-    }.to_json
-  })
+  uri = "https://127.0.0.1/transaction/#{tenant}/#{transaction}/#{transfer}"
+  payload = {
+    side: side,
+    target: {
+      tenant: tenant,
+      name: account
+    }
+  }.to_json
 
-  eventually(timeout: 60, backoff: 2) {
-    HTTPHelper.perform_request()
-  }
+  send "I request curl :http_method :url", "PATCH", uri, payload
+  send "curl responds with :http_status", 200
 end
 
 step "request should succeed" do ||

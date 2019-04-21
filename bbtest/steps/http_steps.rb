@@ -11,7 +11,7 @@ step "I request curl :http_method :url" do |http_method, url, body = nil|
 end
 
 step "curl responds with :http_status" do |http_status, body = nil|
-  eventually(timeout: 60, backoff: 2) {
+  eventually(timeout: 30, backoff: 2) {
     HTTPHelper.perform_request()
     http_status = [http_status] unless http_status.kind_of?(Array)
     expect(http_status).to include(HTTPHelper.response[:code])
@@ -37,7 +37,7 @@ step "curl responds with :http_status" do |http_status, body = nil|
 end
 
 step "curl does not responds with :http_status" do |http_status|
-  eventually(timeout: 10, backoff: 1) {
+  eventually(timeout: 30, backoff: 2) {
     HTTPHelper.perform_request()
   }
 
