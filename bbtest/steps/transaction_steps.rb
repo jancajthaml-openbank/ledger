@@ -24,35 +24,24 @@ step ":amount :currency is transferred from :account to :account" do |amount, cu
   send "following transaction is created from tenant :tenant", fromTenant, payload
 end
 
-step "following transaction is created from tenant :tenant" do |tenant, data = nil|
+step "following transaction is created from tenant :tenant" do |tenant, payload = nil|
   uri = "https://127.0.0.1/transaction/#{tenant}"
 
-  send "I request curl :http_method :url", "POST", uri, data
+  send "I request curl :http_method :url", "POST", uri, payload
+  send "curl responds with :http_status", [200, 201, 417]
 
-  @resp = { :code => 0 }
-
-  eventually(timeout: 60, backoff: 2) {
-    resp = %x(#{@http_req})
-    @resp[:code] = resp[resp.length-3...resp.length].to_i
-
-    if @resp[:code] === 0
-      raise "endpoint #{@http_req} is unreachable"
-    end
-
-    @resp[:body] = resp[0...resp.length-3] unless resp.nil?
-
-    case @resp[:code]
-      when 200, 201
-        @transaction_id = JSON.parse(@resp[:body])["id"]
-      else
-        @transaction_id = nil
-    end
-  }
+  case HTTPHelper.response[:code]
+    when 200, 201
+      @transaction_id = JSON.parse(HTTPHelper.response[:body])["id"]
+    else
+      @transaction_id = nil
+  end
 end
 
 step ":id :id :side side is forwarded to :account from tenant :tenant" do |transaction, transfer, side, account, tenant|
   (tenant, account) = account.split('/')
 
+  uri = "https://127.0.0.1/transaction/#{tenant}/#{transaction}/#{transfer}"
   payload = {
     side: side,
     target: {
@@ -61,28 +50,14 @@ step ":id :id :side side is forwarded to :account from tenant :tenant" do |trans
     }
   }.to_json
 
-  uri = "https://127.0.0.1/transaction/#{tenant}/#{transaction}/#{transfer}"
-
   send "I request curl :http_method :url", "PATCH", uri, payload
-
-  @resp = { :code => 0 }
-
-  eventually(timeout: 60, backoff: 2) {
-    resp = %x(#{@http_req})
-    @resp[:code] = resp[resp.length-3...resp.length].to_i
-
-    if @resp[:code] === 0
-      raise "endpoint #{@http_req} is unreachable"
-    end
-
-    @resp[:body] = resp[0...resp.length-3] unless resp.nil?
-  }
+  send "curl responds with :http_status", 200
 end
 
 step "request should succeed" do ||
-  expect(@resp[:code]).to eq(200), "#{@http_req} -> #{@resp[:code]} #{@resp[:body]}"
+  expect(HTTPHelper.response[:code]).to eq(200), "expected 200 got\n#{HTTPHelper.response[:raw]}"
 end
 
 step "request should fail" do ||
-  expect(@resp[:code]).to_not eq(200), "#{@http_req} -> #{@resp[:code]} #{@resp[:body]}"
+  expect(HTTPHelper.response[:code]).to_not eq(200), "expected non 200 got\n#{HTTPHelper.response[:raw]}"
 end
