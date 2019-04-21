@@ -14,12 +14,12 @@ module HTTPHelper
     cmd << ["-ss"]
     cmd << ["-v"]
     cmd << ["-i"]
-    unless options[:body].nil? or options[:method].upcase == "GET"
-      cmd << ["-H \"Content-Type: application/json\""]
+    unless options[:method].upcase == "GET"
       cmd << ["-X #{options[:method].upcase}"]
     end
     cmd << [options[:url]]
     unless options[:body].nil? or options[:method].upcase == "GET"
+      cmd << ["-H \"Content-Type: application/json\""]
       cmd << ["-d \'#{JSON.parse(options[:body]).to_json}\'"]
     end
     cmd << ["2>&1 | cat"]
