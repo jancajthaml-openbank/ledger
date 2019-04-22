@@ -39,21 +39,7 @@ type Configuration struct {
 	MetricsOutput string
 }
 
-// Resolver loads config
-type Resolver interface {
-	GetConfig() Configuration
-}
-
-type configResolver struct {
-	cfg Configuration
-}
-
-// NewResolver provides config resolver
-func NewResolver() Resolver {
-	return configResolver{cfg: loadConfFromEnv()}
-}
-
 // GetConfig loads application configuration
-func (c configResolver) GetConfig() Configuration {
-	return c.cfg
+func GetConfig() Configuration {
+	return loadConfFromEnv()
 }

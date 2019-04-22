@@ -45,7 +45,7 @@ type Application struct {
 func Initialize() Application {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	cfg := config.NewResolver().GetConfig()
+	cfg := config.GetConfig()
 
 	log.SetFormatter(new(utils.LogFormat))
 
