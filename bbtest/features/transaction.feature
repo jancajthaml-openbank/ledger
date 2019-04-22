@@ -43,6 +43,7 @@ Feature: High level Transaction workflow
     Given vault is empty
     And   tenant T1 is onbdoarded
     And   tenant T2 is onbdoarded
+    And   ledger is restarted
 
     Given pasive account T1/A with currency EUR exist
     And   pasive account T2/B with currency EUR exist
