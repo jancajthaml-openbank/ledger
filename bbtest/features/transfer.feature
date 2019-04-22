@@ -2,8 +2,8 @@ Feature: High level Transfer workflow
 
   Scenario: Transfer forward
     Given vault is empty
+    And   ledger is running
     And   tenant FORWARD is onbdoarded
-    And   ledger is restarted
     And   pasive account FORWARD/OriginCredit with currency EUR exist
     And   pasive account FORWARD/OriginDebit with currency EUR exist
     And   pasive account FORWARD/Target with currency EUR exist

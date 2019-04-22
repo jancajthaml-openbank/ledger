@@ -25,7 +25,7 @@ step ":amount :currency is transferred from :account to :account" do |amount, cu
 end
 
 step "following transaction is created from tenant :tenant" do |tenant, payload = nil|
-  uri = "https://127.0.0.1/transaction/#{tenant}"
+  uri = "https://127.0.0.1:4401/transaction/#{tenant}"
 
   send "I request curl :http_method :url", "POST", uri, payload
   send "curl responds with :http_status", [200, 201, 417]
@@ -41,7 +41,7 @@ end
 step ":id :id :side side is forwarded to :account from tenant :tenant" do |transaction, transfer, side, account, tenant|
   (tenant, account) = account.split('/')
 
-  uri = "https://127.0.0.1/transaction/#{tenant}/#{transaction}/#{transfer}"
+  uri = "https://127.0.0.1:4401/transaction/#{tenant}/#{transaction}/#{transfer}"
   payload = {
     side: side,
     target: {
