@@ -26,7 +26,7 @@ step "curl responds with :http_status" do |http_status, body = nil|
     resp_body = JSON.parse(HTTPHelper.response[:body])
     resp_body.deep_sort!
 
-    diff = JsonDiff.diff(resp_body, expectation).select { |item| item["op"] == "add" }.map { |item| item["value"] or item }
+    diff = JsonDiff.diff(resp_body, expectation).select { |item| item["op"] == "add" || item["op"] == "replace" }.map { |item| item["value"] or item }
     return if diff == []
 
     raise "expectation failure:\ngot:\n#{JSON.pretty_generate(resp_body)}\nexpected:\n#{JSON.pretty_generate(expectation)}\ndiff:#{JSON.pretty_generate(diff)}"
