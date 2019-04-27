@@ -1,0 +1,13 @@
+ledger (1.0.1) unstable; urgency=low
+
+  * Less port reconfiguration and unit restart in bbtest
+  * Simplified config resolver
+  * Restart ledger in highlevel scenario so port setting change is propagated to ledger-rest
+  * Update http_helper.rb
+  * Nitpicking bbtest http_helper
+  * Reuse step definitions in bbtest
+  * Better http helper
+  * Bbtest transaction search
+
+ -- Jan Cajthaml <jan.cajthaml@gmail.com>  Mon, 22 Apr 2019 14:12:57 +0200
+

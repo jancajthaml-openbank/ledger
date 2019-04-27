@@ -34,6 +34,7 @@ step "following transaction is created from tenant :tenant" do |tenant, payload 
     when 200, 201
       @transaction_id = JSON.parse(HTTPHelper.response[:body])["id"]
     else
+      puts "http response #{HTTPHelper.response[:code]}"
       @transaction_id = nil
   end
 end
