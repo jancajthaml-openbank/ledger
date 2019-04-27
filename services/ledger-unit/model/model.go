@@ -21,16 +21,41 @@ import (
 	money "gopkg.in/inf.v0"
 )
 
-type PromiseWasAccepted struct{}
+type FatalErrored struct {
+	Account Account
+}
 
-type CommitWasAccepted struct{}
+type PromiseWasAccepted struct {
+	Account Account
+}
 
-type RollbackWasAccepted struct{}
+type PromiseWasRejected struct {
+	Account Account
+	Reason  string
+}
+
+type CommitWasAccepted struct {
+	Account Account
+}
+
+type CommitWasRejected struct {
+	Account Account
+	Reason  string
+}
+
+type RollbackWasAccepted struct {
+	Account Account
+}
+
+type RollbackWasRejected struct {
+	Account Account
+	Reason  string
+}
 
 type TransactionState struct {
 	Transaction     Transaction
 	Negotiation     map[Account]string
-	NegotiationLen  int
+	WaitFor         map[Account]interface{}
 	OkResponses     int
 	FailedResponses int
 	Ready           bool
@@ -44,30 +69,76 @@ func NewTransactionState() TransactionState {
 	}
 }
 
-func (state *TransactionState) MarkOk() {
+func (state *TransactionState) Mark(response interface{}) {
 	if state == nil {
 		return
 	}
-	state.OkResponses += 1
-}
 
-func (state *TransactionState) MarkFailed() {
-	if state == nil {
-		return
+	switch msg := response.(type) {
+
+	case PromiseWasAccepted:
+		if _, exists := state.WaitFor[msg.Account]; exists {
+			delete(state.WaitFor, msg.Account)
+			state.OkResponses += 1
+		}
+
+	case CommitWasAccepted:
+		if _, exists := state.WaitFor[msg.Account]; exists {
+			delete(state.WaitFor, msg.Account)
+			state.OkResponses += 1
+		}
+
+	case RollbackWasAccepted:
+		if _, exists := state.WaitFor[msg.Account]; exists {
+			delete(state.WaitFor, msg.Account)
+			state.OkResponses += 1
+		}
+
+	case PromiseWasRejected:
+		if _, exists := state.WaitFor[msg.Account]; exists {
+			delete(state.WaitFor, msg.Account)
+			state.FailedResponses += 1
+		}
+
+	case CommitWasRejected:
+		if _, exists := state.WaitFor[msg.Account]; exists {
+			delete(state.WaitFor, msg.Account)
+			state.FailedResponses += 1
+		}
+
+	case RollbackWasRejected:
+		if _, exists := state.WaitFor[msg.Account]; exists {
+			delete(state.WaitFor, msg.Account)
+			state.FailedResponses += 1
+		}
+
+	case FatalErrored:
+		if _, exists := state.WaitFor[msg.Account]; exists {
+			delete(state.WaitFor, msg.Account)
+			state.FailedResponses += 1
+		}
+
 	}
-	state.FailedResponses += 1
 }
 
 func (state *TransactionState) ResetMarks() {
 	if state == nil {
 		return
 	}
+
+	state.WaitFor = make(map[Account]interface{})
+
+	for account := range state.Negotiation {
+		state.WaitFor[account] = nil
+	}
+
 	state.OkResponses = 0
 	state.FailedResponses = 0
+
 }
 
 func (state TransactionState) IsNegotiationFinished() bool {
-	return state.NegotiationLen <= (state.OkResponses + state.FailedResponses)
+	return len(state.Negotiation) <= (state.OkResponses + state.FailedResponses)
 }
 
 func (state *TransactionState) Prepare(transaction Transaction) {
@@ -78,9 +149,7 @@ func (state *TransactionState) Prepare(transaction Transaction) {
 	negotiation := transaction.PrepareRemoteNegotiation()
 	state.Transaction = transaction
 	state.Negotiation = negotiation
-	state.OkResponses = 0
-	state.FailedResponses = 0
-	state.NegotiationLen = len(negotiation)
+	state.ResetMarks()
 	state.Ready = true
 }
 
@@ -115,6 +184,10 @@ type TransferForward struct {
 type Account struct {
 	Tenant string
 	Name   string
+}
+
+func (s Account) String() string {
+	return s.Tenant + "/" + s.Name
 }
 
 // Transaction represents egress message of transaction

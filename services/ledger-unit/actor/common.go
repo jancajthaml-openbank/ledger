@@ -131,17 +131,75 @@ func ProcessRemoteMessage(s *daemon.ActorSystem) system.ProcessRemoteMessage {
 			switch payload {
 
 			case FatalError:
-				message = FatalError
+				message = model.FatalErrored{
+					Account: model.Account{
+						Tenant: parts[0][10:],
+						Name:   parts[2],
+					},
+				}
 
 			case PromiseAccepted:
-				message = model.PromiseWasAccepted{}
+				if len(parts) == 4 {
+					message = model.PromiseWasAccepted{
+						Account: model.Account{
+							Tenant: parts[0][10:],
+							Name:   parts[2],
+						},
+					}
+				}
+
+			case PromiseRejected:
+				if len(parts) == 5 {
+					message = model.PromiseWasRejected{
+						Account: model.Account{
+							Tenant: parts[0][10:],
+							Name:   parts[2],
+						},
+						Reason: parts[4],
+					}
+				}
 
 			case CommitAccepted:
-				message = model.CommitWasAccepted{}
+				if len(parts) == 4 {
+					message = model.CommitWasAccepted{
+						Account: model.Account{
+							Tenant: parts[0][10:],
+							Name:   parts[2],
+						},
+					}
+				}
+
+			case CommitRejected:
+				if len(parts) == 5 {
+					message = model.CommitWasRejected{
+						Account: model.Account{
+							Tenant: parts[0][10:],
+							Name:   parts[2],
+						},
+						Reason: parts[4],
+					}
+				}
 
 			case RollbackAccepted:
-				// FIXME reason
-				message = model.RollbackWasAccepted{}
+				if len(parts) == 4 {
+					message = model.RollbackWasAccepted{
+						Account: model.Account{
+							Tenant: parts[0][10:],
+							Name:   parts[2],
+						},
+					}
+				}
+
+			case RollbackRejected:
+				if len(parts) == 5 {
+					message = model.RollbackWasRejected{
+						Account: model.Account{
+							Tenant: parts[0][10:],
+							Name:   parts[2],
+						},
+						Reason: parts[4],
+					}
+				}
 
 			}
 		}

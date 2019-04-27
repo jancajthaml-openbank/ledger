@@ -83,11 +83,11 @@ module LakeMock
   end
 
   def self.process_next_message(data)
-    if groups = data.match(/^VaultUnit\/([^\s]{1,100}) LedgerUnit\/([^\s]{1,100}) ([^\s]{1,100}) ([^\s]{1,100}) ([012]{1})X ([^\s]{1,100}) (-?\d{1,100}\.\d{1,100}|-?\d{1,100}) ([A-Z]{3})$/i)
+    if groups = data.match(/^VaultUnit\/([^\s]{1,100}) LedgerUnit\/([^\s]{1,100}) ([^\s]{1,100}) ([^\s]{1,100}) ([^\s]{1,100}) ([^\s]{1,100}) (-?\d{1,100}\.\d{1,100}|-?\d{1,100}) ([A-Z]{3})$/i)
       tenant, sender, account, req_id, kind, transaction, amount, currency = groups.captures
-      ok = VaultHelper.process_account_event(tenant, account, kind, transaction, amount, currency)
+      reply_event = VaultHelper.process_account_event(tenant, account, kind, transaction, amount, currency)
 
-      self.reply(sender, tenant, account, req_id, ok ? "X#{kind}" : "EE")
+      self.reply(sender, tenant, account, req_id, reply_event)
     else
       puts "!!!!!! unknown message received !!!!!! #{data}"
     end

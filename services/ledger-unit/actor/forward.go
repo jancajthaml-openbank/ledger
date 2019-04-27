@@ -129,14 +129,18 @@ func PromisingForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(model.ForwardState)
 
-		switch context.Data.(type) {
+		switch msg := context.Data.(type) {
 		case model.PromiseWasAccepted:
-			log.Debugf("~ %v (FWD) Promise Accepted", state.Transaction.IDTransaction)
-			state.MarkOk()
+			log.Debugf("~ %v (FWD) Promise Accepted %s", state.Transaction.IDTransaction, msg.Account)
+		case model.PromiseWasRejected:
+			log.Debugf("~ %v (FWD) Promise Rejected %s %s", state.Transaction.IDTransaction, msg.Account, msg.Reason)
+		case model.FatalErrored:
+			log.Debugf("~ %v (FWD) Promise Errored %s", state.Transaction.IDTransaction, msg.Account)
 		default:
-			log.Debugf("~ %v (FWD) Promise Rejected %+v", state.Transaction.IDTransaction, reflect.ValueOf(context.Data).Type())
-			state.MarkFailed()
+			log.Debugf("~ %v (FWD) Promise Invalid Message %+v / %+v", state.Transaction.IDTransaction, reflect.ValueOf(context.Data).Type(), context.Data)
 		}
+
+		state.Mark(context.Data)
 
 		if !state.IsNegotiationFinished() {
 			context.Receiver.Become(state, PromisingForward(s))
@@ -148,7 +152,7 @@ func PromisingForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 			s.SendRemote(context.Sender.Region, TransactionRefusedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction))
 			return
 		} else if state.FailedResponses > 0 {
-			log.Debugf("~ %v (FWD) Promise Rejected Some %d of %d", state.Transaction.IDTransaction, state.FailedResponses, state.NegotiationLen)
+			log.Debugf("~ %v (FWD) Promise Rejected Some [total: %d, accepted: %d, rejected : %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
 			if !persistence.RejectTransaction(s.Storage, state.Transaction.IDTransaction) {
 				log.Warnf("~ %v (FWD) Promise failed to reject transaction", state.Transaction.IDTransaction)
 				s.SendRemote(context.Sender.Region, TransactionRefusedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction))
@@ -190,14 +194,17 @@ func CommitingForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(model.ForwardState)
 
-		switch context.Data.(type) {
+		switch msg := context.Data.(type) {
 		case model.CommitWasAccepted:
-			log.Debugf("~ %v (FWD) Commit Accepted", state.Transaction.IDTransaction)
-			state.MarkOk()
+			log.Debugf("~ %v (FWD) Commit Accepted %s", state.Transaction.IDTransaction, msg.Account)
+		case model.CommitWasRejected:
+			log.Debugf("~ %v (FWD) Commit Rejected %s %s", state.Transaction.IDTransaction, msg.Account, msg.Reason)
+		case model.FatalErrored:
+			log.Debugf("~ %v (FWD) Commit Errored %s", state.Transaction.IDTransaction, msg.Account)
 		default:
-			log.Debugf("~ %v (FWD) Commit Rejected %+v", state.Transaction.IDTransaction, reflect.ValueOf(context.Data).Type())
-			state.MarkFailed()
+			log.Debugf("~ %v (FWD) Commit Invalid Message %+v / %+v", state.Transaction.IDTransaction, reflect.ValueOf(context.Data).Type(), context.Data)
 		}
+		state.Mark(context.Data)
 
 		if !state.IsNegotiationFinished() {
 			context.Receiver.Become(state, CommitingForward(s))
@@ -205,7 +212,7 @@ func CommitingForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 		}
 
 		if state.FailedResponses > 0 {
-			log.Debugf("~ %v (FWD) Commit Rejected Some %d of %d", state.Transaction.IDTransaction, state.FailedResponses, state.NegotiationLen)
+			log.Debugf("~ %v (FWD) Commit Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
 			if !persistence.RejectTransaction(s.Storage, state.Transaction.IDTransaction) {
 				log.Warnf("~ %v (FWD) Commit failed to reject transaction", state.Transaction.IDTransaction)
 				s.SendRemote(context.Sender.Region, TransactionRefusedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction))
@@ -251,14 +258,17 @@ func RollbackingForward(s *daemon.ActorSystem) func(interface{}, system.Context)
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(model.ForwardState)
 
-		switch context.Data.(type) {
+		switch msg := context.Data.(type) {
 		case model.RollbackWasAccepted:
-			log.Debugf("~ %v (FWD) Rollback Accepted", state.Transaction.IDTransaction)
-			state.MarkOk()
+			log.Debugf("~ %v (FWD) Rollback Accepted %s", state.Transaction.IDTransaction, msg.Account)
+		case model.RollbackWasRejected:
+			log.Debugf("~ %v (FWD) Rollback Rejected %s %s", state.Transaction.IDTransaction, msg.Account, msg.Reason)
+		case model.FatalErrored:
+			log.Debugf("~ %v (FWD) Rollback Errored %s", state.Transaction.IDTransaction, msg.Account)
 		default:
-			log.Debugf("~ %v (FWD) Rollback Rejected %+v", state.Transaction.IDTransaction, reflect.ValueOf(context.Data).Type())
-			state.MarkFailed()
+			log.Debugf("~ %v (FWD) Rollback Invalid Message %+v / %+v", state.Transaction.IDTransaction, reflect.ValueOf(context.Data).Type(), context.Data)
 		}
+		state.Mark(context.Data)
 
 		if !state.IsNegotiationFinished() {
 			context.Receiver.Become(state, RollbackingForward(s))
@@ -266,7 +276,7 @@ func RollbackingForward(s *daemon.ActorSystem) func(interface{}, system.Context)
 		}
 
 		if state.FailedResponses > 0 {
-			log.Debugf("~ %v (FWD) Rollback Rejected Some %d of %d", state.Transaction.IDTransaction, state.FailedResponses, state.NegotiationLen)
+			log.Debugf("~ %v (FWD) Rollback Rejected Rejected [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
 			s.SendRemote(context.Sender.Region, TransactionRefusedMessage(context.Receiver.Name, context.Sender.Name, state.Transaction.IDTransaction))
 			return
 		}

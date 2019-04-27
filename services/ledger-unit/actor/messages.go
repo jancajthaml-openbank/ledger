@@ -14,10 +14,6 @@
 
 package actor
 
-import (
-	"github.com/jancajthaml-openbank/ledger-unit/model"
-)
-
 const (
 	ReqCreateTransaction     = "NT"
 	ReqForwardTransfer       = "FT"
@@ -29,17 +25,26 @@ const (
 	RespTransactionMissing   = "T5"
 
 	// PromiseOrder vault message request code for "Promise"
-	PromiseOrder = model.EventPromise + "X"
+	PromiseOrder = "NP"
+	// PromiseAccepted vault message response code for "Promise" accepted
+	PromiseAccepted = "P1"
+	// PromiseRejected vault message response code for "Promise" rejected
+	PromiseRejected = "P2"
+
 	// CommitOrder vault message request code for "Commit"
-	CommitOrder = model.EventCommit + "X"
+	CommitOrder = "NC"
+	// CommitAccepted vault message response code for "Commit" accepted
+	CommitAccepted = "C1"
+	// CommitRejected vault message response code for "Commit" rejected
+	CommitRejected = "C2"
+
 	// RollbackOrder vault message request code for "Rollback"
-	RollbackOrder = model.EventRollback + "X"
-	// PromiseAccepted vault message response code for "Promise"
-	PromiseAccepted = "X" + model.EventPromise
-	// CommitAccepted vault message response code for "Commit"
-	CommitAccepted = "X" + model.EventCommit
-	// RollbackAccepted vault message response code for "Rollback"
-	RollbackAccepted = "X" + model.EventRollback
+	RollbackOrder = "NR"
+	// RollbackAccepted vault message response code for "Rollback" accepted
+	RollbackAccepted = "R1"
+	// RollbackRejected vault message response code for "Rollback" rejected
+	RollbackRejected = "R2"
+
 	// FatalError vault message response code for "Error"
 	FatalError = "EE"
 )
