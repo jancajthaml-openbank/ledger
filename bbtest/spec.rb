@@ -20,17 +20,22 @@ RSpec.configure do |config|
     install + others.shuffle + uninstall
   end
 
+  $unit = UnitHelper.new()
+
   config.before(:suite) do |_|
     print "[ suite starting ]\n"
 
     LakeMock.start()
 
-    ["/data", "/reports"].each { |folder|
+    ["/reports"].each { |folder|
       FileUtils.mkdir_p folder
       %x(rm -rf #{folder}/*)
     }
 
-    print "[ suite started  ]\n"
+    print "[ downloading unit ]\n"
+    $unit.download()
+
+    print "[ suite started    ]\n"
   end
 
   config.after(:type => :feature) do

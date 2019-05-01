@@ -16,20 +16,4 @@ FROM alpine
 
 COPY packaging/bin/* /opt/artifacts/
 
-RUN \
-    if \
-      \
-      [ ! -f /opt/artifacts/ledger-rest-linux-amd64 ] || \
-      [ ! -f /opt/artifacts/ledger-unit-linux-amd64 ] || \
-      [ ! -f /opt/artifacts/ledger-rest-linux-armhf ] || \
-      [ ! -f /opt/artifacts/ledger-unit-linux-armhf ] || \
-      \
-      [ -z "$(find /opt/artifacts -type f -name 'ledger_*_amd64.deb' -print)" ] || \
-      [ -z "$(find /opt/artifacts -type f -name 'ledger_*_armhf.deb' -print)" ] \
-      \
-      ; then \
-      (>&2 echo "missing expected files, run package and debian for both amd64 and armhf") ; \
-      exit 1 ; \
-    fi
-
 ENTRYPOINT [ "echo", "only stores candidate binaries in /opt/artifacts" ]
