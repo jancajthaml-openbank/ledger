@@ -24,8 +24,8 @@ import (
 )
 
 // LoadTransaction loads transaction from journal
-func LoadTransaction(storage *localfs.Storage, idTransaction string) *model.Transaction {
-	transactionPath := utils.TransactionPath(idTransaction)
+func LoadTransaction(storage *localfs.Storage, id string) *model.Transaction {
+	transactionPath := utils.TransactionPath(id)
 
 	data, err := storage.ReadFileFully(transactionPath)
 	if err != nil {
@@ -33,13 +33,14 @@ func LoadTransaction(storage *localfs.Storage, idTransaction string) *model.Tran
 	}
 
 	result := new(model.Transaction)
+	result.IDTransaction = id
 	result.Deserialise(data)
 	return result
 }
 
 // LoadTransfer loads transfer from journal
-func LoadTransfer(storage *localfs.Storage, idTransaction, idTransfer string) *model.Transfer {
-	transactionPath := utils.TransactionPath(idTransaction)
+func LoadTransfer(storage *localfs.Storage, id string, idTransfer string) *model.Transfer {
+	transactionPath := utils.TransactionPath(id)
 
 	data, err := storage.ReadFileFully(transactionPath)
 	if err != nil {
@@ -68,10 +69,10 @@ func PersistTransaction(storage *localfs.Storage, entity *model.Transaction) *mo
 	//created := now()
 	// FIXME do not store transaction like this :/ or do so for integrity?
 
-	idTransaction := entity.IDTransaction
+	//id := entity.IDTransaction
 
-	transactionPath := utils.TransactionPath(idTransaction)
-	transactionStatePath := utils.TransactionStatePath(idTransaction)
+	transactionPath := utils.TransactionPath(entity.IDTransaction)
+	transactionStatePath := utils.TransactionStatePath(entity.IDTransaction)
 
 	if storage.WriteFile(transactionStatePath, []byte(model.StatusDirty)) != nil {
 		return nil
@@ -89,22 +90,9 @@ func PersistTransaction(storage *localfs.Storage, entity *model.Transaction) *mo
 	return entity
 }
 
-/*
-// PersistAccount persist account entity state to storage
-func PersistAccount(storage *localfs.Storage, name string, entity *model.Account) *model.Account {
-	data := entity.Serialise()
-	path := utils.SnapshotPath(name, entity.Version)
-
-	if storage.WriteFile(path, data) != nil {
-		return nil
-	}
-
-	return entity
-}*/
-
 // GetTransactionState returns transaction state from journal
-func GetTransactionState(storage *localfs.Storage, idTransaction string) (string, string) {
-	fullPath := utils.TransactionStatePath(idTransaction)
+func GetTransactionState(storage *localfs.Storage, id string) (string, string) {
+	fullPath := utils.TransactionStatePath(id)
 	data, err := storage.ReadFileFully(fullPath)
 	if err != nil {
 		return "", ""

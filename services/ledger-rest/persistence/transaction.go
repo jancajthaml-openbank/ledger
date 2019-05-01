@@ -34,7 +34,7 @@ func LoadTransactions(storage *localfs.Storage, tenant string) ([]string, error)
 	return transactions, nil
 }
 
-func LoadTransaction(storage *localfs.Storage, tenant, id string) (*model.Transaction, error) {
+func LoadTransaction(storage *localfs.Storage, tenant string, id string) (*model.Transaction, error) {
 	dataPath := utils.TransactionPath(tenant, id)
 	data, err := storage.ReadFileFully(dataPath)
 	if err != nil {
@@ -48,6 +48,7 @@ func LoadTransaction(storage *localfs.Storage, tenant, id string) (*model.Transa
 	}
 
 	result := new(model.Transaction)
+	result.IDTransaction = id
 	result.Deserialise(data, status)
 	return result, nil
 }

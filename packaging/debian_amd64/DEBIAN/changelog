@@ -1,3 +1,10 @@
+ledger (1.0.2) unstable; urgency=low
+
+  * Rejection compation messages instead of fatal error in negotiation
+  * Strictly compare values in http steps of bbtest
+
+ -- Jan Cajthaml <jan.cajthaml@gmail.com>  Sat, 27 Apr 2019 18:27:27 +0200
+
 ledger (1.0.1) unstable; urgency=low
 
   * Less port reconfiguration and unit restart in bbtest
