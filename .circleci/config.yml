@@ -8,36 +8,32 @@ workflows:
 
   commit:
     jobs:
-      - setup:
-          filters:
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*(-.+)?/
+      - setup-checkout
+      - setup-base-image
+      - setup-bbtest-image
+      - fetch-dependencies:
+          requires:
+            - setup-checkout
       - test:
           requires:
-            - setup
-          filters:
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*(-.+)?/
-      - build:
+            - fetch-dependencies
+      - build-amd64:
           requires:
-            - setup
-          filters:
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*(-.+)?/
-      - package:
-          requires:
-            - build
+            - setup-base-image
             - test
-          filters:
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*(-.+)?/
+      - build-armhf:
+          requires:
+            - setup-base-image
+            - test
+      - build-and-publish-docker:
+          requires:
+            - build-amd64
+            - build-armhf
       - bbtest:
           requires:
-            - package
-          filters:
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*(-.+)?/
-      - release:
+            - setup-bbtest-image
+            - build-and-publish-docker
+      - release-github-artifacts:
           requires:
             - bbtest
           filters:
@@ -46,7 +42,7 @@ workflows:
             branches:
               ignore: /.*/
 
-  rolling_contract:
+  rolling_bbtest:
     triggers:
       - schedule:
           cron: "20,50 * * * *"
@@ -55,20 +51,10 @@ workflows:
               only:
                 - master
     jobs:
-      - setup
-      - test:
-          requires:
-            - setup
-      - build:
-          requires:
-            - setup
-      - package:
-          requires:
-            - build
-            - test
+      - setup-checkout
       - bbtest:
           requires:
-            - package
+            - setup-checkout
 
 # ---------------------------------------------------------------------------- #
 
@@ -76,9 +62,9 @@ jobs:
 
   # -------------------------------------------------------------------------- #
 
-  setup:
+  setup-checkout:
     docker:
-      - image: docker:17.09.0-ce-git
+      - image: docker:18.06.0-ce
         environment:
           - LANG: C.UTF-8
           - GOARCH: amd64
@@ -87,96 +73,110 @@ jobs:
     working_directory: /home/circleci/project
     steps:
       - checkout
-      - setup_remote_docker
-      - run: docker build -t openbankdev/ledger_base ./dev
-      - run: docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
-      - deploy:
-          name: Push dev docker images to DockerHUB
+      - run:
+          name: Set DOCKER_VERSION to master
           command: |
-            upload_to_docker_hub() {
-              docker tag ${1} "${1}:${2}"
-              docker push "${1}:${2}"
-            }
-
-            upload_to_docker_hub openbankdev/ledger_base latest
+            echo -e master > /home/circleci/project/DOCKER_VERSION
       - save_cache:
-          key: bondster-base-{{ .Environment.CIRCLE_SHA1 }}-{{ .Environment.CIRCLE_TAG }}
+          key: cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-base-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - /home/circleci/project
 
   # -------------------------------------------------------------------------- #
 
-  test:
+  setup-base-image:
     docker:
-      - image: openbankdev/ledger_base
+      - image: docker:18.06.0-ce
+        environment:
+          - LANG: C.UTF-8
+          - GOARCH: amd64
+          - GOOS: linux
+          - GOBIN: /usr/lib/go/bin/go
     working_directory: /home/circleci/project
     steps:
-      - restore_cache:
-          keys:
-            - bondster-base-{{ .Environment.CIRCLE_SHA1 }}-{{ .Environment.CIRCLE_TAG }}
+      - checkout
+      - setup_remote_docker:
+          version: 18.06.0-ce
       - run:
-          name: ensure services namespace
+          name: Build base image
           command: |
-            mkdir -p /go/src/github.com/jancajthaml-openbank
-            cp -r /home/circleci/project/services/ledger-rest /go/src/github.com/jancajthaml-openbank/ledger-rest
-            cp -r /home/circleci/project/services/ledger-unit /go/src/github.com/jancajthaml-openbank/ledger-unit
-      - run:
-          name: sync dependencies
+            docker build -t openbankdev/ledger_base:latest -f ./dev/Dockerfile .
+          no_output_timeout: 5m
+      - deploy:
+          name: Push bbtest images to DockerHUB
           command: |
-            ./dev/lifecycle/sync --pkg ledger-rest
-            ./dev/lifecycle/sync --pkg ledger-unit
-      - run:
-          name: move vendor folder to project
-          command: |
-            cp -r /go/src/github.com/jancajthaml-openbank/ledger-rest/vendor /home/circleci/project/services/ledger-rest/vendor
-            cp -r /go/src/github.com/jancajthaml-openbank/ledger-unit/vendor /home/circleci/project/services/ledger-unit/vendor
-      - run:
-          name: unit test ledger-rest
-          command: |
-            ./dev/lifecycle/test --pkg ledger-rest
-      - run:
-          name: unit test ledger-unit
-          command: |
-            ./dev/lifecycle/test --pkg ledger-unit
+            docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
+            docker push openbankdev/ledger_base:latest
+          no_output_timeout: 5m
 
   # -------------------------------------------------------------------------- #
 
-  build:
+  setup-bbtest-image:
     docker:
-      - image: openbankdev/ledger_base
+      - image: docker:18.06.0-ce
+        environment:
+          - LANG: C.UTF-8
+          - GOARCH: amd64
+          - GOOS: linux
+          - GOBIN: /usr/lib/go/bin/go
     working_directory: /home/circleci/project
     steps:
-      - restore_cache:
-          keys:
-            - bondster-base-{{ .Environment.CIRCLE_SHA1 }}
+      - checkout
+      - setup_remote_docker:
+          version: 18.06.0-ce
       - run:
-          name: ensure services namespace
+          name: Build bbtest image
+          command: |
+            docker build -t openbankdev/ledger_bbtest:latest -f ./bbtest/Dockerfile .
+          no_output_timeout: 5m
+      - deploy:
+          name: Push bbtest images to DockerHUB
+          command: |
+            docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
+            docker push openbankdev/ledger_bbtest:latest
+          no_output_timeout: 5m
+
+  # -------------------------------------------------------------------------- #
+
+  fetch-dependencies:
+    docker:
+      - image: circleci/golang:1.11
+        environment:
+          - LANG: C.UTF-8
+          - GOARCH: amd64
+          - GOOS: linux
+          - GO111MODULE: "on"
+    working_directory: /home/circleci/project
+    steps:
+      - checkout
+      - run:
+          name: Ensure services namespace
           command: |
             mkdir -p /go/src/github.com/jancajthaml-openbank
-            cp -r /home/circleci/project/services/ledger-rest /go/src/github.com/jancajthaml-openbank/ledger-rest
-            cp -r /home/circleci/project/services/ledger-unit /go/src/github.com/jancajthaml-openbank/ledger-unit
+            cp -r \
+              /home/circleci/project/services/ledger-rest \
+              /go/src/github.com/jancajthaml-openbank/ledger-rest
+            cp -r \
+              /home/circleci/project/services/ledger-unit \
+              /go/src/github.com/jancajthaml-openbank/ledger-unit
       - run:
-          name: sync dependencies
+          name: Sync dependencies
           command: |
-            ./dev/lifecycle/sync --pkg ledger-rest
-            ./dev/lifecycle/sync --pkg ledger-unit
+            cd /go/src/github.com/jancajthaml-openbank/ledger-rest
+            go mod vendor
+            cd /go/src/github.com/jancajthaml-openbank/ledger-unit
+            go mod vendor
       - run:
-          name: move vendor folder to project
+          name: Move vendor folder to project
           command: |
-            cp -r /go/src/github.com/jancajthaml-openbank/ledger-rest/vendor /home/circleci/project/services/ledger-rest/vendor
-            cp -r /go/src/github.com/jancajthaml-openbank/ledger-unit/vendor /home/circleci/project/services/ledger-unit/vendor
+            cp -r \
+              /go/src/github.com/jancajthaml-openbank/ledger-rest/vendor \
+              /home/circleci/project/services/ledger-rest/vendor
+            cp -r \
+              /go/src/github.com/jancajthaml-openbank/ledger-unit/vendor \
+              /home/circleci/project/services/ledger-unit/vendor
       - run:
-          name: package binary of ledger-unit
-          command: |
-            ./dev/lifecycle/package --arch linux/amd64 --pkg ledger-unit
-            ./dev/lifecycle/package --arch linux/armhf --pkg ledger-unit
-      - run:
-          name: package binary of ledger-rest
-          command: |
-            ./dev/lifecycle/package --arch linux/amd64 --pkg ledger-rest
-            ./dev/lifecycle/package --arch linux/armhf --pkg ledger-rest
-      - run:
-          name: Package debian of ledger
+          name: Update DOCKER_VERSION + DEBIAN_VERSION
           command: |
             if [ -z ${CIRCLE_TAG} ] ; then
               tags=($(git tag --sort=-v:refname))
@@ -186,57 +186,143 @@ jobs:
                 VERSION=${tags[0]}
               fi
               META=$(sed 's:.*/::' <<< ${CIRCLE_BRANCH})
-              VERSION=${VERSION}+${META}
+              echo -e "${VERSION}+${META}" > /home/circleci/project/DEBIAN_VERSION
+              echo -e "${VERSION}" > /home/circleci/project/DOCKER_VERSION
             else
-              VERSION=${CIRCLE_TAG}
+              echo -e "${CIRCLE_TAG}" > /home/circleci/project/DEBIAN_VERSION
+              echo -e "${CIRCLE_TAG}" > /home/circleci/project/DOCKER_VERSION
             fi
-
-            ./dev/lifecycle/debian -v ${VERSION} --arch amd64 --pkg ledger
-            ./dev/lifecycle/debian -v ${VERSION} --arch armhf --pkg ledger
       - save_cache:
-          key: bondster-binaries-{{ .Environment.CIRCLE_SHA1 }}-{{ .Environment.CIRCLE_TAG }}
+          key: cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-dependencies-{{ .Environment.CIRCLE_SHA1 }}
           paths:
-            - /home/circleci/project
-      - persist_to_workspace:
-          root: /home/circleci/project/packaging
+            - /home/circleci/project/dev
+            - /home/circleci/project/bbtest
+            - /home/circleci/project/packaging
+            - /go/src/github.com/jancajthaml-openbank/ledger-rest
+            - /go/src/github.com/jancajthaml-openbank/ledger-unit
+      - save_cache:
+          key: cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-versions-{{ .Environment.CIRCLE_SHA1 }}
           paths:
-            - bin
+            - /home/circleci/project/DEBIAN_VERSION
+            - /home/circleci/project/DOCKER_VERSION
+
   # -------------------------------------------------------------------------- #
 
-  package:
+  build-amd64:
     docker:
-      - image: openbankdev/ledger_base
+      - image: openbankdev/ledger_base:latest
     working_directory: /home/circleci/project
     steps:
-      - setup_remote_docker
       - restore_cache:
           keys:
-            - bondster-binaries-{{ .Environment.CIRCLE_SHA1 }}-{{ .Environment.CIRCLE_TAG }}
-      - run: docker build -t openbank/ledger .
-      - run: docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
-      - deploy:
-          name: Push snapshot docker images to DockerHUB
+            - cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-base-{{ .Environment.CIRCLE_SHA1 }}
+      - restore_cache:
+          keys:
+            - cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-dependencies-{{ .Environment.CIRCLE_SHA1 }}
+      - restore_cache:
+          keys:
+            - cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-versions-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Package binaries
           command: |
-            upload() {
-              if [ -z ${CIRCLE_TAG} ] ; then
-                VERSION=$(sed 's:.*/::' <<< ${CIRCLE_BRANCH})
-                echo "snapshot ${VERSION}"
+            /home/circleci/project/dev/lifecycle/package --arch linux/amd64 --pkg ledger-rest
+            /home/circleci/project/dev/lifecycle/package --arch linux/amd64 --pkg ledger-unit
+          no_output_timeout: 5m
+      - run:
+          name: Package for debian
+          command: |
+            VERSION=$(cat /home/circleci/project/DEBIAN_VERSION)
+            /home/circleci/project/dev/lifecycle/debian -v ${VERSION} --arch amd64 --pkg ledger-rest
+            /home/circleci/project/dev/lifecycle/debian -v ${VERSION} --arch amd64 --pkg ledger-unit
+          no_output_timeout: 5m
+      - save_cache:
+          key: cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-binaries-amd64-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - /home/circleci/project/packaging/bin
 
-                docker tag ${1} ${1}:${VERSION}
-                docker push ${1}:${VERSION}
-              else
-                VERSION=${CIRCLE_TAG}
-                echo "release ${VERSION}"
+  # -------------------------------------------------------------------------- #
 
-                docker tag ${1} ${1}:${VERSION}
-                docker push ${1}:${VERSION}
+  build-armhf:
+    docker:
+      - image: openbankdev/ledger_base:latest
+    working_directory: /home/circleci/project
+    steps:
+      - setup_remote_docker:
+          version: 18.06.0-ce
+      - restore_cache:
+          keys:
+            - cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-base-{{ .Environment.CIRCLE_SHA1 }}
+      - restore_cache:
+          keys:
+            - cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-dependencies-{{ .Environment.CIRCLE_SHA1 }}
+      - restore_cache:
+          keys:
+            - cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-versions-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Package binaries
+          command: |
+            /home/circleci/project/dev/lifecycle/package --arch linux/armhf --pkg ledger-rest
+            /home/circleci/project/dev/lifecycle/package --arch linux/armhf --pkg ledger-unit
+          no_output_timeout: 5m
+      - run:
+          name: Package for debian
+          command: |
+            VERSION=$(cat /home/circleci/project/DEBIAN_VERSION)
+            /home/circleci/project/dev/lifecycle/debian -v ${VERSION} --arch armhf --pkg ledger-rest
+            /home/circleci/project/dev/lifecycle/debian -v ${VERSION} --arch armhf --pkg ledger-unit
+          no_output_timeout: 5m
+      - save_cache:
+          key: cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-binaries-armhf-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - /home/circleci/project/packaging/bin
 
-                docker tag ${1} ${1}:latest
-                docker push ${1}:latest
-              fi
-            }
+  # -------------------------------------------------------------------------- #
 
-            upload openbank/ledger
+  build-and-publish-docker:
+    docker:
+      - image: docker:18.06.0-ce
+    working_directory: /home/circleci/project
+    steps:
+      - setup_remote_docker:
+          version: 18.06.0-ce
+      - restore_cache:
+          keys:
+            - cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-base-{{ .Environment.CIRCLE_SHA1 }}
+      - restore_cache:
+          keys:
+            - cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-binaries-amd64-{{ .Environment.CIRCLE_SHA1 }}
+      - restore_cache:
+          keys:
+            - cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-binaries-armhf-{{ .Environment.CIRCLE_SHA1 }}
+      - restore_cache:
+          keys:
+            - cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-versions-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Package for docker
+          command: |
+            VERSION=$(cat /home/circleci/project/DOCKER_VERSION)
+            docker build -t openbank/ledger:${VERSION} .
+            docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
+            docker push openbank/ledger:${VERSION}
+
+  # -------------------------------------------------------------------------- #
+
+  test:
+    docker:
+      - image: openbankdev/ledger_base:latest
+    working_directory: /home/circleci/project
+    steps:
+      - restore_cache:
+          keys:
+            - cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-dependencies-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Unit test ledger-rest
+          command: /home/circleci/project/dev/lifecycle/test --pkg ledger-rest
+          no_output_timeout: 5m
+      - run:
+          name: Unit test ledger-unit
+          command: /home/circleci/project/dev/lifecycle/test --pkg ledger-unit
+          no_output_timeout: 5m
 
   # -------------------------------------------------------------------------- #
 
@@ -244,16 +330,22 @@ jobs:
     machine: true
     working_directory: /home/circleci/project
     steps:
-      - checkout
-      - attach_workspace:
-          at: /home/circleci/project/packaging
-      - run: docker build -t openbankdev/ledger_bbtest -f ./bbtest/Dockerfile .
+      - restore_cache:
+          keys:
+            - cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-base-{{ .Environment.CIRCLE_SHA1 }}
+      - restore_cache:
+          keys:
+            - cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-versions-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Run blackbox tests
           command: |
+            VERSION=$(cat /home/circleci/project/DOCKER_VERSION)
             docker exec -it $(\
               docker run -d -ti \
+                -e UNIT_VERSION="${VERSION}" \
                 -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
+                -v /var/run/docker.sock:/var/run/docker.sock \
+                -v /var/lib/docker/containers:/var/lib/docker/containers \
                 -v /home/circleci/project/bbtest:/opt/bbtest \
                 -v /home/circleci/project/reports:/reports \
               openbankdev/ledger_bbtest \
@@ -270,15 +362,17 @@ jobs:
 
   # -------------------------------------------------------------------------- #
 
-  release:
+  release-github-artifacts:
     docker:
-      - image: openbankdev/ledger_base
+      - image: docker:18.06.0-ce-git
     working_directory: /home/circleci/project
     steps:
-      - setup_remote_docker
       - restore_cache:
           keys:
-            - bondster-binaries-{{ .Environment.CIRCLE_SHA1 }}-{{ .Environment.CIRCLE_TAG }}
+            - cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-binaries-amd64-{{ .Environment.CIRCLE_SHA1 }}
+      - restore_cache:
+          keys:
+            - cache-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-binaries-armhf-{{ .Environment.CIRCLE_SHA1 }}
       - run: if [ ! -f ./packaging/bin/ledger-rest-linux-amd64 ] ; then exit 1 ; fi
       - run: if [ ! -f ./packaging/bin/ledger-unit-linux-amd64 ] ; then exit 1 ; fi
       - run: if [ ! -f ./packaging/bin/ledger-rest-linux-armhf ] ; then exit 1 ; fi
@@ -288,6 +382,8 @@ jobs:
       - deploy:
           name: Release artifacts to github
           command: |
-            ./dev/lifecycle/release -v ${CIRCLE_TAG} -t ${GITHUB_RELEASE_TOKEN}
+            /home/circleci/project/dev/lifecycle/release \
+              -v ${CIRCLE_TAG} \
+              -t ${GITHUB_RELEASE_TOKEN}
 
 # ---------------------------------------------------------------------------- #
