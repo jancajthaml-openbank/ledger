@@ -29,7 +29,6 @@ class UnitHelper
     %x(docker rm temp-container-ledger)
 
     Dir.glob('/opt/artifacts/ledger_*_amd64.deb').each { |f|
-      puts "#{f}"
       FileUtils.mv(f, '/etc/bbtest/packages/ledger.deb')
     }
 
