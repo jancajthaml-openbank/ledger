@@ -28,8 +28,8 @@ module JournalHelper
       lines = f.read.split("\n").map(&:strip)
 
       {
-        "id" => lines[0],
-        "transfers" => lines[1..-1].map { |line|
+        "id" => id,
+        "transfers" => lines[0..-1].map { |line|
           data = line.split(" ").map(&:strip)
 
           {
