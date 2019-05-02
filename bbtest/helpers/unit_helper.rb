@@ -29,31 +29,54 @@ class UnitHelper
     %x(docker rm temp-container-ledger)
 
     Dir.glob('/opt/artifacts/ledger_*_amd64.deb').each { |f|
+      puts "#{f}"
       FileUtils.mv(f, '/etc/bbtest/packages/ledger.deb')
     }
 
     raise "no package to install" unless File.file?('/etc/bbtest/packages/ledger.deb')
   end
 
+  def cleanup()
+    %x(systemctl -t service --no-legend | awk '{ print $1 }' | sort -t @ -k 2 -g)
+      .split("\n")
+      .map(&:strip)
+      .reject { |x| x.empty? || !x.start_with?("ledger") }
+      .map { |x| x.chomp(".service") }
+      .each { |unit|
+        if unit.start_with?("ledger-unit@")
+          %x(journalctl -o short-precise -u #{unit}.service --no-pager > /reports/#{unit.gsub('@','_')}.log 2>&1)
+          %x(systemctl stop #{unit} 2>&1)
+          %x(systemctl disable #{unit} 2>&1)
+          %x(journalctl -o short-precise -u #{unit}.service --no-pager > /reports/#{unit.gsub('@','_')}.log 2>&1)
+        else
+          %x(journalctl -o short-precise -u #{unit}.service --no-pager > /reports/#{unit.gsub('@','_')}.log 2>&1)
+        end
+      }
+  end
+
   def teardown()
-    return if @units.nil?
+    %x(systemctl -t service --no-legend | awk '{ print $1 }' | sort -t @ -k 2 -g)
+      .split("\n")
+      .map(&:strip)
+      .reject { |x| x.empty? || !x.start_with?("ledger") }
+      .map { |x| x.chomp(".service") }
+      .each { |unit|
+        %x(journalctl -o short-precise -u #{unit}.service --no-pager > /reports/#{unit.gsub('@','_')}.log 2>&1)
+        %x(systemctl stop #{unit} 2>&1)
+        %x(journalctl -o short-precise -u #{unit}.service --no-pager > /reports/#{unit.gsub('@','_')}.log 2>&1)
 
-    @units.each { |unit|
-      %x(systemctl stop #{unit})
-      %x(journalctl -o short-precise -u #{unit} --no-pager > /reports/logs/#{unit.gsub('@','_')}.log 2>&1)
+        if unit.include?("@")
+          metrics_file = "/opt/#{unit[/[^@]+/]}/metrics/metrics.#{unit[/([^@]+)$/]}.json"
+        else
+          metrics_file = "/opt/#{unit}/metrics/metrics.json"
+        end
 
-      if unit.include?("@")
-        metrics_file = "/opt/#{unit[/[^@]+/]}/metrics/metrics.#{unit[/([^@]+)$/]}.json"
-      else
-        metrics_file = "/opt/#{unit}/metrics/metrics.json"
-      end
-
-      File.open(metrics_file, 'rb') { |fr|
-        File.open("/reports/metrics/#{unit.gsub('@','_')}.json", 'w') { |fw|
-          fw.write(fr.read)
-        }
-      } if File.file?(metrics_file)
-    }
+        File.open(metrics_file, 'rb') { |fr|
+          File.open("/reports/metrics/#{unit.gsub('@','_')}.json", 'w') { |fw|
+            fw.write(fr.read)
+          }
+        } if File.file?(metrics_file)
+      }
   end
 
 end
