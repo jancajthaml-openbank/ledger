@@ -7,10 +7,7 @@ services:
   # -------------------------------------------------------------------------- #
 
   go:
-    build:
-      dockerfile: dev/Dockerfile
-      context: .
-    image: openbankdev/ledger_base
+    image: jancajthaml/go
     volumes:
       - .:/project
       - ./services/ledger-unit:/go/src/github.com/jancajthaml-openbank/ledger-unit
@@ -74,18 +71,10 @@ services:
 
   # -------------------------------------------------------------------------- #
 
-  bbtest:
-    build:
-      context: .
-      dockerfile: bbtest/Dockerfile
-    image: openbankdev/ledger_bbtest
-
-  # -------------------------------------------------------------------------- #
-
   artifacts:
     build:
       dockerfile: Dockerfile
       context: .
-    image: openbank/ledger
+    image: openbank/lake
 
 # ---------------------------------------------------------------------------- #

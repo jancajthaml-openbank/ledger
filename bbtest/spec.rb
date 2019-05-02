@@ -33,41 +33,20 @@ RSpec.configure do |config|
     }
 
     print "[ downloading unit ]\n"
+
     $unit.download()
 
     print "[ suite started    ]\n"
   end
 
   config.after(:type => :feature) do
-    ids = %x(systemctl -a -t service --no-legend | awk '{ print $1 }')
-
-    if $?
-      ids = ids.split("\n").map(&:strip).reject { |x|
-        x.empty? || !x.start_with?("ledger-unit@")
-      }.map { |x| x.chomp(".service") }
-    else
-      ids = []
-    end
-
-    ids.each { |e|
-      %x(journalctl -o short-precise -u #{e}.service --no-pager > /reports/#{e}.log 2>&1)
-      %x(systemctl stop #{e} 2>&1)
-      %x(systemctl disable #{e} 2>&1)
-      %x(journalctl -o short-precise -u #{e}.service --no-pager > /reports/#{e}.log 2>&1)
-    } unless ids.empty?
+    $unit.cleanup()
   end
 
   config.after(:suite) do |_|
     print "\n[ suite ending   ]\n"
 
-    [
-      "ledger-rest",
-      "ledger",
-    ].each { |e|
-      %x(journalctl -o short-precise -u #{e}.service --no-pager > /reports/#{e}.log 2>&1)
-      %x(systemctl stop #{e} 2>&1)
-      %x(journalctl -o short-precise -u #{e}.service --no-pager > /reports/#{e}.log 2>&1)
-    }
+    $unit.teardown()
 
     LakeMock.stop()
 

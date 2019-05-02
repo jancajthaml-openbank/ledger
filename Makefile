@@ -18,18 +18,15 @@ package:
 
 .PHONY: bundle-binaries
 bundle-binaries:
-	@echo "[info] packaging binaries for linux/amd64"
-	@docker-compose run --rm package --arch linux/amd64 --pkg ledger-unit
 	@docker-compose run --rm package --arch linux/amd64 --pkg ledger-rest
+	@docker-compose run --rm package --arch linux/amd64 --pkg ledger-unit
 
 .PHONY: bundle-debian
 bundle-debian:
-	@echo "[info] packaging for debian"
 	@docker-compose run --rm debian -v $(VERSION)+$(META) --arch amd64
 
 .PHONY: bundle-docker
 bundle-docker:
-	@echo "[info] packaging for docker"
 	@docker build -t openbank/ledger:$(VERSION)-$(META) .
 
 .PHONY: bootstrap
@@ -38,28 +35,23 @@ bootstrap:
 
 .PHONY: lint
 lint:
-	@docker-compose run --rm lint --pkg ledger-unit || :
 	@docker-compose run --rm lint --pkg ledger-rest || :
+	@docker-compose run --rm lint --pkg ledger-unit || :
 
 .PHONY: sec
 sec:
-	@docker-compose run --rm sec --pkg ledger-unit || :
 	@docker-compose run --rm sec --pkg ledger-rest || :
+	@docker-compose run --rm sec --pkg ledger-unit || :
 
 .PHONY: sync
 sync:
-	@docker-compose run --rm sync --pkg ledger-unit
 	@docker-compose run --rm sync --pkg ledger-rest
-
-.PHONY: update
-update:
-	@docker-compose run --rm update --pkg ledger-unit
-	@docker-compose run --rm update --pkg ledger-rest
+	@docker-compose run --rm sync --pkg ledger-unit
 
 .PHONY: test
 test:
-	@docker-compose run --rm test --pkg ledger-unit
 	@docker-compose run --rm test --pkg ledger-rest
+	@docker-compose run --rm test --pkg ledger-unit
 
 .PHONY: release
 release:
@@ -67,11 +59,8 @@ release:
 
 .PHONY: bbtest
 bbtest:
-	@docker-compose build bbtest
-	@echo "[info] removing older images if present"
 	@(docker rm -f $$(docker ps -a --filter="name=ledger_bbtest" -q) &> /dev/null || :)
-	@echo "[info] running bbtest image"
-	@(docker exec -it $$(\
+	@docker exec -it $$(\
 		docker run -d -ti \
 			--name=ledger_bbtest \
 			-e UNIT_VERSION="$(VERSION)-$(META)" \
@@ -82,12 +71,10 @@ bbtest:
 			-v $$(pwd)/reports:/reports \
 			--privileged=true \
 			--security-opt seccomp:unconfined \
-		openbankdev/ledger_bbtest \
+		jancajthaml/bbtest \
 	) rspec --require /opt/bbtest/spec.rb \
 		--format documentation \
 		--format RspecJunitFormatter \
 		--out junit.xml \
-		--pattern /opt/bbtest/features/*.feature || :)
-	@echo "[info] removing bbtest image"
+		--pattern /opt/bbtest/features/*.feature
 	@(docker rm -f $$(docker ps -a --filter="name=ledger_bbtest" -q) &> /dev/null || :)
-

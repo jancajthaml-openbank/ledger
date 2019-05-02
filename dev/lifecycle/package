@@ -38,6 +38,18 @@ package_service() {
       }
     ;;
 
+    arm64)
+      GOOS=${platform} \
+      CC=aarch64-linux-gnu-gcc \
+      GOARCH=arm64 \
+      CGO_ENABLED=1 \
+      \
+      go build -a -o ${output} || {
+        (>&2 echo "[error] unable to build for ${platform}/arm64")
+        exit 1
+      }
+    ;;
+
     amd64)
       GOOS=${platform} \
       CC=gcc \
