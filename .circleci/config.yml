@@ -76,9 +76,6 @@ jobs:
       - image: docker:18.06.0-ce-git
         environment:
           - LANG: C.UTF-8
-          - GOARCH: amd64
-          - GOOS: linux
-          - GOBIN: /usr/lib/go/bin/go
     working_directory: /home/circleci/project
     steps:
       - checkout
