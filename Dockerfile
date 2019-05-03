@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine
+FROM scratch
 
 COPY packaging/bin/* /opt/artifacts/
-
-ENTRYPOINT [ "echo", "only stores candidate binaries in /opt/artifacts" ]
