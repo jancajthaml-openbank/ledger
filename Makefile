@@ -71,7 +71,7 @@ bbtest:
 			-v $$(pwd)/reports:/reports \
 			--privileged=true \
 			--security-opt seccomp:unconfined \
-		jancajthaml/bbtest \
+		jancajthaml/bbtest:amd64 \
 	) rspec --require /opt/bbtest/spec.rb \
 		--format documentation \
 		--format RspecJunitFormatter \

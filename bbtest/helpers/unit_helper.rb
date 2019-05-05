@@ -3,6 +3,7 @@ require_relative 'eventually_helper'
 require 'fileutils'
 require 'timeout'
 require 'thread'
+require 'tempfile'
 
 Thread.abort_on_exception = true
 
@@ -13,10 +14,20 @@ class UnitHelper
 
   attr_reader :units
 
+
   def download()
     raise "no version specified" unless ENV.has_key?('UNIT_VERSION')
+    raise "no arch specified" unless ENV.has_key?('UNIT_ARCH')
 
     version = ENV['UNIT_VERSION']
+    parts = version.split(/(?:v)([^-]+)\-(.+)/)
+
+    raise "invalid version #{version}" if parts.length != 3
+
+    version = parts[1]
+    branch = parts[2]
+
+    arch = ENV['UNIT_ARCH']
 
     FileUtils.mkdir_p "/opt/artifacts"
     %x(rm -rf /opt/artifacts/*)
@@ -24,14 +35,32 @@ class UnitHelper
     FileUtils.mkdir_p "/etc/bbtest/packages"
     %x(rm -rf /etc/bbtest/packages/*)
 
-    %x(docker run --name temp-container-ledger openbank/ledger:#{version} /bin/true)
-    %x(docker cp temp-container-ledger:/opt/artifacts/. /opt/artifacts)
-    %x(docker rm temp-container-ledger)
+    file = Tempfile.new('search_artifacts')
 
-    Dir.glob('/opt/artifacts/ledger_*_amd64.deb').each { |f|
-      puts "#{f}"
-      FileUtils.mv(f, '/etc/bbtest/packages/ledger.deb')
-    }
+    begin
+      file.write([
+        "FROM alpine",
+        "COPY --from=openbank/ledger:v#{version}-#{branch} /opt/artifacts/ledger_#{version}+#{branch}_#{arch}.deb /opt/artifacts/ledger.deb",
+        "RUN ls -la /opt/artifacts"
+      ].join("\n"))
+      file.close
+
+      IO.popen("docker build -t ledger_artifacts - < #{file.path}") do |stream|
+        stream.each do |line|
+          puts line
+        end
+      end
+      raise "failed to build ledger_artifacts" unless $? == 0
+
+      %x(docker run --name ledger_artifacts-scratch ledger_artifacts /bin/true)
+      %x(docker cp ledger_artifacts-scratch:/opt/artifacts/ /opt)
+    ensure
+      %x(docker rmi -f ledger_artifacts)
+      %x(docker rm ledger_artifacts-scratch)
+      file.delete
+    end
+
+    FileUtils.mv('/opt/artifacts/ledger.deb', '/etc/bbtest/packages/ledger.deb')
 
     raise "no package to install" unless File.file?('/etc/bbtest/packages/ledger.deb')
   end
