@@ -381,6 +381,7 @@ jobs:
           key: code-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
           key: versions-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+      - run: docker pull jancajthaml/bbtest:amd64
       - run:
           name: Run blackbox tests
           command: |
@@ -388,12 +389,13 @@ jobs:
             docker exec -it $(\
               docker run -d -ti \
                 -e UNIT_VERSION="${VERSION}" \
+                -e UNIT_ARCH=amd64 \
                 -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
                 -v /var/run/docker.sock:/var/run/docker.sock \
                 -v /var/lib/docker/containers:/var/lib/docker/containers \
                 -v /home/circleci/project/bbtest:/opt/bbtest \
                 -v /home/circleci/project/reports:/reports \
-              jancajthaml/bbtest \
+              jancajthaml/bbtest:amd64 \
             ) rspec --require /opt/bbtest/spec.rb \
               --format documentation \
               --format RspecJunitFormatter \
