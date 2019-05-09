@@ -6,20 +6,22 @@ case "$1" in
 
   configure)
     if [ -f "/etc/init/ledger.conf" ] ; then
-      systemctl unmask \
-        ledger.path \
-        ledger-unit.service \
-        ledger-rest.service \
-        ledger.service \
-      >/dev/null
+      if [ -d /run/systemd/system ] ; then
+        systemctl unmask \
+          ledger.path \
+          ledger-unit.service \
+          ledger-rest.service \
+          ledger.service \
+        >/dev/null
 
-      systemctl enable \
-        ledger.path \
-        ledger-rest.service \
-        ledger.service \
-      >/dev/null
+        systemctl enable \
+          ledger.path \
+          ledger-rest.service \
+          ledger.service \
+        >/dev/null
 
-      (systemctl start ledger.service >/dev/null || :)
+        (systemctl start ledger.service >/dev/null || :)
+      fi
     else
       (>&2 echo "/etc/init/ledger.conf file not found")
       exit 1

@@ -39,6 +39,7 @@ scan() {
   (/go/bin/gocyclo -over 15 ${1} || :)
   (/go/bin/prealloc ${1} || :)
   (/go/bin/goconst ${1} || :)
+  (/go/bin/ineffassign ${1} || :)
 }
 
 find /go/src/github.com/jancajthaml-openbank/${TARGET_PACKAGE} \
