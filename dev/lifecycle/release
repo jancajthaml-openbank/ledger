@@ -94,7 +94,7 @@ response=$(
 
 UPLOAD_URL=$(echo ${response} | jq -r .upload_url | sed -e "s/{?name,label}//")
 
-for asset in $(ls -d -1 $(pwd)/packaging/bin/*.*) ; do
+for asset in $(ls -d -1 $(pwd)/packaging/bin/*) ; do
   echo "[info] uploading ${asset}"
 
   curl \

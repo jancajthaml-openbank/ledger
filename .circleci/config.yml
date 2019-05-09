@@ -6,6 +6,115 @@ workflows:
 
   version: 2
 
+  tag:
+    jobs:
+      - checkout:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
+      - versions:
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
+      - deps:
+          requires:
+            - checkout
+          filters:
+            branches:
+              only: master
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
+      - test:
+          requires:
+            - deps
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
+      - bin-amd64:
+          requires:
+            - deps
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
+      - bin-armhf:
+          requires:
+            - deps
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
+      - bin-arm64:
+          requires:
+            - deps
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
+      - debian-amd64:
+          requires:
+            - bin-amd64
+            - versions
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
+      - debian-armhf:
+          requires:
+            - bin-armhf
+            - versions
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
+      - debian-arm64:
+          requires:
+            - bin-arm64
+            - versions
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
+      - publish:
+          requires:
+            - test
+            - debian-amd64
+            - debian-armhf
+            - debian-arm64
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
+      - bbtest-amd64:
+          requires:
+            - publish
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
+      - release:
+          requires:
+            - bbtest-amd64
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
+
   commit:
     jobs:
       - checkout
@@ -43,17 +152,9 @@ workflows:
             - debian-amd64
             - debian-armhf
             - debian-arm64
-      - bbtest:
+      - bbtest-amd64:
           requires:
             - publish
-      - release:
-          requires:
-            - bbtest
-          filters:
-            tags:
-              only: /v[0-9]+(\.[0-9]+)*(-.+)?/
-            branches:
-              ignore: /.*/
 
   rolling_bbtest:
     triggers:
@@ -66,7 +167,7 @@ workflows:
     jobs:
       - checkout
       - versions
-      - bbtest:
+      - bbtest-amd64:
           requires:
             - checkout
             - versions
@@ -86,7 +187,7 @@ jobs:
     steps:
       - checkout
       - save_cache:
-          key: code-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: code-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - /home/circleci/project
 
@@ -121,7 +222,7 @@ jobs:
             cat /home/circleci/project/DEBIAN_VERSION
             cat /home/circleci/project/DOCKER_VERSION
       - save_cache:
-          key: versions-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: versions-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - /home/circleci/project/DEBIAN_VERSION
             - /home/circleci/project/DOCKER_VERSION
@@ -152,8 +253,10 @@ jobs:
           name: Sync dependencies
           command: |
             cd /go/src/github.com/jancajthaml-openbank/ledger-rest
+            rm go.sum
             go mod vendor
             cd /go/src/github.com/jancajthaml-openbank/ledger-unit
+            rm go.sum
             go mod vendor
       - run:
           name: Move vendor folder to project
@@ -165,7 +268,7 @@ jobs:
               /go/src/github.com/jancajthaml-openbank/ledger-unit/vendor \
               /home/circleci/project/services/ledger-unit/vendor
       - save_cache:
-          key: dependencies-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: dependencies-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - /home/circleci/project/dev
             - /home/circleci/project/bbtest
@@ -181,9 +284,9 @@ jobs:
     working_directory: /home/circleci/project
     steps:
       - restore_cache:
-          key: code-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: code-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
-          key: dependencies-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: dependencies-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Package binaries
           command: |
@@ -191,7 +294,7 @@ jobs:
             /home/circleci/project/dev/lifecycle/package --arch linux/amd64 --pkg ledger-unit
           no_output_timeout: 5m
       - save_cache:
-          key: binaries-amd64-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: binaries-amd64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - /home/circleci/project/packaging/bin
 
@@ -205,9 +308,9 @@ jobs:
       - setup_remote_docker:
           version: 18.06.0-ce
       - restore_cache:
-          key: code-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: code-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
-          key: dependencies-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: dependencies-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Package binaries
           command: |
@@ -215,7 +318,7 @@ jobs:
             /home/circleci/project/dev/lifecycle/package --arch linux/armhf --pkg ledger-unit
           no_output_timeout: 5m
       - save_cache:
-          key: binaries-armhf-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: binaries-armhf-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - /home/circleci/project/packaging/bin
 
@@ -229,9 +332,9 @@ jobs:
       - setup_remote_docker:
           version: 18.06.0-ce
       - restore_cache:
-          key: code-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: code-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
-          key: dependencies-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: dependencies-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Package binaries
           command: |
@@ -239,7 +342,7 @@ jobs:
             /home/circleci/project/dev/lifecycle/package --arch linux/arm64 --pkg ledger-unit
           no_output_timeout: 5m
       - save_cache:
-          key: binaries-arm64-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: binaries-arm64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - /home/circleci/project/packaging/bin
 
@@ -251,11 +354,11 @@ jobs:
     working_directory: /home/circleci/project
     steps:
       - restore_cache:
-          key: code-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: code-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
-          key: binaries-amd64-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: binaries-amd64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
-          key: versions-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: versions-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Package for debian
           command: |
@@ -264,7 +367,7 @@ jobs:
             /home/circleci/project/dev/lifecycle/debian -v ${VERSION} --arch amd64 --pkg ledger-unit
           no_output_timeout: 5m
       - save_cache:
-          key: debian-amd64-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: debian-amd64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - /home/circleci/project/packaging/bin
 
@@ -278,11 +381,11 @@ jobs:
       - setup_remote_docker:
           version: 18.06.0-ce
       - restore_cache:
-          key: code-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: code-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
-          key: binaries-armhf-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: binaries-armhf-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
-          key: versions-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: versions-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Package for debian
           command: |
@@ -291,7 +394,7 @@ jobs:
             /home/circleci/project/dev/lifecycle/debian -v ${VERSION} --arch armhf --pkg ledger-unit
           no_output_timeout: 5m
       - save_cache:
-          key: debian-armhf-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: debian-armhf-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - /home/circleci/project/packaging/bin
 
@@ -305,11 +408,11 @@ jobs:
       - setup_remote_docker:
           version: 18.06.0-ce
       - restore_cache:
-          key: code-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: code-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
-          key: binaries-arm64-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: binaries-arm64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
-          key: versions-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: versions-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Package for debian
           command: |
@@ -318,7 +421,7 @@ jobs:
             /home/circleci/project/dev/lifecycle/debian -v ${VERSION} --arch arm64 --pkg ledger-unit
           no_output_timeout: 5m
       - save_cache:
-          key: debian-arm64-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: debian-arm64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - /home/circleci/project/packaging/bin
 
@@ -332,21 +435,21 @@ jobs:
       - setup_remote_docker:
           version: 18.06.0-ce
       - restore_cache:
-          key: code-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: code-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
-          key: binaries-amd64-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: binaries-amd64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
-          key: binaries-armhf-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: binaries-armhf-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
-          key: binaries-arm64-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: binaries-arm64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
-          key: debian-amd64-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: debian-amd64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
-          key: debian-armhf-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: debian-armhf-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
-          key: debian-arm64-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: debian-arm64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
-          key: versions-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: versions-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Package for docker
           command: |
@@ -363,24 +466,26 @@ jobs:
     working_directory: /home/circleci/project
     steps:
       - restore_cache:
-          key: dependencies-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: dependencies-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - run:
-          name: Unit test
-          command: |
-            /home/circleci/project/dev/lifecycle/test --pkg ledger-rest
-            /home/circleci/project/dev/lifecycle/test --pkg ledger-unit
+          name: Unit test ledger-rest
+          command: /home/circleci/project/dev/lifecycle/test --pkg ledger-rest
+          no_output_timeout: 5m
+      - run:
+          name: Unit test ledger-unit
+          command: /home/circleci/project/dev/lifecycle/test --pkg ledger-unit
           no_output_timeout: 5m
 
   # -------------------------------------------------------------------------- #
 
-  bbtest:
+  bbtest-amd64:
     machine: true
     working_directory: /home/circleci/project
     steps:
       - restore_cache:
-          key: code-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: code-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
-          key: versions-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: versions-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - run: docker pull jancajthaml/bbtest:amd64
       - run:
           name: Run blackbox tests
@@ -411,30 +516,86 @@ jobs:
 
   release:
     docker:
-      - image: docker:18.06.0-ce-git
+      - image: jancajthaml/go:latest
     working_directory: /home/circleci/project
     steps:
       - restore_cache:
-          key: binaries-amd64-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
-      - run: if [ ! -f ./packaging/bin/ledger-rest-linux-amd64 ] ; then exit 1 ; fi
-      - run: if [ ! -f ./packaging/bin/ledger-unit-linux-amd64 ] ; then exit 1 ; fi
+          key: code-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
-          key: binaries-armhf-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
-      - run: if [ ! -f ./packaging/bin/ledger-rest-linux-armhf ] ; then exit 1 ; fi
-      - run: if [ ! -f ./packaging/bin/ledger-unit-linux-armhf ] ; then exit 1 ; fi
+          key: binaries-amd64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          command: |
+            if [ ! -f ./packaging/bin/ledger-unit-linux-amd64 ] ; then
+              echo "ledger-unit-linux-amd64 not found at"
+              ls -la ./packaging/bin
+              exit 1
+            fi
+      - run:
+          command: |
+            if [ ! -f ./packaging/bin/ledger-rest-linux-amd64 ] ; then
+              echo "ledger-rest-linux-amd64 not found at"
+              ls -la ./packaging/bin
+              exit 1
+            fi
       - restore_cache:
-          key: binaries-arm64-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
-      - run: if [ ! -f ./packaging/bin/ledger-rest-linux-arm64 ] ; then exit 1 ; fi
-      - run: if [ ! -f ./packaging/bin/ledger-unit-linux-arm64 ] ; then exit 1 ; fi
+          key: binaries-armhf-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          command: |
+            if [ ! -f ./packaging/bin/ledger-rest-linux-armhf ] ; then
+              echo "ledger-rest-linux-armhf not found at"
+              ls -la ./packaging/bin
+              exit 1
+            fi
+      - run:
+          command: |
+            if [ ! -f ./packaging/bin/ledger-unit-linux-armhf ] ; then
+              echo "ledger-unit-linux-armhf not found at"
+              ls -la ./packaging/bin
+              exit 1
+            fi
       - restore_cache:
-          key: debian-amd64-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
-      - run: if [ ! -f ./packaging/bin/ledger_${CIRCLE_TAG#v}_amd64.deb ] ; then exit 1 ; fi
+          key: binaries-arm64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          command: |
+            if [ ! -f ./packaging/bin/ledger-rest-linux-arm64 ] ; then
+              echo "ledger-rest-linux-arm64 not found at"
+              ls -la ./packaging/bin
+              exit 1
+            fi
+      - run:
+          command: |
+            if [ ! -f ./packaging/bin/ledger-unit-linux-arm64 ] ; then
+              echo "ledger-unit-linux-arm64 not found at"
+              ls -la ./packaging/bin
+              exit 1
+            fi
       - restore_cache:
-          key: debian-armhf-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
-      - run: if [ ! -f ./packaging/bin/ledger_${CIRCLE_TAG#v}_armhf.deb ] ; then exit 1 ; fi
+          key: debian-amd64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          command: |
+            if [ ! -f ./packaging/bin/ledger_${CIRCLE_TAG#v}_amd64.deb ] ; then
+              echo "ledger_${CIRCLE_TAG#v}_amd64.deb not found at"
+              ls -la ./packaging/bin
+              exit 1
+            fi
       - restore_cache:
-          key: debian-arm64-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
-      - run: if [ ! -f ./packaging/bin/ledger_${CIRCLE_TAG#v}_arm64.deb ] ; then exit 1 ; fi
+          key: debian-armhf-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          command: |
+            if [ ! -f ./packaging/bin/ledger_${CIRCLE_TAG#v}_armhf.deb ] ; then
+              echo "ledger_${CIRCLE_TAG#v}_armhf.deb not found at"
+              ls -la ./packaging/bin
+              exit 1
+            fi
+      - restore_cache:
+          key: debian-arm64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          command: |
+            if [ ! -f ./packaging/bin/ledger_${CIRCLE_TAG#v}_arm64.deb ] ; then
+              echo "ledger_${CIRCLE_TAG#v}_arm64.deb not found at"
+              ls -la ./packaging/bin
+              exit 1
+            fi
       - deploy:
           name: Release artifacts to github
           command: |

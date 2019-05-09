@@ -1,2 +1,5 @@
 bin
-debian_*/openbank/services/ledger/ledger*
+debian_*/usr/bin
+debian_*/usr/share/doc/changelog.Debian.gz
+debian_*/usr/share/man/man8/*.8.gz
+

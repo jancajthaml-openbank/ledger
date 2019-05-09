@@ -79,43 +79,43 @@ func (state *TransactionState) Mark(response interface{}) {
 	case PromiseWasAccepted:
 		if _, exists := state.WaitFor[msg.Account]; exists {
 			delete(state.WaitFor, msg.Account)
-			state.OkResponses += 1
+			state.OkResponses++
 		}
 
 	case CommitWasAccepted:
 		if _, exists := state.WaitFor[msg.Account]; exists {
 			delete(state.WaitFor, msg.Account)
-			state.OkResponses += 1
+			state.OkResponses++
 		}
 
 	case RollbackWasAccepted:
 		if _, exists := state.WaitFor[msg.Account]; exists {
 			delete(state.WaitFor, msg.Account)
-			state.OkResponses += 1
+			state.OkResponses++
 		}
 
 	case PromiseWasRejected:
 		if _, exists := state.WaitFor[msg.Account]; exists {
 			delete(state.WaitFor, msg.Account)
-			state.FailedResponses += 1
+			state.FailedResponses++
 		}
 
 	case CommitWasRejected:
 		if _, exists := state.WaitFor[msg.Account]; exists {
 			delete(state.WaitFor, msg.Account)
-			state.FailedResponses += 1
+			state.FailedResponses++
 		}
 
 	case RollbackWasRejected:
 		if _, exists := state.WaitFor[msg.Account]; exists {
 			delete(state.WaitFor, msg.Account)
-			state.FailedResponses += 1
+			state.FailedResponses++
 		}
 
 	case FatalErrored:
 		if _, exists := state.WaitFor[msg.Account]; exists {
 			delete(state.WaitFor, msg.Account)
-			state.FailedResponses += 1
+			state.FailedResponses++
 		}
 
 	}

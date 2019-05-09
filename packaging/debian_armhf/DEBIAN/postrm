@@ -34,19 +34,25 @@ case "$1" in
     delete_service_files
     delete_displace_files
 
-    (systemctl daemon-reload || :)
-    (systemctl reset-failed || :)
+    if [ -d /run/systemd/system ] ; then
+      (systemctl daemon-reload || :)
+      (systemctl reset-failed || :)
+    fi
   ;;
 
   remove)
-    (systemctl -a -t service --no-legend  | awk '$1 ~ /ledger/ { print $1 }' | xargs -I {} systemctl stop {} 2> /dev/null || :)
-    (systemctl daemon-reload || :)
+    if [ -d /run/systemd/system ] ; then
+      (systemctl -a -t service --no-legend  | awk '$1 ~ /ledger/ { print $1 }' | xargs -I {} systemctl stop {} 2> /dev/null || :)
+      (systemctl daemon-reload || :)
+    fi
 
     delete_displace_files
   ;;
 
   upgrade|deconfigure)
-    systemctl stop ledger 2> /dev/null || :
+    if [ -d /run/systemd/system ] ; then
+      systemctl stop ledger 2> /dev/null || :
+    fi
   ;;
 
   remove|failed-upgrade|abort-install|abort-upgrade|disappear)

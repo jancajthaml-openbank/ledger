@@ -18,10 +18,10 @@ package_service() {
 
   cd ${working_dir}
 
-  echo "[info] cleaning"
+  echo "[info] (${platform}/${arch}) cleaning"
   go clean
 
-  echo "[info] packaging ${TARGET_PACKAGE} for ${platform}/${arch}"
+  echo "[info] (${platform}/${arch}) packaging ${TARGET_PACKAGE}"
 
   case ${arch} in
 
@@ -32,8 +32,8 @@ package_service() {
       GOARCH=arm \
       CGO_ENABLED=1 \
       \
-      go build -a -o ${output} || {
-        (>&2 echo "[error] unable to build for ${platform}/armhf")
+      go build -tags netgo -a -o ${output} || {
+        (>&2 echo "[error] (${platform}/${arch}) unable to build")
         exit 1
       }
     ;;
@@ -44,8 +44,8 @@ package_service() {
       GOARCH=arm64 \
       CGO_ENABLED=1 \
       \
-      go build -a -o ${output} || {
-        (>&2 echo "[error] unable to build for ${platform}/arm64")
+      go build -tags netgo -a -o ${output} || {
+        (>&2 echo "[error] (${platform}/${arch}) unable to build")
         exit 1
       }
     ;;
@@ -56,21 +56,28 @@ package_service() {
       GOARCH=amd64 \
       CGO_ENABLED=1 \
       \
-      go build -a -o ${output} || {
-        (>&2 echo "[error] unable to build for ${platform}/amd64")
+      go build -tags netgo -a -o ${output} || {
+        (>&2 echo "[error] (${platform}/${arch}) unable to build")
         exit 1
       }
     ;;
 
     *)
-      (>&2 echo "[error] unsupported target ${platform}/${arch}")
+      (>&2 echo "[error] (${platform}/${arch}) unsupported target")
       exit 1
     ;;
 
   esac
 
   chmod +x ${output}
+
+  echo "[info] (${platform}/${arch}) check"
+
+  objdump -p ${output}
   file ${output}
+  du -hs ${output}
+
+  echo "[info] (${platform}/${arch}) done"
 }
 
 while [ $# -gt 0 ] ; do
@@ -103,5 +110,3 @@ if [ ! "${TARGET_PACKAGE}" ] ; then
 fi
 
 package_service
-
-echo "[info] done"

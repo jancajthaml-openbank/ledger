@@ -9,7 +9,7 @@ Type=notify
 Environment=LEDGER_TENANT=%i
 EnvironmentFile=/etc/init/ledger.conf
 StartLimitBurst=0
-ExecStart=/openbank/services/ledger/ledger-unit %i
+ExecStart=/usr/bin/ledger-unit %i
 StandardInput=null
 LimitNOFILE=1048576
 LimitNPROC=infinity
