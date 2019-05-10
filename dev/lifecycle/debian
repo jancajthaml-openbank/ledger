@@ -154,6 +154,13 @@ generate_changelog() {
   rm ${target}
 }
 
+check_files() {
+  chmod 0755 "${DEB_SOURCES}/DEBIAN/control"
+  chmod 0755 "${DEB_SOURCES}/DEBIAN/postinst"
+  chmod 0755 "${DEB_SOURCES}/DEBIAN/postrm"
+  chmod 0755 "${DEB_SOURCES}/DEBIAN/preinst"
+}
+
 ################################################################################
 
 PKGS="$(pwd)/packaging"
@@ -241,6 +248,8 @@ generate_manpage
 sed -i 's/Version.*/Version: '${VERSION#v}'/' "${DEB_SOURCES}/DEBIAN/control"
 
 find "${BIN_SOURCES}" -name "ledger_*_${TARGET_ARCHITECTURE}.deb" -exec rm -f {} \;
+
+check_files
 
 dpkg-deb --build "${DEB_SOURCES}" "${BIN_SOURCES}"
 
