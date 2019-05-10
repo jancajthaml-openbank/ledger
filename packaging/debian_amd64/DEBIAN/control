@@ -1,5 +1,5 @@
 Package: ledger
-Version: 1.0.2+more-robust-debian-packaging
+Version: 1.0.2+changelog
 Section: misc
 Priority: extra
 Architecture: amd64

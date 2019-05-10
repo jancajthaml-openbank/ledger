@@ -67,9 +67,7 @@ cat > ${target_unit} <<EOL
 .SH NAME
 ledger-unit \- starts openbank account ledger transaction unit
 .SH DESCRIPTION
-The
-.B pldd
-ledger unit stores transaction journal and negotiates transaction with
+The ledger unit stores transaction journal and negotiates transaction with
 vault units
 .EE
 EOL
@@ -79,9 +77,7 @@ cat > ${target_rest} <<EOL
 .SH NAME
 ledger-rest \- starts openbank account ledger REST server
 .SH DESCRIPTION
-The
-.B pldd
-ledger rest provides REST server for accessing and manipulating ledger units
+The ledger rest provides REST server for accessing and manipulating ledger units
 .EE
 EOL
 
@@ -154,7 +150,7 @@ generate_changelog() {
     fi
   done
 
-  cat ${target} | gzip -n -9 > ${target}.Debian.gz
+  cat ${target} | gzip -n -9 > ${target}.gz
   rm ${target}
 }
 

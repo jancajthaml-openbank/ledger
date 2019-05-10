@@ -24,7 +24,6 @@ import (
 )
 
 func loadConfFromEnv() Configuration {
-	logOutput := getEnvString("LEDGER_LOG", "")
 	logLevel := strings.ToUpper(getEnvString("LEDGER_LOG_LEVEL", "DEBUG"))
 	storage := getEnvString("LEDGER_STORAGE", "/data")
 	tenant := getEnvString("LEDGER_TENANT", "")
@@ -45,7 +44,6 @@ func loadConfFromEnv() Configuration {
 		Tenant:                           tenant,
 		LakeHostname:                     lakeHostname,
 		RootStorage:                      storage + "/" + "t_" + tenant,
-		LogOutput:                        logOutput,
 		LogLevel:                         logLevel,
 		MetricsRefreshRate:               metricsRefreshRate,
 		MetricsOutput:                    metricsOutput,

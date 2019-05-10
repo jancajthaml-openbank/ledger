@@ -16,6 +16,8 @@ package utils
 
 import (
 	"bytes"
+	"os"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -32,6 +34,22 @@ var (
 	errorPrefix = []byte("ERRO ")
 	panicPrefix = []byte("PANI ")
 )
+
+func SetupLogger(level string) {
+
+	log.SetFormatter(new(LogFormat))
+
+	if logLevel, err := log.ParseLevel(level); err == nil {
+		log.Infof("Log level set to %v", strings.ToUpper(level))
+		log.SetLevel(logLevel)
+	} else {
+		log.Warnf("Invalid log level %v, using level WARN", level)
+		log.SetLevel(log.WarnLevel)
+	}
+
+	log.SetOutput(os.Stdout)
+
+}
 
 // Format processed each log entry and produces formatted log line
 func (f *LogFormat) Format(entry *log.Entry) ([]byte, error) {
