@@ -15,10 +15,8 @@
 package boot
 
 import (
-	"bufio"
 	"context"
 	"os"
-	"strings"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
 	log "github.com/sirupsen/logrus"
@@ -45,27 +43,9 @@ func Initialize() Application {
 
 	cfg := config.GetConfig()
 
-	log.SetFormatter(new(utils.LogFormat))
+	utils.SetupLogger(cfg.LogLevel)
 
 	log.Infof(">>> Setup <<<")
-
-	if cfg.LogOutput == "" {
-		log.SetOutput(os.Stdout)
-	} else if file, err := os.OpenFile(cfg.LogOutput, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0600); err == nil {
-		defer file.Close()
-		log.SetOutput(bufio.NewWriter(file))
-	} else {
-		log.SetOutput(os.Stdout)
-		log.Warnf("Unable to create %s: %v", cfg.LogOutput, err)
-	}
-
-	if level, err := log.ParseLevel(cfg.LogLevel); err == nil {
-		log.Infof("Log level set to %v", strings.ToUpper(cfg.LogLevel))
-		log.SetLevel(level)
-	} else {
-		log.Warnf("Invalid log level %v, using level WARN", cfg.LogLevel)
-		log.SetLevel(log.WarnLevel)
-	}
 
 	storage := localfs.NewStorage(cfg.RootStorage)
 

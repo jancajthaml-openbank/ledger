@@ -26,7 +26,6 @@ import (
 )
 
 func loadConfFromEnv() Configuration {
-	logOutput := getEnvString("LEDGER_LOG", "")
 	logLevel := strings.ToUpper(getEnvString("LEDGER_LOG_LEVEL", "DEBUG"))
 	secrets := getEnvString("LEDGER_SECRETS", "")
 	rootStorage := getEnvString("LEDGER_STORAGE", "/data")
@@ -59,7 +58,6 @@ func loadConfFromEnv() Configuration {
 		SecretKey:          key,
 		SecretCert:         cert,
 		LakeHostname:       lakeHostname,
-		LogOutput:          logOutput,
 		LogLevel:           logLevel,
 		MetricsRefreshRate: metricsRefreshRate,
 		MetricsOutput:      metricsOutput,

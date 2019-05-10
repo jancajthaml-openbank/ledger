@@ -24,8 +24,6 @@ type Configuration struct {
 	LakeHostname string
 	// RootStorage gives where to store journals
 	RootStorage string
-	// LogOutput represents log output
-	LogOutput string
 	// LogLevel ignorecase log level
 	LogLevel string
 	// MetricsRefreshRate represents interval in which in memory metrics should be
