@@ -30,7 +30,7 @@ import (
 func CreateTransaction(s *daemon.ActorSystem, tenant string, transaction model.Transaction) (result interface{}) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Errorf("CreateTransaction recovered in %v", r)
+			log.Errorf("CreateTransaction recovered in %+v", r)
 			result = nil
 		}
 	}()
@@ -47,7 +47,7 @@ func CreateTransaction(s *daemon.ActorSystem, tenant string, transaction model.T
 		ch <- context.Data
 	})
 
-	s.SendRemote("LedgerUnit/"+tenant, CreateTransactionMessage(envelope.Name, name, transaction))
+	s.SendRemote(CreateTransactionMessage(tenant, envelope.Name, name, transaction))
 
 	select {
 

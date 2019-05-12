@@ -16,6 +16,7 @@ package actor
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/jancajthaml-openbank/ledger-rest/daemon"
 	"github.com/jancajthaml-openbank/ledger-rest/model"
@@ -26,30 +27,32 @@ import (
 
 var nilCoordinates = system.Coordinates{}
 
-func asEnvelopes(s *daemon.ActorSystem, parts []string) (system.Coordinates, system.Coordinates, string, error) {
-	if len(parts) < 4 {
-		return nilCoordinates, nilCoordinates, "", fmt.Errorf("invalid message received %+v", parts)
+func asEnvelopes(s *daemon.ActorSystem, msg string) (system.Coordinates, system.Coordinates, []string, error) {
+	parts := strings.Split(msg, " ")
+
+	if len(parts) < 5 {
+		return nilCoordinates, nilCoordinates, nil, fmt.Errorf("invalid message received %+v", parts)
 	}
 
-	region, receiver, sender, payload := parts[0], parts[1], parts[2], parts[3]
+	recieverRegion, senderRegion, receiverName, senderName := parts[0], parts[1], parts[2], parts[3]
 
 	from := system.Coordinates{
-		Name:   sender,
-		Region: region,
+		Name:   senderName,
+		Region: senderRegion,
 	}
 
 	to := system.Coordinates{
-		Name:   receiver,
-		Region: s.Name,
+		Name:   receiverName,
+		Region: recieverRegion,
 	}
 
-	return from, to, payload, nil
+	return from, to, parts, nil
 }
 
 // ProcessRemoteMessage processing of remote message to this wall
 func ProcessRemoteMessage(s *daemon.ActorSystem) system.ProcessRemoteMessage {
-	return func(parts []string) {
-		from, to, payload, err := asEnvelopes(s, parts)
+	return func(msg string) {
+		from, to, parts, err := asEnvelopes(s, msg)
 		if err != nil {
 			log.Warn(err.Error())
 			return
@@ -64,13 +67,13 @@ func ProcessRemoteMessage(s *daemon.ActorSystem) system.ProcessRemoteMessage {
 		ref, err := s.ActorOf(to.Name)
 		if err != nil {
 			// FIXME forward into deadletter receiver and finish whatever has started
-			log.Warnf("Deadletter received [remote %v -> local %v] : %+v", from, to, parts[3:])
+			log.Warnf("Deadletter received [remote %v -> local %v] : %+v", from, to, msg)
 			return
 		}
 
 		var message interface{}
 
-		switch payload {
+		switch parts[4] {
 
 		case FatalError:
 			message = FatalError
@@ -94,11 +97,11 @@ func ProcessRemoteMessage(s *daemon.ActorSystem) system.ProcessRemoteMessage {
 			message = new(model.TransactionDuplicate)
 
 		default:
-			log.Warnf("Deserialization of unsuported message [remote %v -> local %v] : %+v", from, to, parts)
+			log.Warnf("Deserialization of unsuported message [remote %v -> local %v] : %+v", from, to, msg)
 			message = FatalError
 		}
 
-		ref.Tell(message, from)
+		ref.Tell(message, to, from)
 		return
 	}
 }
