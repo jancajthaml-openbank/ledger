@@ -33,7 +33,7 @@ const (
 	FatalError               = "EE"
 )
 
-func CreateTransactionMessage(sender, name string, transaction model.Transaction) string {
+func CreateTransactionMessage(tenant string, sender string, name string, transaction model.Transaction) string {
 	var buffer strings.Builder
 
 	numOfTransfers := len(transaction.Transfers)
@@ -59,9 +59,9 @@ func CreateTransactionMessage(sender, name string, transaction model.Transaction
 		}
 	}
 
-	return name + " " + sender + " " + ReqCreateTransaction + " " + transaction.IDTransaction + " " + buffer.String()
+	return "LedgerUnit/" + tenant + " LedgerRest " + name + " " + sender + " " + ReqCreateTransaction + " " + transaction.IDTransaction + " " + buffer.String()
 }
 
-func ForwardTransferMessage(sender, name, transaction, transfer string, forward model.TransferForward) string {
-	return name + " " + sender + " " + ReqForwardTransfer + " " + transaction + " " + transfer + " " + forward.Side + " " + forward.TargetAccount.Tenant + ";" + forward.TargetAccount.Name
+func ForwardTransferMessage(tenant string, sender string, name string, transaction string, transfer string, forward model.TransferForward) string {
+	return "LedgerUnit/" + tenant + " LedgerRest " + name + " " + sender + " " + ReqForwardTransfer + " " + transaction + " " + transfer + " " + forward.Side + " " + forward.TargetAccount.Tenant + ";" + forward.TargetAccount.Name
 }

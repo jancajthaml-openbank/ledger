@@ -30,7 +30,7 @@ import (
 func ForwardTransfer(s *daemon.ActorSystem, tenant, transaction, transfer string, forward model.TransferForward) (result interface{}) {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Errorf("ForwardTransfer recovered in %v", r)
+			log.Errorf("ForwardTransfer recovered in %+v", r)
 			result = nil
 		}
 	}()
@@ -47,7 +47,7 @@ func ForwardTransfer(s *daemon.ActorSystem, tenant, transaction, transfer string
 		ch <- context.Data
 	})
 
-	s.SendRemote("LedgerUnit/"+tenant, ForwardTransferMessage(envelope.Name, name, transaction, transfer, forward))
+	s.SendRemote(ForwardTransferMessage(tenant, envelope.Name, name, transaction, transfer, forward))
 
 	select {
 

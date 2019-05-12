@@ -14,6 +14,11 @@
 
 package actor
 
+import (
+	system "github.com/jancajthaml-openbank/actor-system"
+	"github.com/jancajthaml-openbank/ledger-unit/model"
+)
+
 const (
 	ReqCreateTransaction     = "NT"
 	ReqForwardTransfer       = "FT"
@@ -50,45 +55,45 @@ const (
 )
 
 // FatalErrorMessage is reply message carrying failure
-func FatalErrorMessage(sender, name string) string {
-	return name + " " + sender + " " + FatalError
+func FatalErrorMessage(context system.Context) string {
+	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + FatalError
 }
 
 // PromiseOrderMessage is message for negotiation of promise transaction
-func PromiseOrderMessage(sender, name, msg string) string {
-	return name + " " + sender + " " + PromiseOrder + " " + msg
+func PromiseOrderMessage(context system.Context, account model.Account, msg string) string {
+	return "VaultUnit/" + account.Tenant + " " + context.Receiver.Region + " " + account.Name + " " + context.Receiver.Name + " " + PromiseOrder + " " + msg
 }
 
 // CommitOrderMessage is message for negotiation of commit transaction
-func CommitOrderMessage(sender, name, msg string) string {
-	return name + " " + sender + " " + CommitOrder + " " + msg
+func CommitOrderMessage(context system.Context, account model.Account, msg string) string {
+	return "VaultUnit/" + account.Tenant + " " + context.Receiver.Region + " " + account.Name + " " + context.Receiver.Name + " " + CommitOrder + " " + msg
 }
 
 // RollbackOrderMessage is message for negotiation of rollback transaction
-func RollbackOrderMessage(sender, name, msg string) string {
-	return name + " " + sender + " " + RollbackOrder + " " + msg
+func RollbackOrderMessage(context system.Context, account model.Account, msg string) string {
+	return "VaultUnit/" + account.Tenant + " " + context.Receiver.Region + " " + account.Name + " " + context.Receiver.Name + " " + RollbackOrder + " " + msg
 }
 
-func TransactionRejectedMessage(sender, name, id, reason string) string {
-	return name + " " + sender + " " + RespTransactionRejected + " " + id + " " + reason
+func TransactionRejectedMessage(context system.Context, id string, reason string) string {
+	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespTransactionRejected + " " + id + " " + reason
 }
 
-func TransactionProcessedMessage(sender, name, id string) string {
-	return name + " " + sender + " " + RespCreateTransaction + " " + id
+func TransactionProcessedMessage(context system.Context, id string) string {
+	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespCreateTransaction + " " + id
 }
 
-func TransactionRefusedMessage(sender, name, id string) string {
-	return name + " " + sender + " " + RespTransactionRefused + " " + id
+func TransactionRefusedMessage(context system.Context, id string) string {
+	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespTransactionRefused + " " + id
 }
 
-func TransactionDuplicateMessage(sender, name, id string) string {
-	return name + " " + sender + " " + RespTransactionDuplicate + " " + id
+func TransactionDuplicateMessage(context system.Context, id string) string {
+	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespTransactionDuplicate + " " + id
 }
 
-func TransactionRaceMessage(sender, name, id string) string {
-	return name + " " + sender + " " + RespTransactionRace + " " + id
+func TransactionRaceMessage(context system.Context, id string) string {
+	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespTransactionRace + " " + id
 }
 
-func TransactionMissingMessage(sender, name, id string) string {
-	return name + " " + sender + " " + RespTransactionMissing + " " + id
+func TransactionMissingMessage(context system.Context, id string) string {
+	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespTransactionMissing + " " + id
 }

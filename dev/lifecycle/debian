@@ -97,8 +97,8 @@ generate_changelog() {
     rm -f ${target}
   fi
 
-  if [ -f ${target}.Debian.gz ] ; then
-    rm -f ${target}.Debian.gz
+  if [ -f ${target}.gz ] ; then
+    rm -f ${target}.gz
   fi
 
   touch ${target}

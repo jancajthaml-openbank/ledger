@@ -28,30 +28,32 @@ import (
 
 var nilCoordinates = system.Coordinates{}
 
-func asEnvelopes(s *daemon.ActorSystem, parts []string) (system.Coordinates, system.Coordinates, string, error) {
-	if len(parts) < 4 {
-		return nilCoordinates, nilCoordinates, "", fmt.Errorf("invalid message received %+v", parts)
+func asEnvelopes(s *daemon.ActorSystem, msg string) (system.Coordinates, system.Coordinates, []string, error) {
+	parts := strings.Split(msg, " ")
+
+	if len(parts) < 5 {
+		return nilCoordinates, nilCoordinates, nil, fmt.Errorf("invalid message received %+v", parts)
 	}
 
-	receiver, payload := parts[1], parts[3]
+	recieverRegion, senderRegion, receiverName, senderName := parts[0], parts[1], parts[2], parts[3]
 
 	from := system.Coordinates{
-		Name:   receiver,
-		Region: "LedgerRest",
+		Name:   senderName,
+		Region: senderRegion,
 	}
 
 	to := system.Coordinates{
-		Name:   receiver,
-		Region: s.Name,
+		Name:   receiverName,
+		Region: recieverRegion,
 	}
 
-	return from, to, payload, nil
+	return from, to, parts, nil
 }
 
 // ProcessRemoteMessage processing of remote message to this wall
 func ProcessRemoteMessage(s *daemon.ActorSystem) system.ProcessRemoteMessage {
-	return func(parts []string) {
-		from, to, payload, err := asEnvelopes(s, parts)
+	return func(msg string) {
+		from, to, parts, err := asEnvelopes(s, msg)
 		if err != nil {
 			log.Warn(err.Error())
 			return
@@ -68,13 +70,13 @@ func ProcessRemoteMessage(s *daemon.ActorSystem) system.ProcessRemoteMessage {
 			ref     *system.Envelope
 		)
 
-		if payload == ReqCreateTransaction {
-			if len(parts) > 5 {
+		if parts[4] == ReqCreateTransaction {
+			if len(parts) > 6 {
 				transaction := model.Transaction{
-					IDTransaction: parts[4],
+					IDTransaction: parts[5],
 				}
 
-				for _, transferPart := range parts[5:] {
+				for _, transferPart := range parts[6:] {
 					transferParts := strings.Split(transferPart, ";")
 					amount, _ := new(money.Dec).SetString(transferParts[5])
 					transfer := model.Transfer{
@@ -97,17 +99,20 @@ func ProcessRemoteMessage(s *daemon.ActorSystem) system.ProcessRemoteMessage {
 				ref, err = spawnTransactionActor(s, to.Name)
 				if err != nil {
 					log.Warnf("Unable to spray from [remote %v -> local %v] : %+v", from, to, parts[3:])
-					s.SendRemote(from.Region, FatalErrorMessage(to.Name, from.Name))
+					s.SendRemote(FatalErrorMessage(system.Context{
+						Receiver: to,
+						Sender:   from,
+					}))
 					return
 				}
 			}
-		} else if payload == ReqForwardTransfer {
-			if len(parts) == 8 {
-				targetParts := strings.Split(parts[7], ";")
+		} else if parts[4] == ReqForwardTransfer {
+			if len(parts) == 9 {
+				targetParts := strings.Split(parts[8], ";")
 				message = model.TransferForward{
-					IDTransaction: parts[4],
-					IDTransfer:    parts[5],
-					Side:          parts[6],
+					IDTransaction: parts[5],
+					IDTransfer:    parts[6],
+					Side:          parts[7],
 					Target: model.Account{
 						Tenant: targetParts[0],
 						Name:   targetParts[1],
@@ -116,88 +121,85 @@ func ProcessRemoteMessage(s *daemon.ActorSystem) system.ProcessRemoteMessage {
 
 				ref, err = spawnForwardActor(s, to.Name)
 				if err != nil {
-					log.Warnf("Unable to spray from [remote %v -> local %v] : %+v", from, to, parts[3:])
-					s.SendRemote(from.Region, FatalErrorMessage(to.Name, from.Name))
+					log.Warnf("Unable to spray from [remote %v -> local %v] : %+v", from, to, msg)
+					s.SendRemote(FatalErrorMessage(system.Context{
+						Receiver: to,
+						Sender:   from,
+					}))
 					return
 				}
 			}
 		} else {
 			ref, err = s.ActorOf(to.Name)
 			if err != nil {
-				log.Warnf("Deadletter received [remote %v -> local %v] : %+v", from, to, parts[3:])
+				log.Warnf("Deadletter received [remote %v -> local %v] : %+v", from, to, msg)
 				return
 			}
 
-			switch payload {
+			switch parts[4] {
 
 			case FatalError:
 				message = model.FatalErrored{
 					Account: model.Account{
-						Tenant: parts[0][10:],
-						Name:   parts[2],
+						Tenant: from.Region[10:],
+						Name:   from.Name,
 					},
 				}
 
 			case PromiseAccepted:
-				if len(parts) == 4 {
-					message = model.PromiseWasAccepted{
-						Account: model.Account{
-							Tenant: parts[0][10:],
-							Name:   parts[2],
-						},
-					}
+				message = model.PromiseWasAccepted{
+					Account: model.Account{
+						Tenant: from.Region[10:],
+						Name:   from.Name,
+					},
 				}
 
 			case PromiseRejected:
-				if len(parts) == 5 {
+				if len(parts) == 6 {
 					message = model.PromiseWasRejected{
 						Account: model.Account{
-							Tenant: parts[0][10:],
-							Name:   parts[2],
+							Tenant: from.Region[10:],
+							Name:   from.Name,
 						},
-						Reason: parts[4],
+						Reason: parts[5],
 					}
 				}
 
 			case CommitAccepted:
-				if len(parts) == 4 {
-					message = model.CommitWasAccepted{
-						Account: model.Account{
-							Tenant: parts[0][10:],
-							Name:   parts[2],
-						},
-					}
+				message = model.CommitWasAccepted{
+					Account: model.Account{
+						Tenant: from.Region[10:],
+						Name:   from.Name,
+					},
 				}
 
 			case CommitRejected:
-				if len(parts) == 5 {
+				if len(parts) == 6 {
 					message = model.CommitWasRejected{
 						Account: model.Account{
-							Tenant: parts[0][10:],
-							Name:   parts[2],
+							Tenant: from.Region[10:],
+							Name:   from.Name,
 						},
-						Reason: parts[4],
+						Reason: parts[5],
 					}
 				}
 
 			case RollbackAccepted:
-				if len(parts) == 4 {
-					message = model.RollbackWasAccepted{
-						Account: model.Account{
-							Tenant: parts[0][10:],
-							Name:   parts[2],
-						},
-					}
+				message = model.RollbackWasAccepted{
+					Account: model.Account{
+						Tenant: from.Region[10:],
+						Name:   from.Name,
+					},
 				}
 
 			case RollbackRejected:
-				if len(parts) == 5 {
+				if len(parts) == 6 {
 					message = model.RollbackWasRejected{
 						Account: model.Account{
-							Tenant: parts[0][10:],
-							Name:   parts[2],
+							Tenant: from.Region[10:],
+							Name:   from.Name,
 						},
-						Reason: parts[4],
+						Reason: parts[5],
 					}
 				}
 
@@ -205,11 +207,11 @@ func ProcessRemoteMessage(s *daemon.ActorSystem) system.ProcessRemoteMessage {
 		}
 
 		if message == nil {
-			log.Warnf("Deserialization of unsuported message [remote %v -> local %v] : %+v", from, to, parts)
+			log.Warnf("Deserialization of unsuported message [remote %v -> local %v] : %+v", from, to, msg)
 			message = FatalError
 		}
 
-		ref.Tell(message, from)
+		ref.Tell(message, to, from)
 		return
 	}
 }
@@ -253,6 +255,6 @@ func ProcessLocalMessage(s *daemon.ActorSystem) system.ProcessLocalMessage {
 			log.Warnf("Actor not found [local %s]", to)
 			return
 		}
-		ref.Tell(message, from)
+		ref.Tell(message, to, from)
 	}
 }
