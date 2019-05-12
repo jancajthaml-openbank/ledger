@@ -159,7 +159,7 @@ workflows:
   rolling_bbtest:
     triggers:
       - schedule:
-          cron: "20,50 * * * *"
+          cron: "0,30 * * * *"
           filters:
             branches:
               only:
