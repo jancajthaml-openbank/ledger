@@ -32,15 +32,15 @@ func InitialTransaction(s *daemon.ActorSystem) func(interface{}, system.Context)
 		switch msg := context.Data.(type) {
 		case model.Transaction:
 			if state.Ready {
-				log.Warnf("Transaction already in progress %s", msg.IDTransaction)
 				s.SendRemote(TransactionRaceMessage(context, msg.IDTransaction))
+				log.Warnf("Transaction already in progress %s", msg.IDTransaction)
 				return
 			}
 			state.Prepare(msg)
 
 		default:
-			log.Warnf("Invalid message in InitialTransaction")
 			s.SendRemote(FatalErrorMessage(context))
+			log.Warnf("Invalid message in InitialTransaction")
 			return
 		}
 
@@ -70,15 +70,15 @@ func InitialTransaction(s *daemon.ActorSystem) func(interface{}, system.Context)
 			return
 		}
 
-		log.Infof("~ %v Start->Promise", state.Transaction.IDTransaction)
-
-		state.ResetMarks()
-		context.Self.Become(state, PromisingTransaction(s))
 		s.Metrics.TransactionPromised(len(state.Transaction.Transfers))
 
 		for account, task := range state.Negotiation {
 			s.SendRemote(PromiseOrderMessage(context, account, task))
 		}
+
+		state.ResetMarks()
+		context.Self.Become(state, PromisingTransaction(s))
+		log.Infof("~ %v Start->Promise", state.Transaction.IDTransaction)
 	}
 }
 
@@ -105,16 +105,16 @@ func PromisingTransaction(s *daemon.ActorSystem) func(interface{}, system.Contex
 		}
 
 		if state.OkResponses == 0 {
-			log.Debugf("~ %v Promise Rejected All", state.Transaction.IDTransaction)
 			s.SendRemote(TransactionRefusedMessage(context, state.Transaction.IDTransaction))
+			log.Debugf("~ %v Promise Rejected All", state.Transaction.IDTransaction)
 			return
 		}
 
 		if state.FailedResponses > 0 {
 			log.Debugf("~ %v Promise Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
 			if !persistence.RejectTransaction(s.Storage, state.Transaction.IDTransaction) {
-				log.Warnf("~ %v Promise failed to reject transaction", state.Transaction.IDTransaction)
 				s.SendRemote(TransactionRefusedMessage(context, state.Transaction.IDTransaction))
+				log.Warnf("~ %v Promise failed to reject transaction", state.Transaction.IDTransaction)
 				return
 			}
 
@@ -134,19 +134,18 @@ func PromisingTransaction(s *daemon.ActorSystem) func(interface{}, system.Contex
 
 		// FIXME possible null here
 		if !persistence.AcceptTransaction(s.Storage, state.Transaction.IDTransaction) {
-			log.Warnf("~ %v Promise failed to accept transaction", state.Transaction.IDTransaction)
 			s.SendRemote(TransactionRefusedMessage(context, state.Transaction.IDTransaction))
+			log.Warnf("~ %v Promise failed to accept transaction", state.Transaction.IDTransaction)
 			return
 		}
-
-		log.Infof("~ %v Promise->Commit", state.Transaction.IDTransaction)
-
-		state.ResetMarks()
-		context.Self.Become(state, CommitingTransaction(s))
 
 		for account, task := range state.Negotiation {
 			s.SendRemote(CommitOrderMessage(context, account, task))
 		}
+
+		state.ResetMarks()
+		context.Self.Become(state, CommitingTransaction(s))
+		log.Infof("~ %v Promise->Commit", state.Transaction.IDTransaction)
 		return
 	}
 }
@@ -175,27 +174,26 @@ func CommitingTransaction(s *daemon.ActorSystem) func(interface{}, system.Contex
 		if state.FailedResponses > 0 {
 			log.Debugf("~ %v Commit Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
 			if !persistence.RejectTransaction(s.Storage, state.Transaction.IDTransaction) {
-				log.Warnf("~ %v Commit failed to reject transaction", state.Transaction.IDTransaction)
 				s.SendRemote(TransactionRefusedMessage(context, state.Transaction.IDTransaction))
+				log.Warnf("~ %v Commit failed to reject transaction", state.Transaction.IDTransaction)
 				return
 			}
-
-			log.Infof("~ %v Commit->Rollback", state.Transaction.IDTransaction)
-
-			state.ResetMarks()
-			context.Self.Become(state, RollbackingTransaction(s))
 
 			for account, task := range state.Negotiation {
 				s.SendRemote(RollbackOrderMessage(context, account, task))
 			}
+
+			state.ResetMarks()
+			context.Self.Become(state, RollbackingTransaction(s))
+			log.Infof("~ %v Commit->Rollback", state.Transaction.IDTransaction)
 			return
 		}
 
 		log.Debugf("~ %v Commit Accepted All", state.Transaction.IDTransaction)
 
 		if !persistence.CommitTransaction(s.Storage, state.Transaction.IDTransaction) {
-			log.Warnf("~ %v Commit failed to commit transaction", state.Transaction.IDTransaction)
 			s.SendRemote(TransactionRefusedMessage(context, state.Transaction.IDTransaction))
+			log.Warnf("~ %v Commit failed to commit transaction", state.Transaction.IDTransaction)
 			s.UnregisterActor(context.Sender.Name)
 			return
 		}
@@ -205,11 +203,10 @@ func CommitingTransaction(s *daemon.ActorSystem) func(interface{}, system.Contex
 			transfers = append(transfers, transfer.IDTransfer)
 		}
 
-		log.Infof("~ %v Commit->End", state.Transaction.IDTransaction)
+		s.Metrics.TransactionCommitted(len(state.Transaction.Transfers))
 
 		s.SendRemote(TransactionProcessedMessage(context, state.Transaction.IDTransaction))
-
-		s.Metrics.TransactionCommitted(len(state.Transaction.Transfers))
+		log.Infof("~ %v Commit->End", state.Transaction.IDTransaction)
 		s.UnregisterActor(context.Sender.Name)
 		return
 	}
@@ -237,8 +234,8 @@ func RollbackingTransaction(s *daemon.ActorSystem) func(interface{}, system.Cont
 		}
 
 		if state.FailedResponses > 0 {
-			log.Debugf("~ %v Rollback Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
 			s.SendRemote(TransactionRefusedMessage(context, state.Transaction.IDTransaction))
+			log.Debugf("~ %v Rollback Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
 			s.UnregisterActor(context.Sender.Name)
 			return
 		}
@@ -248,17 +245,16 @@ func RollbackingTransaction(s *daemon.ActorSystem) func(interface{}, system.Cont
 		rollBackReason := "unknown"
 
 		if !persistence.RollbackTransaction(s.Storage, state.Transaction.IDTransaction, rollBackReason) {
-			log.Warnf("~ %v Rollback failed to rollback transaction", state.Transaction.IDTransaction)
 			s.SendRemote(TransactionRefusedMessage(context, state.Transaction.IDTransaction))
+			log.Warnf("~ %v Rollback failed to rollback transaction", state.Transaction.IDTransaction)
 			s.UnregisterActor(context.Sender.Name)
 			return
 		}
 
-		log.Infof("~ %v Rollback->End", state.Transaction.IDTransaction)
+		s.Metrics.TransactionRollbacked(len(state.Transaction.Transfers))
 
 		s.SendRemote(TransactionRejectedMessage(context, state.Transaction.IDTransaction, rollBackReason))
-
-		s.Metrics.TransactionRollbacked(len(state.Transaction.Transfers))
+		log.Infof("~ %v Rollback->End", state.Transaction.IDTransaction)
 		s.UnregisterActor(context.Sender.Name)
 		return
 	}
