@@ -59,6 +59,14 @@ func FatalErrorMessage(context system.Context) string {
 	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + FatalError
 }
 
+func TransactionRaceMessage(context system.Context, id string) string {
+	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespTransactionRace + " " + id
+}
+
+func TransactionMissingMessage(context system.Context, id string) string {
+	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespTransactionMissing + " " + id
+}
+
 // PromiseOrderMessage is message for negotiation of promise transaction
 func PromiseOrderMessage(context system.Context, account model.Account, msg string) string {
 	return "VaultUnit/" + account.Tenant + " " + context.Receiver.Region + " " + account.Name + " " + context.Receiver.Name + " " + PromiseOrder + " " + msg
@@ -74,26 +82,18 @@ func RollbackOrderMessage(context system.Context, account model.Account, msg str
 	return "VaultUnit/" + account.Tenant + " " + context.Receiver.Region + " " + account.Name + " " + context.Receiver.Name + " " + RollbackOrder + " " + msg
 }
 
-func TransactionRejectedMessage(context system.Context, id string, reason string) string {
-	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespTransactionRejected + " " + id + " " + reason
+func TransactionRejectedMessage(context system.Context, entity *model.Transaction) string {
+	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespTransactionRejected + " " + entity.IDTransaction + " " + entity.State
 }
 
-func TransactionProcessedMessage(context system.Context, id string) string {
-	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespCreateTransaction + " " + id
+func TransactionProcessedMessage(context system.Context, entity *model.Transaction) string {
+	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespCreateTransaction + " " + entity.IDTransaction
 }
 
-func TransactionRefusedMessage(context system.Context, id string) string {
-	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespTransactionRefused + " " + id
+func TransactionRefusedMessage(context system.Context, entity *model.Transaction) string {
+	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespTransactionRefused + " " + entity.IDTransaction
 }
 
-func TransactionDuplicateMessage(context system.Context, id string) string {
-	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespTransactionDuplicate + " " + id
-}
-
-func TransactionRaceMessage(context system.Context, id string) string {
-	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespTransactionRace + " " + id
-}
-
-func TransactionMissingMessage(context system.Context, id string) string {
-	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespTransactionMissing + " " + id
+func TransactionDuplicateMessage(context system.Context, entity *model.Transaction) string {
+	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespTransactionDuplicate + " " + entity.IDTransaction
 }

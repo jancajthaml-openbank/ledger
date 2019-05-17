@@ -1,5 +1,5 @@
 Package: ledger
-Version: 1.0.2+update-actor-system
+Version: 1.0.2+merge-transaction-and-transaction-state
 Section: misc
 Priority: extra
 Architecture: amd64

@@ -24,66 +24,60 @@ import (
 )
 
 // LoadTransaction loads transaction from journal
-func LoadTransaction(storage *localfs.Storage, id string) *model.Transaction {
+func LoadTransaction(storage *localfs.Storage, id string) (*model.Transaction, error) {
 	transactionPath := utils.TransactionPath(id)
 
 	data, err := storage.ReadFileFully(transactionPath)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	result := new(model.Transaction)
 	result.IDTransaction = id
 	result.Deserialise(data)
-	return result
-}
-
-// LoadTransfer loads transfer from journal
-func LoadTransfer(storage *localfs.Storage, id string, idTransfer string) *model.Transfer {
-	transactionPath := utils.TransactionPath(id)
-
-	data, err := storage.ReadFileFully(transactionPath)
-	if err != nil {
-		return nil
-	}
-
-	result := new(model.Transaction)
-	result.Deserialise(data)
-
-	for _, transfer := range result.Transfers {
-		if transfer.IDTransfer == idTransfer {
-			return &transfer
-		}
-	}
-
-	return nil
+	return result, nil
 }
 
 // CreateTransaction persist transaction entity state to storage
 func CreateTransaction(storage *localfs.Storage) *model.Transaction {
-	return PersistTransaction(storage, &model.Transaction{})
+	entity := new(model.Transaction)
+	entity.State = model.StatusNew
+	return PersistTransaction(storage, entity)
 }
 
-// StoreNewTransaction persist transaction to disk
+// PersistTransaction persist transaction to disk
 func PersistTransaction(storage *localfs.Storage, entity *model.Transaction) *model.Transaction {
 	//created := now()
 	// FIXME do not store transaction like this :/ or do so for integrity?
 
-	//id := entity.IDTransaction
-
 	transactionPath := utils.TransactionPath(entity.IDTransaction)
-	transactionStatePath := utils.TransactionStatePath(entity.IDTransaction)
 
-	if storage.WriteFile(transactionStatePath, []byte(model.StatusDirty)) != nil {
-		return nil
-	}
+	//if storage.WriteFile(transactionStatePath, []byte(model.StatusDirty)) != nil {
+	//return nil
+	//}
 
 	data := entity.Serialise()
 	if storage.WriteFile(transactionPath, data) != nil {
 		return nil
 	}
 
-	if storage.UpdateFile(transactionStatePath, []byte(model.StatusNew)) != nil {
+	return entity
+}
+
+// UpdateTransaction persist update of transaction to disk
+func UpdateTransaction(storage *localfs.Storage, entity *model.Transaction) *model.Transaction {
+
+	//created := now()
+	// FIXME do not store transaction like this :/ or do so for integrity?
+
+	transactionPath := utils.TransactionPath(entity.IDTransaction)
+
+	//if storage.WriteFile(transactionStatePath, []byte(model.StatusDirty)) != nil {
+	//return nil
+	//}
+
+	data := entity.Serialise()
+	if storage.UpdateFile(transactionPath, data) != nil {
 		return nil
 	}
 
@@ -91,6 +85,7 @@ func PersistTransaction(storage *localfs.Storage, entity *model.Transaction) *mo
 }
 
 // GetTransactionState returns transaction state from journal
+/*
 func GetTransactionState(storage *localfs.Storage, id string) (string, string) {
 	fullPath := utils.TransactionStatePath(id)
 	data, err := storage.ReadFileFully(fullPath)
@@ -103,6 +98,7 @@ func GetTransactionState(storage *localfs.Storage, id string) (string, string) {
 	}
 	return parts[0], parts[1]
 }
+*/
 
 // IsTransferForwardedCredit returns true if transaction's credit side was forwarded
 func IsTransferForwardedCredit(storage *localfs.Storage, idTransaction, idTransfer string) (bool, error) {
@@ -164,26 +160,31 @@ func AcceptForwardDebit(storage *localfs.Storage, targetTenant, targetTransactio
 	return storage.AppendFile(fullPath, []byte(originTransfer+" debit "+targetTenant+" "+targetTransaction+" "+targetTransfer)) == nil
 }
 
+/*
 // AcceptTransaction accepts transaction
-func AcceptTransaction(storage *localfs.Storage, idTransaction string) bool {
-	fullPath := utils.TransactionStatePath(idTransaction)
-	return storage.UpdateFile(fullPath, []byte(model.StatusAccepted)) == nil
+func AcceptTransaction(storage *localfs.Storage, entity *model.Transaction) bool {
+
+	State
+
+	//fullPath := utils.TransactionStatePath(idTransaction)
+	//return storage.UpdateFile(fullPath, []byte(model.StatusAccepted)) == nil
 }
 
 // RejectTransaction rejects transaction
-func RejectTransaction(storage *localfs.Storage, idTransaction string) bool {
-	fullPath := utils.TransactionStatePath(idTransaction)
-	return storage.UpdateFile(fullPath, []byte(model.StatusRejected)) == nil
+func RejectTransaction(storage *localfs.Storage, entity *model.Transaction) bool {
+	//fullPath := utils.TransactionStatePath(idTransaction)
+	//return storage.UpdateFile(fullPath, []byte(model.StatusRejected)) == nil
 }
 
 // CommitTransaction changes state of transaction to committed
-func CommitTransaction(storage *localfs.Storage, idTransaction string) bool {
-	fullPath := utils.TransactionStatePath(idTransaction)
-	return storage.UpdateFile(fullPath, []byte(model.StatusCommitted)) == nil
+func CommitTransaction(storage *localfs.Storage, entity *model.Transaction) bool {
+	//fullPath := utils.TransactionStatePath(idTransaction)
+	//return storage.UpdateFile(fullPath, []byte(model.StatusCommitted)) == nil
 }
 
 // RollbackTransaction changes state of transaction to rollbacked
-func RollbackTransaction(storage *localfs.Storage, idTransaction, reason string) bool {
-	fullPath := utils.TransactionStatePath(idTransaction)
-	return storage.UpdateFile(fullPath, []byte(model.StatusRollbacked+" "+reason)) == nil
+func RollbackTransaction(storage *localfs.Storage, entity *model.Transaction, reason string) bool {
+	//fullPath := utils.TransactionStatePath(idTransaction)
+	//return storage.UpdateFile(fullPath, []byte(model.StatusRollbacked+" "+reason)) == nil
 }
+*/
