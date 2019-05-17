@@ -19,10 +19,12 @@ func TransactionPath(id string) string {
 	return "transaction/" + id
 }
 
+/*
 // TransactionStatePath returns path for transaction state file
 func TransactionStatePath(id string) string {
 	return "transaction_state/" + id
 }
+*/
 
 // TransactionForwardPath returns path for transaction forward file
 func TransactionForwardPath(id string) string {

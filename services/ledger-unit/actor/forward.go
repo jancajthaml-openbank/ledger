@@ -39,8 +39,19 @@ func InitialForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 				return
 			}
 
-			existing := persistence.LoadTransfer(s.Storage, msg.IDTransaction, msg.IDTransfer)
-			if existing == nil {
+			var foundTransfer *model.Transfer = nil
+
+			current, err := persistence.LoadTransaction(s.Storage, msg.IDTransaction)
+			if err == nil {
+				for _, transfer := range current.Transfers {
+					if transfer.IDTransfer == msg.IDTransfer {
+						foundTransfer = &transfer
+						break
+					}
+				}
+			}
+
+			if foundTransfer == nil {
 				s.SendRemote(TransactionMissingMessage(context, msg.IDTransaction))
 				log.Warnf("(FWD) Cannot forward non existant transfer %s/%s", msg.IDTransaction, msg.IDTransfer)
 				return
@@ -52,7 +63,7 @@ func InitialForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 
 			case "credit":
 				if already, err := persistence.IsTransferForwardedCredit(s.Storage, msg.IDTransaction, msg.IDTransfer); already || err != nil {
-					s.SendRemote(TransactionRefusedMessage(context, msg.IDTransaction))
+					s.SendRemote(TransactionRefusedMessage(context, current))
 					log.Warnf("(FWD) Transaction %s/%s credit side is already forwarded", msg.IDTransaction, msg.IDTransfer)
 					return
 				}
@@ -64,17 +75,17 @@ func InitialForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 						{
 							IDTransfer: id + "1",
 							Credit:     msg.Target,
-							Debit:      existing.Credit,
-							ValueDate:  existing.ValueDate,
-							Amount:     existing.Amount,
-							Currency:   existing.Currency,
+							Debit:      foundTransfer.Credit,
+							ValueDate:  foundTransfer.ValueDate,
+							Amount:     foundTransfer.Amount,
+							Currency:   foundTransfer.Currency,
 						},
 					},
 				}
 
 			case "debit":
 				if already, err := persistence.IsTransferForwardedDebit(s.Storage, msg.IDTransaction, msg.IDTransfer); already || err != nil {
-					s.SendRemote(TransactionRefusedMessage(context, msg.IDTransaction))
+					s.SendRemote(TransactionRefusedMessage(context, current))
 					log.Warnf("(FWD) Transaction %s/%s debit side is already forwarded", msg.IDTransaction, msg.IDTransfer)
 					return
 				}
@@ -85,17 +96,17 @@ func InitialForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 					Transfers: []model.Transfer{
 						{
 							IDTransfer: id + "1",
-							Credit:     existing.Debit,
+							Credit:     foundTransfer.Debit,
 							Debit:      msg.Target,
-							ValueDate:  existing.ValueDate,
-							Amount:     existing.Amount,
-							Currency:   existing.Currency,
+							ValueDate:  foundTransfer.ValueDate,
+							Amount:     foundTransfer.Amount,
+							Currency:   foundTransfer.Currency,
 						},
 					},
 				}
 
 			default:
-				s.SendRemote(TransactionRefusedMessage(context, msg.IDTransaction))
+				s.SendRemote(TransactionRefusedMessage(context, current))
 				log.Warnf("(FWD) Transaction %s/%s invalid forward side", msg.IDTransaction, msg.IDTransfer)
 			}
 
@@ -149,14 +160,19 @@ func PromisingForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 		}
 
 		if state.OkResponses == 0 {
-			s.SendRemote(TransactionRefusedMessage(context, state.Transaction.IDTransaction))
-			log.Debugf("~ %v (FWD) Promise Rejected All", state.Transaction.IDTransaction)
+			s.SendRemote(TransactionRefusedMessage(context, &state.Transaction))
+      log.Debugf("~ %v (FWD) Promise Rejected All", state.Transaction.IDTransaction)
+			s.UnregisterActor(context.Sender.Name)
 			return
 		} else if state.FailedResponses > 0 {
 			log.Debugf("~ %v (FWD) Promise Rejected Some [total: %d, accepted: %d, rejected : %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
-			if !persistence.RejectTransaction(s.Storage, state.Transaction.IDTransaction) {
-				s.SendRemote(TransactionRefusedMessage(context, state.Transaction.IDTransaction))
+
+			state.Transaction.State = model.StatusRejected
+
+			if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
+				s.SendRemote(TransactionRefusedMessage(context, &state.Transaction))
 				log.Warnf("~ %v (FWD) Promise failed to reject transaction", state.Transaction.IDTransaction)
+				s.UnregisterActor(context.Sender.Name)
 				return
 			}
 
@@ -173,11 +189,14 @@ func PromisingForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 
 		log.Debugf("~ %v (FWD) Promise Accepted All", state.Transaction.IDTransaction)
 
+		state.Transaction.State = model.StatusAccepted
+
 		// FIXME possible null here
-		if !persistence.AcceptTransaction(s.Storage, state.Transaction.IDTransaction) {
-			s.SendRemote(TransactionRefusedMessage(context, state.Transaction.IDTransaction))
-			log.Warnf("~ %v (FWD) Promise failed to accept transaction", state.Transaction.IDTransaction)
-			return
+		if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
+			s.SendRemote(TransactionRefusedMessage(context, &state.Transaction))
+      log.Warnf("~ %v (FWD) Promise failed to accept transaction", state.Transaction.IDTransaction)
+			s.UnregisterActor(context.Sender.Name)
+      return
 		}
 
 		state.ResetMarks()
@@ -215,9 +234,13 @@ func CommitingForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 
 		if state.FailedResponses > 0 {
 			log.Debugf("~ %v (FWD) Commit Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
-			if !persistence.RejectTransaction(s.Storage, state.Transaction.IDTransaction) {
-				s.SendRemote(TransactionRefusedMessage(context, state.Transaction.IDTransaction))
+
+			state.Transaction.State = model.StatusRejected
+
+			if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
+				s.SendRemote(TransactionRefusedMessage(context, &state.Transaction))
 				log.Warnf("~ %v (FWD) Commit failed to reject transaction", state.Transaction.IDTransaction)
+        s.UnregisterActor(context.Sender.Name)
 				return
 			}
 
@@ -234,9 +257,12 @@ func CommitingForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 
 		log.Debugf("~ %v (FWD) Commit Accepted All", state.Transaction.IDTransaction)
 
-		if !persistence.CommitTransaction(s.Storage, state.Transaction.IDTransaction) {
-			s.SendRemote(TransactionRefusedMessage(context, state.Transaction.IDTransaction))
+		state.Transaction.State = model.StatusCommitted
+
+		if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
+			s.SendRemote(TransactionRefusedMessage(context, &state.Transaction))
 			log.Warnf("~ %v (FWD) Commit failed to commit transaction", state.Transaction.IDTransaction)
+      s.UnregisterActor(context.Sender.Name)
 			return
 		}
 
@@ -250,7 +276,7 @@ func CommitingForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 
 		s.Metrics.TransactionCommitted(1)
 
-		s.SendRemote(TransactionProcessedMessage(context, state.Transaction.IDTransaction))
+		s.SendRemote(TransactionProcessedMessage(context, &state.Transaction))
 
 		log.Infof("~ %v (FWD) Commit->Accept", state.Transaction.IDTransaction)
 
@@ -280,24 +306,29 @@ func RollbackingForward(s *daemon.ActorSystem) func(interface{}, system.Context)
 		}
 
 		if state.FailedResponses > 0 {
-			s.SendRemote(TransactionRefusedMessage(context, state.Transaction.IDTransaction))
+			s.SendRemote(TransactionRefusedMessage(context, &state.Transaction))
 			log.Debugf("~ %v (FWD) Rollback Rejected Rejected [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
+      s.UnregisterActor(context.Sender.Name)
 			return
 		}
 
 		log.Debugf("~ %v (FWD) Rollback Accepted All", state.Transaction.IDTransaction)
 
-		rollBackReason := "unknown"
+		// FIXME
+		//rollBackReason := "unknown"
 
-		if !persistence.RollbackTransaction(s.Storage, state.Transaction.IDTransaction, rollBackReason) {
+		state.Transaction.State = model.StatusRollbacked
+
+		if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 			log.Warnf("~ %v (FWD) Rollback failed to rollback transaction", state.Transaction.IDTransaction)
-			s.SendRemote(TransactionRefusedMessage(context, state.Transaction.IDTransaction))
+			s.SendRemote(TransactionRefusedMessage(context, &state.Transaction))
+			s.UnregisterActor(context.Sender.Name)
 			return
 		}
 
 		s.Metrics.TransactionRollbacked(1)
 
-		s.SendRemote(TransactionRejectedMessage(context, state.Transaction.IDTransaction, rollBackReason))
+		s.SendRemote(TransactionRejectedMessage(context, &state.Transaction))
 		log.Infof("~ %v (FWD) Rollback->End", state.Transaction.IDTransaction)
 		s.UnregisterActor(context.Sender.Name)
 		return
@@ -320,14 +351,15 @@ func AcceptingForward(s *daemon.ActorSystem) func(interface{}, system.Context) {
 		}
 
 		if !ok {
-			s.SendRemote(TransactionRefusedMessage(context, state.Transaction.IDTransaction))
+			s.SendRemote(TransactionRefusedMessage(context, &state.Transaction))
 			log.Warnf("~ %v (FWD) Accept failed to accept forward", state.Transaction.IDTransaction)
+      s.UnregisterActor(context.Sender.Name)
 			return
 		}
 
 		s.Metrics.TransactionForwarded(1)
 
-		s.SendRemote(TransactionProcessedMessage(context, state.Transaction.IDTransaction))
+		s.SendRemote(TransactionProcessedMessage(context, &state.Transaction))
 		log.Infof("~ %v (FWD) Accept->End", state.Transaction.IDTransaction)
 		s.UnregisterActor(context.Sender.Name)
 		return

@@ -23,7 +23,7 @@ const (
 	EventRollback = "2"
 
 	// StatusDirty is initial lock-like state of transaction
-	StatusDirty = "dirty"
+	//StatusDirty = "dirty"
 	// StatusNew represents NEW transaction
 	StatusNew = "new"
 	// StatusAccepted represents ACCEPTED transaction

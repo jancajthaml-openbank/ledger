@@ -3,33 +3,19 @@ require 'date'
 module JournalHelper
 
   def self.transaction(tenant, id)
-    transaction = self.transaction_data(tenant, id)
-    state = self.transaction_state(tenant, id)
-
-    return nil if (transaction.nil? or state.nil?)
-
-    transaction[:state] = state
-    transaction
-  end
-
-  def self.transaction_state(tenant, id)
-    return nil if id.nil?
-    path = "/data/t_#{tenant}/transaction_state/#{id}"
-    raise "transaction state for #{id} not found" unless File.file?(path)
-    File.open(path, 'rb') { |f| f.read }
-  end
-
-  def self.transaction_data(tenant, id)
     return nil if id.nil?
     path = "/data/t_#{tenant}/transaction/#{id}"
     return nil unless File.file?(path)
 
     File.open(path, 'rb') { |f|
       lines = f.read.split("\n").map(&:strip)
+      transfers = lines[1..-1]
+      transfers = [] if transfers.nil?
 
       {
         "id" => id,
-        "transfers" => lines[0..-1].map { |line|
+        "state" => lines[0],
+        "transfers" => transfers.map { |line|
           data = line.split(" ").map(&:strip)
 
           {

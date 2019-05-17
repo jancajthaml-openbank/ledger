@@ -193,6 +193,7 @@ func (s Account) String() string {
 // Transaction represents egress message of transaction
 type Transaction struct {
 	IDTransaction string
+	State         string
 	Transfers     []Transfer
 }
 
@@ -200,8 +201,8 @@ type Transaction struct {
 func (entity *Transaction) Serialise() []byte {
 	var buffer bytes.Buffer
 
-	//buffer.WriteString(entity.IDTransaction)
-	//buffer.WriteString("\n")
+	buffer.WriteString(entity.State)
+	buffer.WriteString("\n")
 
 	for _, transfer := range entity.Transfers {
 		buffer.WriteString(transfer.IDTransfer)
@@ -228,11 +229,11 @@ func (entity *Transaction) Serialise() []byte {
 // Deserialise transaction from binary data
 func (entity *Transaction) Deserialise(data []byte) {
 	lines := strings.Split(string(data), "\n")
-	//entity.IDTransaction = lines[0]
-	entity.Transfers = make([]Transfer, len(lines)-1)
+	entity.State = lines[0]
+	entity.Transfers = make([]Transfer, len(lines)-2)
 
 	for i := range entity.Transfers {
-		transfer := strings.SplitN(lines[i], " ", 8)
+		transfer := strings.SplitN(lines[i+1], " ", 8)
 
 		amount, _ := new(money.Dec).SetString(transfer[6])
 

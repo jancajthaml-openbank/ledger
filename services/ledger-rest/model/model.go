@@ -248,16 +248,13 @@ func (entity Transfer) MarshalJSON() ([]byte, error) {
 }
 
 // Deserialise transaction from binary data
-func (entity *Transaction) Deserialise(data []byte, status []byte) {
+func (entity *Transaction) Deserialise(data []byte) {
 	lines := strings.Split(string(data), "\n")
-	//entity.IDTransaction = lines[0]
-	entity.Transfers = make([]Transfer, len(lines)-1)
-
-	parts := strings.Split(string(status), " ")
-	entity.Status = parts[0]
+	entity.Status = lines[0]
+	entity.Transfers = make([]Transfer, len(lines)-2)
 
 	for i := range entity.Transfers {
-		transfer := strings.SplitN(lines[i], " ", 8)
+		transfer := strings.SplitN(lines[i+1], " ", 8)
 
 		valueDate, _ := time.Parse(time.RFC3339, transfer[5])
 		amount, _ := new(money.Dec).SetString(transfer[6])
