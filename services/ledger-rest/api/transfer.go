@@ -19,7 +19,6 @@ import (
 	"net/http"
 
 	"github.com/jancajthaml-openbank/ledger-rest/actor"
-	"github.com/jancajthaml-openbank/ledger-rest/daemon"
 	"github.com/jancajthaml-openbank/ledger-rest/model"
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
 
@@ -27,7 +26,7 @@ import (
 )
 
 // TransactionPartial returns http handler for single transfer
-func TransferPartial(metrics *daemon.Metrics, system *daemon.ActorSystem) func(w http.ResponseWriter, r *http.Request) {
+func TransferPartial(server *Server) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		vars := mux.Vars(r)
@@ -46,9 +45,7 @@ func TransferPartial(metrics *daemon.Metrics, system *daemon.ActorSystem) func(w
 		switch r.Method {
 
 		case "PATCH":
-			metrics.TimeForwardTransfer(func() {
-				ForwardTransfer(system, tenant, transaction, transfer, w, r)
-			})
+			ForwardTransfer(server, tenant, transaction, transfer, w, r)
 			return
 
 		default:
@@ -62,7 +59,7 @@ func TransferPartial(metrics *daemon.Metrics, system *daemon.ActorSystem) func(w
 }
 
 // CreateTransaction creates new transaction
-func ForwardTransfer(system *daemon.ActorSystem, tenant, transaction, transfer string, w http.ResponseWriter, r *http.Request) {
+func ForwardTransfer(server *Server, tenant string, transaction string, transfer string, w http.ResponseWriter, r *http.Request) {
 	data, err := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
@@ -81,7 +78,7 @@ func ForwardTransfer(system *daemon.ActorSystem, tenant, transaction, transfer s
 		return
 	}
 
-	switch actor.ForwardTransfer(system, tenant, transaction, transfer, *req).(type) {
+	switch actor.ForwardTransfer(server.ActorSystem, tenant, transaction, transfer, *req).(type) {
 
 	case *model.TransactioMissing:
 		w.Header().Set("Content-Type", "application/json")

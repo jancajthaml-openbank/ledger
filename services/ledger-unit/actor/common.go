@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jancajthaml-openbank/ledger-unit/daemon"
 	"github.com/jancajthaml-openbank/ledger-unit/model"
 
 	system "github.com/jancajthaml-openbank/actor-system"
@@ -26,13 +25,11 @@ import (
 	money "gopkg.in/inf.v0"
 )
 
-var nilCoordinates = system.Coordinates{}
-
-func asEnvelopes(s *daemon.ActorSystem, msg string) (system.Coordinates, system.Coordinates, []string, error) {
+func asEnvelopes(s *ActorSystem, msg string) (system.Coordinates, system.Coordinates, []string, error) {
 	parts := strings.Split(msg, " ")
 
 	if len(parts) < 5 {
-		return nilCoordinates, nilCoordinates, nil, fmt.Errorf("invalid message received %+v", parts)
+		return system.Coordinates{}, system.Coordinates{}, nil, fmt.Errorf("invalid message received %+v", parts)
 	}
 
 	recieverRegion, senderRegion, receiverName, senderName := parts[0], parts[1], parts[2], parts[3]
@@ -51,7 +48,7 @@ func asEnvelopes(s *daemon.ActorSystem, msg string) (system.Coordinates, system.
 }
 
 // ProcessRemoteMessage processing of remote message to this wall
-func ProcessRemoteMessage(s *daemon.ActorSystem) system.ProcessRemoteMessage {
+func ProcessRemoteMessage(s *ActorSystem) system.ProcessRemoteMessage {
 	return func(msg string) {
 		from, to, parts, err := asEnvelopes(s, msg)
 		if err != nil {
@@ -216,7 +213,7 @@ func ProcessRemoteMessage(s *daemon.ActorSystem) system.ProcessRemoteMessage {
 	}
 }
 
-func spawnForwardActor(s *daemon.ActorSystem, name string) (*system.Envelope, error) {
+func spawnForwardActor(s *ActorSystem, name string) (*system.Envelope, error) {
 	envelope := system.NewEnvelope(name, model.NewForwardState())
 
 	err := s.RegisterActor(envelope, InitialForward(s))
@@ -229,7 +226,7 @@ func spawnForwardActor(s *daemon.ActorSystem, name string) (*system.Envelope, er
 	return envelope, nil
 }
 
-func spawnTransactionActor(s *daemon.ActorSystem, name string) (*system.Envelope, error) {
+func spawnTransactionActor(s *ActorSystem, name string) (*system.Envelope, error) {
 	envelope := system.NewEnvelope(name, model.NewTransactionState())
 
 	err := s.RegisterActor(envelope, InitialTransaction(s))
@@ -243,7 +240,7 @@ func spawnTransactionActor(s *daemon.ActorSystem, name string) (*system.Envelope
 }
 
 // ProcessLocalMessage processing of local message to this ledger
-func ProcessLocalMessage(s *daemon.ActorSystem) system.ProcessLocalMessage {
+func ProcessLocalMessage(s *ActorSystem) system.ProcessLocalMessage {
 	return func(message interface{}, to system.Coordinates, from system.Coordinates) {
 		if to.Region != "" && to.Region != s.Name {
 			log.Warnf("Invalid region received [local %s -> local %s]", from, to)

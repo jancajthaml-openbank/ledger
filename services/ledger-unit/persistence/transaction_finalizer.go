@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package daemon
+package persistence
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/jancajthaml-openbank/ledger-unit/config"
+	"github.com/jancajthaml-openbank/ledger-unit/metrics"
+	"github.com/jancajthaml-openbank/ledger-unit/utils"
 
 	system "github.com/jancajthaml-openbank/actor-system"
 	localfs "github.com/jancajthaml-openbank/local-fs"
@@ -28,21 +29,21 @@ import (
 
 // TransactionFinalizer represents journal saturation update subroutine
 type TransactionFinalizer struct {
-	Support
+	utils.DaemonSupport
 	callback     func(msg interface{}, to system.Coordinates, from system.Coordinates)
-	metrics      *Metrics
+	metrics      *metrics.Metrics
 	storage      *localfs.Storage
 	scanInterval time.Duration
 }
 
 // NewTransactionFinalizer returns snapshot updater fascade
-func NewTransactionFinalizer(ctx context.Context, cfg config.Configuration, metrics *Metrics, storage *localfs.Storage, callback func(msg interface{}, to system.Coordinates, from system.Coordinates)) TransactionFinalizer {
+func NewTransactionFinalizer(ctx context.Context, scanInterval time.Duration, metrics *metrics.Metrics, storage *localfs.Storage, callback func(msg interface{}, to system.Coordinates, from system.Coordinates)) TransactionFinalizer {
 	return TransactionFinalizer{
-		Support:      NewDaemonSupport(ctx),
-		callback:     callback,
-		metrics:      metrics,
-		storage:      storage,
-		scanInterval: cfg.TransactionIntegrityScanInterval,
+		DaemonSupport: utils.NewDaemonSupport(ctx),
+		callback:      callback,
+		metrics:       metrics,
+		storage:       storage,
+		scanInterval:  scanInterval,
 	}
 }
 
@@ -54,55 +55,55 @@ func (scan TransactionFinalizer) performIntegrityScan() {
 // FIXME unit test coverage
 // FIXME maximum events to params
 func (updater SnapshotUpdater) updateSaturated() {
-	accounts := updater.getAccounts()
-	var numberOfSnapshotsUpdated int64
+  accounts := updater.getAccounts()
+  var numberOfSnapshotsUpdated int64
 
-	for _, name := range accounts {
-		version := updater.getVersion(name)
-		if version == -1 {
-			continue
-		}
-		if updater.getEvents(name, version) >= updater.saturationThreshold {
-			log.Debugf("Request %v to update snapshot version from %d to %d", name, version, version+1)
-			msg := model.Update{Version: version}
-			to := system.Coordinates{Name: name}
-			from := system.Coordinates{Name: "snapshot_saturation_cron"}
-			updater.callback(msg, to, from)
+  for _, name := range accounts {
+    version := updater.getVersion(name)
+    if version == -1 {
+      continue
+    }
+    if updater.getEvents(name, version) >= updater.saturationThreshold {
+      log.Debugf("Request %v to update snapshot version from %d to %d", name, version, version+1)
+      msg := model.Update{Version: version}
+      to := system.Coordinates{Name: name}
+      from := system.Coordinates{Name: "snapshot_saturation_cron"}
+      updater.callback(msg, to, from)
 
-			numberOfSnapshotsUpdated++
-		}
-	}
-	updater.metrics.SnapshotsUpdated(numberOfSnapshotsUpdated)
+      numberOfSnapshotsUpdated++
+    }
+  }
+  updater.metrics.SnapshotsUpdated(numberOfSnapshotsUpdated)
 }
 
 func (updater SnapshotUpdater) getAccounts() []string {
-	result, err := updater.storage.ListDirectory(utils.RootPath(), true)
-	if err != nil {
-		return nil
-	}
-	return result
+  result, err := updater.storage.ListDirectory(utils.RootPath(), true)
+  if err != nil {
+    return nil
+  }
+  return result
 }
 
 func (updater SnapshotUpdater) getVersion(name string) int {
-	result, err := updater.storage.ListDirectory(utils.SnapshotsPath(name), false)
-	if err != nil || len(result) == 0 {
-		return -1
-	}
+  result, err := updater.storage.ListDirectory(utils.SnapshotsPath(name), false)
+  if err != nil || len(result) == 0 {
+    return -1
+  }
 
-	version, err := strconv.Atoi(result[0])
-	if err != nil {
-		return -1
-	}
+  version, err := strconv.Atoi(result[0])
+  if err != nil {
+    return -1
+  }
 
-	return version
+  return version
 }
 
 func (updater SnapshotUpdater) getEvents(name string, version int) int {
-	result, err := updater.storage.CountFiles(utils.EventPath(name, version))
-	if err != nil {
-		return -1
-	}
-	return result
+  result, err := updater.storage.CountFiles(utils.EventPath(name, version))
+  if err != nil {
+    return -1
+  }
+  return result
 }*/
 
 // WaitReady wait for snapshot updated to be ready
@@ -144,7 +145,7 @@ func (scan TransactionFinalizer) Start() {
 	scan.MarkReady()
 
 	select {
-	case <-scan.canStart:
+	case <-scan.CanStart:
 		break
 	case <-scan.Done():
 		return

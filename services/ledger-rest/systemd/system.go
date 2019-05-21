@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package daemon
+package systemd
 
 import (
 	"context"
@@ -21,7 +21,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jancajthaml-openbank/ledger-rest/config"
+	"github.com/jancajthaml-openbank/ledger-rest/utils"
 
 	"github.com/coreos/go-systemd/dbus"
 
@@ -30,20 +30,20 @@ import (
 
 // SystemControl represents systemctl subroutine
 type SystemControl struct {
-	Support
+	utils.DaemonSupport
 	underlying *dbus.Conn
 }
 
 // NewSystemControl returns new systemctl fascade
-func NewSystemControl(ctx context.Context, cfg config.Configuration) SystemControl {
+func NewSystemControl(ctx context.Context) SystemControl {
 	conn, err := dbus.New()
 	if err != nil {
 		panic(fmt.Sprintf("Unable to obtain dbus connection because %+v", err))
 	}
 
 	return SystemControl{
-		Support:    NewDaemonSupport(ctx),
-		underlying: conn,
+		DaemonSupport: utils.NewDaemonSupport(ctx),
+		underlying:    conn,
 	}
 }
 
@@ -168,7 +168,7 @@ func (sys SystemControl) Start() {
 	sys.MarkReady()
 
 	select {
-	case <-sys.canStart:
+	case <-sys.CanStart:
 		break
 	case <-sys.Done():
 		return
@@ -176,12 +176,12 @@ func (sys SystemControl) Start() {
 
 	log.Info("Start system-control daemon")
 
-	<-sys.exitSignal
+	<-sys.ExitSignal
 }
 
 // Stop shutdowns systemctl fascade
 func (sys *SystemControl) Stop() {
 	log.Info("Stopping system-control daemon")
-	sys.cancel()
+	sys.Cancel()
 	return
 }

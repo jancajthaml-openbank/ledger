@@ -101,6 +101,10 @@ generate_changelog() {
     rm -f ${target}.gz
   fi
 
+  if [ -f ${target}.Debian.gz ] ; then
+    rm -f ${target}.Debian.gz
+  fi
+
   touch ${target}
 
   VER="${VERSION}"
@@ -150,7 +154,15 @@ generate_changelog() {
     fi
   done
 
-  cat ${target} | gzip -n -9 > ${target}.gz
+  case "${VERSION}" in
+    *+*)
+      cat ${target} | gzip -n -9 > ${target}.Debian.gz
+      ;;
+    *)
+      cat ${target} | gzip -n -9 > ${target}.gz
+      ;;
+  esac
+
   rm ${target}
 }
 

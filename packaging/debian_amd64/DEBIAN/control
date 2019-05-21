@@ -1,5 +1,5 @@
 Package: ledger
-Version: 1.0.2+merge-transaction-and-transaction-state
+Version: 1.0.2+single-app-struct
 Section: misc
 Priority: extra
 Architecture: amd64

@@ -21,24 +21,23 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jancajthaml-openbank/ledger-rest/daemon"
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
 
 	log "github.com/sirupsen/logrus"
 )
 
 // Stop stops the application
-func (app Application) Stop() {
+func (app Program) Stop() {
 	close(app.interrupt)
 }
 
 // WaitReady wait for daemons to be ready
-func (app Application) WaitReady(deadline time.Duration) error {
+func (app Program) WaitReady(deadline time.Duration) error {
 	errors := make([]error, 0)
 	mux := new(sync.Mutex)
 
 	var wg sync.WaitGroup
-	waitWithDeadline := func(support daemon.Daemon) {
+	waitWithDeadline := func(support utils.Daemon) {
 		go func() {
 			err := support.WaitReady(deadline)
 			if err != nil {
@@ -65,7 +64,7 @@ func (app Application) WaitReady(deadline time.Duration) error {
 }
 
 // GreenLight daemons
-func (app Application) GreenLight() {
+func (app Program) GreenLight() {
 	app.metrics.GreenLight()
 	app.actorSystem.GreenLight()
 	app.systemControl.GreenLight()
@@ -73,12 +72,12 @@ func (app Application) GreenLight() {
 }
 
 // WaitInterrupt wait for signal
-func (app Application) WaitInterrupt() {
+func (app Program) WaitInterrupt() {
 	<-app.interrupt
 }
 
 // Run runs the application
-func (app Application) Run() {
+func (app Program) Run() {
 	log.Info(">>> Start <<<")
 
 	go app.metrics.Start()
