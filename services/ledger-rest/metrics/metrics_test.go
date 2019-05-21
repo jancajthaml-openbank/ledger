@@ -1,11 +1,9 @@
-package daemon
+package metrics
 
 import (
 	"context"
 	"testing"
 	"time"
-
-	"github.com/jancajthaml-openbank/ledger-rest/config"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,12 +14,10 @@ func TestGetFilename(t *testing.T) {
 }
 
 func TestMetricsPersist(t *testing.T) {
-	cfg := config.Configuration{}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	entity := NewMetrics(ctx, cfg)
+	entity := NewMetrics(ctx, "", time.Hour)
 	delay := 1e8
 	delta := 1e8
 

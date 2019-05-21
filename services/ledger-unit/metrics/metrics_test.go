@@ -1,10 +1,9 @@
-package daemon
+package metrics
 
 import (
 	"context"
 	"testing"
-
-	"github.com/jancajthaml-openbank/ledger-unit/config"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -16,12 +15,10 @@ func TestGetFilename(t *testing.T) {
 }
 
 func TestMetricsPersist(t *testing.T) {
-	cfg := config.Configuration{}
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	entity := NewMetrics(ctx, cfg)
+	entity := NewMetrics(ctx, "tenant", "output", time.Hour)
 
 	t.Log("TransactionPromised properly increments number of promised transactions and transfers")
 	{

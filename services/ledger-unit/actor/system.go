@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package daemon
+package actor
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/jancajthaml-openbank/ledger-unit/config"
+	"github.com/jancajthaml-openbank/ledger-unit/metrics"
 
 	system "github.com/jancajthaml-openbank/actor-system"
 	localfs "github.com/jancajthaml-openbank/local-fs"
@@ -29,16 +29,21 @@ import (
 type ActorSystem struct {
 	system.Support
 	Storage *localfs.Storage
-	Metrics *Metrics
+	Metrics *metrics.Metrics
 }
 
 // NewActorSystem returns actor system fascade
-func NewActorSystem(ctx context.Context, cfg config.Configuration, metrics *Metrics, storage *localfs.Storage) ActorSystem {
-	return ActorSystem{
-		Support: system.NewSupport(ctx, "LedgerUnit/"+cfg.Tenant, cfg.LakeHostname),
+func NewActorSystem(ctx context.Context, tenant string, lakeEndpoint string, metrics *metrics.Metrics, storage *localfs.Storage) ActorSystem {
+	result := ActorSystem{
+		Support: system.NewSupport(ctx, "LedgerUnit/"+tenant, lakeEndpoint),
 		Storage: storage,
 		Metrics: metrics,
 	}
+
+	result.Support.RegisterOnLocalMessage(ProcessLocalMessage(&result))
+	result.Support.RegisterOnRemoteMessage(ProcessRemoteMessage(&result))
+
+	return result
 }
 
 // GreenLight daemon noop

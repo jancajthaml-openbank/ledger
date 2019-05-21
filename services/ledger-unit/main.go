@@ -19,7 +19,7 @@ import (
 )
 
 func main() {
-	application := boot.Initialize()
-	defer application.Stop()
-	application.Run()
+	program := boot.Initialize()
+	defer program.Stop()
+	program.Run()
 }

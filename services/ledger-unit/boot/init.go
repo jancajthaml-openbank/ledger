@@ -18,51 +18,45 @@ import (
 	"context"
 	"os"
 
-	localfs "github.com/jancajthaml-openbank/local-fs"
-	log "github.com/sirupsen/logrus"
-
 	"github.com/jancajthaml-openbank/ledger-unit/actor"
 	"github.com/jancajthaml-openbank/ledger-unit/config"
-	"github.com/jancajthaml-openbank/ledger-unit/daemon"
+	"github.com/jancajthaml-openbank/ledger-unit/metrics"
+	"github.com/jancajthaml-openbank/ledger-unit/persistence"
 	"github.com/jancajthaml-openbank/ledger-unit/utils"
+
+	localfs "github.com/jancajthaml-openbank/local-fs"
 )
 
-// Application encapsulate initialized application
-type Application struct {
+// Program encapsulate initialized application
+type Program struct {
 	cfg                  config.Configuration
 	interrupt            chan os.Signal
-	metrics              daemon.Metrics
-	actorSystem          daemon.ActorSystem
-	transactionFinalizer daemon.TransactionFinalizer
+	metrics              metrics.Metrics
+	actorSystem          actor.ActorSystem
+	transactionFinalizer persistence.TransactionFinalizer
 	cancel               context.CancelFunc
 }
 
 // Initialize application
-func Initialize() Application {
+func Initialize() Program {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	cfg := config.GetConfig()
 
 	utils.SetupLogger(cfg.LogLevel)
 
-	log.Infof(">>> Setup <<<")
-
 	storage := localfs.NewStorage(cfg.RootStorage)
+	metricsDaemon := metrics.NewMetrics(ctx, cfg.Tenant, cfg.MetricsOutput, cfg.MetricsRefreshRate)
 
-	metrics := daemon.NewMetrics(ctx, cfg)
+	actorSystemDaemon := actor.NewActorSystem(ctx, cfg.Tenant, cfg.LakeHostname, &metricsDaemon, &storage)
+	transactionFinalizerDaemon := persistence.NewTransactionFinalizer(ctx, cfg.TransactionIntegrityScanInterval, &metricsDaemon, &storage, actor.ProcessLocalMessage(&actorSystemDaemon))
 
-	actorSystem := daemon.NewActorSystem(ctx, cfg, &metrics, &storage)
-	actorSystem.Support.RegisterOnLocalMessage(actor.ProcessLocalMessage(&actorSystem))
-	actorSystem.Support.RegisterOnRemoteMessage(actor.ProcessRemoteMessage(&actorSystem))
-
-	transactionFinalizer := daemon.NewTransactionFinalizer(ctx, cfg, &metrics, &storage, actor.ProcessLocalMessage(&actorSystem))
-
-	return Application{
+	return Program{
 		cfg:                  cfg,
 		interrupt:            make(chan os.Signal, 1),
-		metrics:              metrics,
-		actorSystem:          actorSystem,
-		transactionFinalizer: transactionFinalizer,
+		metrics:              metricsDaemon,
+		actorSystem:          actorSystemDaemon,
+		transactionFinalizer: transactionFinalizerDaemon,
 		cancel:               cancel,
 	}
 }

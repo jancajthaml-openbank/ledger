@@ -19,17 +19,15 @@ import (
 	"net/http"
 
 	"github.com/jancajthaml-openbank/ledger-rest/actor"
-	"github.com/jancajthaml-openbank/ledger-rest/daemon"
 	"github.com/jancajthaml-openbank/ledger-rest/model"
 	"github.com/jancajthaml-openbank/ledger-rest/persistence"
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
 
 	"github.com/gorilla/mux"
-	localfs "github.com/jancajthaml-openbank/local-fs"
 )
 
 // TransactionPartial returns http handler for single transaction
-func TransactionPartial(metrics *daemon.Metrics, storage *localfs.Storage) func(w http.ResponseWriter, r *http.Request) {
+func TransactionPartial(server *Server) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 
@@ -46,9 +44,9 @@ func TransactionPartial(metrics *daemon.Metrics, storage *localfs.Storage) func(
 		switch r.Method {
 
 		case "GET":
-			metrics.TimeGetTransaction(func() {
-				GetTransaction(storage, tenant, transaction, w, r)
-			})
+			//metrics.TimeGetTransaction(func() {
+			GetTransaction(server, tenant, transaction, w, r)
+			//})
 			return
 
 		default:
@@ -62,7 +60,7 @@ func TransactionPartial(metrics *daemon.Metrics, storage *localfs.Storage) func(
 }
 
 // TransactionsPartial returns http handler for transactions
-func TransactionsPartial(metrics *daemon.Metrics, system *daemon.ActorSystem, storage *localfs.Storage) func(w http.ResponseWriter, r *http.Request) {
+func TransactionsPartial(server *Server) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 
@@ -78,15 +76,13 @@ func TransactionsPartial(metrics *daemon.Metrics, system *daemon.ActorSystem, st
 		switch r.Method {
 
 		case "GET":
-			metrics.TimeGetTransactions(func() {
-				GetTransactions(storage, tenant, w, r)
-			})
+			//metrics.TimeGetTransactions(func() {
+			GetTransactions(server, tenant, w, r)
+			//})
 			return
 
 		case "POST":
-			metrics.TimeCreateTransaction(func() {
-				CreateTransaction(system, tenant, w, r)
-			})
+			CreateTransaction(server, tenant, w, r)
 			return
 
 		default:
@@ -101,7 +97,7 @@ func TransactionsPartial(metrics *daemon.Metrics, system *daemon.ActorSystem, st
 }
 
 // CreateTransaction creates new transaction
-func CreateTransaction(system *daemon.ActorSystem, tenant string, w http.ResponseWriter, r *http.Request) {
+func CreateTransaction(server *Server, tenant string, w http.ResponseWriter, r *http.Request) {
 	data, err := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
@@ -120,7 +116,7 @@ func CreateTransaction(system *daemon.ActorSystem, tenant string, w http.Respons
 		return
 	}
 
-	switch actor.CreateTransaction(system, tenant, *req).(type) {
+	switch actor.CreateTransaction(server.ActorSystem, tenant, *req).(type) {
 
 	case *model.TransactionCreated:
 		resp, err := utils.JSON.Marshal(req)
@@ -179,8 +175,8 @@ func CreateTransaction(system *daemon.ActorSystem, tenant string, w http.Respons
 }
 
 // GetTransactions returns list of existing transactions
-func GetTransactions(storage *localfs.Storage, tenant string, w http.ResponseWriter, r *http.Request) {
-	transactions, err := persistence.LoadTransactions(storage, tenant)
+func GetTransactions(server *Server, tenant string, w http.ResponseWriter, r *http.Request) {
+	transactions, err := persistence.LoadTransactions(server.Storage, tenant)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -201,8 +197,8 @@ func GetTransactions(storage *localfs.Storage, tenant string, w http.ResponseWri
 }
 
 // GetTransaction returns existing transaction
-func GetTransaction(storage *localfs.Storage, tenant, id string, w http.ResponseWriter, r *http.Request) {
-	transaction, err := persistence.LoadTransaction(storage, tenant, id)
+func GetTransaction(server *Server, tenant, id string, w http.ResponseWriter, r *http.Request) {
+	transaction, err := persistence.LoadTransaction(server.Storage, tenant, id)
 	if err != nil || transaction == nil {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)

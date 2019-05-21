@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package daemon
+package utils
 
 import (
 	"context"
@@ -24,55 +24,55 @@ type Daemon interface {
 	WaitReady(deadline time.Duration) error
 }
 
+// Support provides support for graceful shutdown
+type DaemonSupport struct {
+	ctx        context.Context
+	Cancel     context.CancelFunc
+	ExitSignal chan struct{}
+	IsReady    chan interface{}
+	CanStart   chan interface{}
+}
+
 // NewDaemonSupport constructor
-func NewDaemonSupport(parentCtx context.Context) Support {
+func NewDaemonSupport(parentCtx context.Context) DaemonSupport {
 	ctx, cancel := context.WithCancel(parentCtx)
-	return Support{
+	return DaemonSupport{
 		ctx:        ctx,
-		cancel:     cancel,
-		exitSignal: make(chan struct{}),
+		Cancel:     cancel,
+		ExitSignal: make(chan struct{}),
 		IsReady:    make(chan interface{}),
-		canStart:   make(chan interface{}),
+		CanStart:   make(chan interface{}),
 	}
 }
 
-// Support provides support for graceful shutdown
-type Support struct {
-	ctx        context.Context
-	cancel     context.CancelFunc
-	exitSignal chan struct{}
-	IsReady    chan interface{}
-	canStart   chan interface{}
-}
-
 // GreenLight signals daemon to start work
-func (s Support) GreenLight() {
-	s.canStart <- nil
+func (daemon DaemonSupport) GreenLight() {
+	daemon.CanStart <- nil
 }
 
 // MarkDone signals daemon is finished
-func (s Support) MarkDone() {
-	close(s.exitSignal)
+func (daemon DaemonSupport) MarkDone() {
+	close(daemon.ExitSignal)
 }
 
 // MarkReady signals daemon is ready
-func (s Support) MarkReady() {
-	s.IsReady <- nil
+func (daemon DaemonSupport) MarkReady() {
+	daemon.IsReady <- nil
 }
 
 // Done cancel channel
-func (s Support) Done() <-chan struct{} {
-	return s.ctx.Done()
+func (daemon DaemonSupport) Done() <-chan struct{} {
+	return daemon.ctx.Done()
 }
 
 // Stop daemon and wait for graceful shutdown
-func (s Support) Stop() {
-	s.cancel()
-	<-s.exitSignal
+func (daemon DaemonSupport) Stop() {
+	daemon.Cancel()
+	<-daemon.ExitSignal
 }
 
 // Start daemon and wait for it to be ready
-func (s Support) Start() {
-	s.MarkReady()
-	<-s.IsReady
+func (daemon DaemonSupport) Start() {
+	daemon.MarkReady()
+	<-daemon.IsReady
 }

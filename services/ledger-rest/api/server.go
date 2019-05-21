@@ -12,33 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package daemon
+package api
 
 import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"time"
 
-	"github.com/jancajthaml-openbank/ledger-rest/config"
+	"github.com/jancajthaml-openbank/ledger-rest/actor"
+	"github.com/jancajthaml-openbank/ledger-rest/systemd"
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
 
 	"github.com/gorilla/mux"
-
+	localfs "github.com/jancajthaml-openbank/local-fs"
 	log "github.com/sirupsen/logrus"
 )
 
 // Server is a fascade for http-server following handler api of Gin and lifecycle
 // api of http
 type Server struct {
-	Support
-	underlying *http.Server
-	router     *mux.Router
-	key        []byte
-	cert       []byte
+	utils.DaemonSupport
+	Storage       *localfs.Storage
+	SystemControl *systemd.SystemControl
+	ActorSystem   *actor.ActorSystem
+	underlying    *http.Server
+	router        *mux.Router
+	key           []byte
+	cert          []byte
 }
+
+type Endpoint func(*Server) func(http.ResponseWriter, *http.Request)
 
 type tcpKeepAliveListener struct {
 	*net.TCPListener
@@ -72,14 +79,27 @@ func cloneTLSConfig(cfg *tls.Config) *tls.Config {
 }
 
 // NewServer returns new secure server instance
-func NewServer(ctx context.Context, cfg config.Configuration) Server {
+func NewServer(ctx context.Context, port int, secretsPath string, actorSystem *actor.ActorSystem, systemControl *systemd.SystemControl, storage *localfs.Storage) Server {
 	router := mux.NewRouter()
 
-	return Server{
-		Support: NewDaemonSupport(ctx),
-		router:  router,
+	cert, err := ioutil.ReadFile(secretsPath + "/domain.local.crt")
+	if err != nil {
+		log.Fatalf("unable to load certificate %s/domain.local.crt", secretsPath)
+	}
+
+	key, err := ioutil.ReadFile(secretsPath + "/domain.local.key")
+	if err != nil {
+		log.Fatalf("unable to load certificate %s/domain.local.key", secretsPath)
+	}
+
+	result := Server{
+		DaemonSupport: utils.NewDaemonSupport(ctx),
+		Storage:       storage,
+		ActorSystem:   actorSystem,
+		router:        router,
+		SystemControl: systemControl,
 		underlying: &http.Server{
-			Addr:         fmt.Sprintf(":%d", cfg.ServerPort),
+			Addr:         fmt.Sprintf(":%d", port),
 			ReadTimeout:  5 * time.Second,
 			WriteTimeout: 5 * time.Second,
 			Handler:      router,
@@ -96,15 +116,24 @@ func NewServer(ctx context.Context, cfg config.Configuration) Server {
 			},
 			TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
 		},
-		key:  cfg.SecretKey,
-		cert: cfg.SecretCert,
+		key:  key,
+		cert: cert,
 	}
+
+	result.HandleFunc("/health", HealtCheck, "GET", "HEAD")
+	result.HandleFunc("/tenant/{tenant}", TenantPartial, "POST", "DELETE")
+	result.HandleFunc("/tenant", TenantsPartial, "GET")
+	result.HandleFunc("/transaction/{tenant}/{transaction}", TransactionPartial, "GET")
+	result.HandleFunc("/transaction/{tenant}/{transaction}/{transfer}", TransferPartial, "PATCH")
+	result.HandleFunc("/transaction/{tenant}", TransactionsPartial, "POST", "GET")
+
+	return result
 }
 
 // HandleFunc registers route
-func (server Server) HandleFunc(path string, handle func(w http.ResponseWriter, r *http.Request), methods ...string) *mux.Route {
+func (server Server) HandleFunc(path string, handle Endpoint, methods ...string) *mux.Route {
 	log.Debugf("HTTP route %+v %+v registered", methods, path)
-	return server.router.HandleFunc(path, handle).Methods(methods...)
+	return server.router.HandleFunc(path, handle(&server)).Methods(methods...)
 }
 
 // WaitReady wait for server to be ready
@@ -168,7 +197,7 @@ func (server Server) Start() {
 	server.MarkReady()
 
 	select {
-	case <-server.canStart:
+	case <-server.CanStart:
 		break
 	case <-server.Done():
 		return
@@ -176,7 +205,7 @@ func (server Server) Start() {
 
 	log.Infof("Start http-server daemon, listening on :%d", ln.Addr().(*net.TCPAddr).Port)
 
-	<-server.exitSignal
+	<-server.ExitSignal
 }
 
 // Stop tries to shut down http-server daemon gracefully within 5 seconds
@@ -185,6 +214,6 @@ func (server Server) Stop() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	server.underlying.Shutdown(ctx)
-	server.cancel()
+	server.Cancel()
 	return
 }

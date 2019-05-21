@@ -17,7 +17,6 @@ package actor
 import (
 	"time"
 
-	"github.com/jancajthaml-openbank/ledger-rest/daemon"
 	"github.com/jancajthaml-openbank/ledger-rest/model"
 
 	"github.com/rs/xid"
@@ -27,36 +26,39 @@ import (
 )
 
 // ForwardTransfer forward existing transfer to different vault
-func ForwardTransfer(s *daemon.ActorSystem, tenant, transaction, transfer string, forward model.TransferForward) (result interface{}) {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Errorf("ForwardTransfer recovered in %+v", r)
-			result = nil
+func ForwardTransfer(sys *ActorSystem, tenant, transaction, transfer string, forward model.TransferForward) (result interface{}) {
+	sys.Metrics.TimeForwardTransfer(func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Errorf("ForwardTransfer recovered in %+v", r)
+				result = nil
+			}
+		}()
+
+		ch := make(chan interface{})
+		defer close(ch)
+
+		name := "forward/" + xid.New().String()
+
+		envelope := system.NewEnvelope(name, nil)
+		defer sys.UnregisterActor(envelope.Name)
+
+		sys.RegisterActor(envelope, func(state interface{}, context system.Context) {
+			ch <- context.Data
+		})
+
+		sys.SendRemote(ForwardTransferMessage(tenant, envelope.Name, name, transaction, transfer, forward))
+
+		select {
+
+		case result = <-ch:
+			return
+
+		case <-time.After(3 * time.Second):
+			log.Warnf("Forward transfer %s/%s/%s timeout", tenant, transaction, transfer)
+			result = new(model.ReplyTimeout)
+			return
 		}
-	}()
-
-	ch := make(chan interface{})
-	defer close(ch)
-
-	name := "forward/" + xid.New().String()
-
-	envelope := system.NewEnvelope(name, nil)
-	defer s.UnregisterActor(envelope.Name)
-
-	s.RegisterActor(envelope, func(state interface{}, context system.Context) {
-		ch <- context.Data
 	})
-
-	s.SendRemote(ForwardTransferMessage(tenant, envelope.Name, name, transaction, transfer, forward))
-
-	select {
-
-	case result = <-ch:
-		return
-
-	case <-time.After(3 * time.Second):
-		log.Warnf("Forward transfer %s/%s/%s timeout", tenant, transaction, transfer)
-		result = new(model.ReplyTimeout)
-		return
-	}
+	return
 }

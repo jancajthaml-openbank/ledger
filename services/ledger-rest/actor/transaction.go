@@ -17,7 +17,6 @@ package actor
 import (
 	"time"
 
-	"github.com/jancajthaml-openbank/ledger-rest/daemon"
 	"github.com/jancajthaml-openbank/ledger-rest/model"
 
 	"github.com/rs/xid"
@@ -27,36 +26,39 @@ import (
 )
 
 // CreateTransaction creates new transaction
-func CreateTransaction(s *daemon.ActorSystem, tenant string, transaction model.Transaction) (result interface{}) {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Errorf("CreateTransaction recovered in %+v", r)
-			result = nil
+func CreateTransaction(sys *ActorSystem, tenant string, transaction model.Transaction) (result interface{}) {
+	sys.Metrics.TimeCreateTransaction(func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Errorf("CreateTransaction recovered in %+v", r)
+				result = nil
+			}
+		}()
+
+		ch := make(chan interface{})
+		defer close(ch)
+
+		name := "transaction/" + xid.New().String()
+
+		envelope := system.NewEnvelope(name, nil)
+		defer sys.UnregisterActor(envelope.Name)
+
+		sys.RegisterActor(envelope, func(state interface{}, context system.Context) {
+			ch <- context.Data
+		})
+
+		sys.SendRemote(CreateTransactionMessage(tenant, envelope.Name, name, transaction))
+
+		select {
+
+		case result = <-ch:
+			return
+
+		case <-time.After(3 * time.Second):
+			log.Warnf("Create transaction %s/%s timeout", tenant, transaction.IDTransaction)
+			result = new(model.ReplyTimeout)
+			return
 		}
-	}()
-
-	ch := make(chan interface{})
-	defer close(ch)
-
-	name := "transaction/" + xid.New().String()
-
-	envelope := system.NewEnvelope(name, nil)
-	defer s.UnregisterActor(envelope.Name)
-
-	s.RegisterActor(envelope, func(state interface{}, context system.Context) {
-		ch <- context.Data
 	})
-
-	s.SendRemote(CreateTransactionMessage(tenant, envelope.Name, name, transaction))
-
-	select {
-
-	case result = <-ch:
-		return
-
-	case <-time.After(3 * time.Second):
-		log.Warnf("Create transaction %s/%s timeout", tenant, transaction.IDTransaction)
-		result = new(model.ReplyTimeout)
-		return
-	}
+	return
 }

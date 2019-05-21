@@ -17,7 +17,6 @@ package actor
 import (
 	"reflect"
 
-	"github.com/jancajthaml-openbank/ledger-unit/daemon"
 	"github.com/jancajthaml-openbank/ledger-unit/model"
 	"github.com/jancajthaml-openbank/ledger-unit/persistence"
 
@@ -25,7 +24,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func InitialTransaction(s *daemon.ActorSystem) func(interface{}, system.Context) {
+func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(model.TransactionState)
 
@@ -85,7 +84,7 @@ func InitialTransaction(s *daemon.ActorSystem) func(interface{}, system.Context)
 	}
 }
 
-func PromisingTransaction(s *daemon.ActorSystem) func(interface{}, system.Context) {
+func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(model.TransactionState)
 
@@ -109,7 +108,7 @@ func PromisingTransaction(s *daemon.ActorSystem) func(interface{}, system.Contex
 
 		if state.OkResponses == 0 {
 			s.SendRemote(TransactionRefusedMessage(context, &state.Transaction))
-      log.Debugf("~ %v Promise Rejected All", state.Transaction.IDTransaction)
+			log.Debugf("~ %v Promise Rejected All", state.Transaction.IDTransaction)
 			s.UnregisterActor(context.Sender.Name)
 			return
 		}
@@ -122,7 +121,7 @@ func PromisingTransaction(s *daemon.ActorSystem) func(interface{}, system.Contex
 			if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 				s.SendRemote(TransactionRefusedMessage(context, &state.Transaction))
 				log.Warnf("~ %v Promise failed to reject transaction", state.Transaction.IDTransaction)
-        s.UnregisterActor(context.Sender.Name)
+				s.UnregisterActor(context.Sender.Name)
 				return
 			}
 
@@ -146,7 +145,7 @@ func PromisingTransaction(s *daemon.ActorSystem) func(interface{}, system.Contex
 		if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 			s.SendRemote(TransactionRefusedMessage(context, &state.Transaction))
 			log.Warnf("~ %v Promise failed to accept transaction", state.Transaction.IDTransaction)
-      s.UnregisterActor(context.Sender.Name)
+			s.UnregisterActor(context.Sender.Name)
 			return
 		}
 
@@ -161,7 +160,7 @@ func PromisingTransaction(s *daemon.ActorSystem) func(interface{}, system.Contex
 	}
 }
 
-func CommitingTransaction(s *daemon.ActorSystem) func(interface{}, system.Context) {
+func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(model.TransactionState)
 
@@ -190,7 +189,7 @@ func CommitingTransaction(s *daemon.ActorSystem) func(interface{}, system.Contex
 			if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 				s.SendRemote(TransactionRefusedMessage(context, &state.Transaction))
 				log.Warnf("~ %v Commit failed to reject transaction", state.Transaction.IDTransaction)
-        s.UnregisterActor(context.Sender.Name)
+				s.UnregisterActor(context.Sender.Name)
 				return
 			}
 
@@ -211,7 +210,7 @@ func CommitingTransaction(s *daemon.ActorSystem) func(interface{}, system.Contex
 		if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 			s.SendRemote(TransactionRefusedMessage(context, &state.Transaction))
 			log.Warnf("~ %v Commit failed to commit transaction", state.Transaction.IDTransaction)
-      s.UnregisterActor(context.Sender.Name)
+			s.UnregisterActor(context.Sender.Name)
 			return
 		}
 
@@ -222,13 +221,13 @@ func CommitingTransaction(s *daemon.ActorSystem) func(interface{}, system.Contex
 
 		s.Metrics.TransactionCommitted(len(state.Transaction.Transfers))
 		s.SendRemote(TransactionProcessedMessage(context, &state.Transaction))
-    log.Infof("~ %v Commit->End", state.Transaction.IDTransaction)
+		log.Infof("~ %v Commit->End", state.Transaction.IDTransaction)
 		s.UnregisterActor(context.Sender.Name)
 		return
 	}
 }
 
-func RollbackingTransaction(s *daemon.ActorSystem) func(interface{}, system.Context) {
+func RollbackingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(model.TransactionState)
 
@@ -252,7 +251,7 @@ func RollbackingTransaction(s *daemon.ActorSystem) func(interface{}, system.Cont
 		if state.FailedResponses > 0 {
 			s.SendRemote(TransactionRefusedMessage(context, &state.Transaction))
 			log.Debugf("~ %v Rollback Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
-      s.UnregisterActor(context.Sender.Name)
+			s.UnregisterActor(context.Sender.Name)
 			return
 		}
 

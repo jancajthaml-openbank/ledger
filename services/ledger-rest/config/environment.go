@@ -15,7 +15,6 @@
 package config
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -42,21 +41,10 @@ func loadConfFromEnv() Configuration {
 		log.Fatal("unable to assert metrics output")
 	}
 
-	cert, err := ioutil.ReadFile(secrets + "/domain.local.crt")
-	if err != nil {
-		log.Fatalf("unable to load certificate %s/domain.local.crt", secrets)
-	}
-
-	key, err := ioutil.ReadFile(secrets + "/domain.local.key")
-	if err != nil {
-		log.Fatalf("unable to load certificate %s/domain.local.key", secrets)
-	}
-
 	return Configuration{
 		RootStorage:        rootStorage,
 		ServerPort:         port,
-		SecretKey:          key,
-		SecretCert:         cert,
+		SecretsPath:        secrets,
 		LakeHostname:       lakeHostname,
 		LogLevel:           logLevel,
 		MetricsRefreshRate: metricsRefreshRate,
