@@ -61,7 +61,7 @@ func TenantPartial(server *Server) func(w http.ResponseWriter, r *http.Request) 
 func TenantsPartial(server *Server) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		units, err := server.SystemControl.ListUnits("vault-unit@")
+		units, err := server.SystemControl.ListUnits("ledger-unit@")
 		if err != nil {
 			log.Errorf("Error when listing units, %+v", err)
 			w.Header().Set("Content-Type", "application/json")
@@ -87,7 +87,7 @@ func TenantsPartial(server *Server) func(w http.ResponseWriter, r *http.Request)
 
 // EnableUnit enables tenant unit
 func EnableUnit(server *Server, tenant string, w http.ResponseWriter, r *http.Request) {
-	err := server.SystemControl.EnableUnit("vault-unit@" + tenant + ".service")
+	err := server.SystemControl.EnableUnit("ledger-unit@" + tenant + ".service")
 	if err != nil {
 		log.Errorf("Error when enabling unit, %+v", err)
 		w.Header().Set("Content-Type", "application/json")
@@ -104,7 +104,7 @@ func EnableUnit(server *Server, tenant string, w http.ResponseWriter, r *http.Re
 
 // DisableUnit disables tenant unit
 func DisableUnit(server *Server, tenant string, w http.ResponseWriter, r *http.Request) {
-	err := server.SystemControl.DisableUnit("vault-unit@" + tenant + ".service")
+	err := server.SystemControl.DisableUnit("ledger-unit@" + tenant + ".service")
 	if err != nil {
 		log.Errorf("Error when disabling unit, %+v", err)
 		w.Header().Set("Content-Type", "application/json")
