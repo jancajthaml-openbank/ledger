@@ -26,7 +26,7 @@ import (
 )
 
 // ForwardTransfer forward existing transfer to different vault
-func ForwardTransfer(sys *ActorSystem, tenant, transaction, transfer string, forward model.TransferForward) (result interface{}) {
+func ForwardTransfer(sys *ActorSystem, tenant string, transaction string, transfer string, forward model.TransferForward) (result interface{}) {
 	sys.Metrics.TimeForwardTransfer(func() {
 		defer func() {
 			if r := recover(); r != nil {

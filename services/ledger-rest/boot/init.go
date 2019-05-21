@@ -53,7 +53,7 @@ func Initialize() Program {
 	metricsDaemon := metrics.NewMetrics(ctx, cfg.MetricsOutput, cfg.MetricsRefreshRate)
 
 	actorSystemDaemon := actor.NewActorSystem(ctx, cfg.LakeHostname, &metricsDaemon)
-	restDaemon := api.NewServer(ctx, cfg.ServerPort, cfg.SecretsPath, &actorSystemDaemon, &systemControlDaemon, &storage)
+	restDaemon := api.NewServer(ctx, cfg.ServerPort, cfg.SecretsPath, &actorSystemDaemon, &systemControlDaemon, &metricsDaemon, &storage)
 
 	return Program{
 		cfg:           cfg,

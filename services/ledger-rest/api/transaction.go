@@ -44,9 +44,7 @@ func TransactionPartial(server *Server) func(w http.ResponseWriter, r *http.Requ
 		switch r.Method {
 
 		case "GET":
-			//metrics.TimeGetTransaction(func() {
 			GetTransaction(server, tenant, transaction, w, r)
-			//})
 			return
 
 		default:
@@ -76,9 +74,7 @@ func TransactionsPartial(server *Server) func(w http.ResponseWriter, r *http.Req
 		switch r.Method {
 
 		case "GET":
-			//metrics.TimeGetTransactions(func() {
 			GetTransactions(server, tenant, w, r)
-			//})
 			return
 
 		case "POST":
@@ -176,46 +172,56 @@ func CreateTransaction(server *Server, tenant string, w http.ResponseWriter, r *
 
 // GetTransactions returns list of existing transactions
 func GetTransactions(server *Server, tenant string, w http.ResponseWriter, r *http.Request) {
-	transactions, err := persistence.LoadTransactions(server.Storage, tenant)
-	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(emptyJSONArray)
-		return
-	}
+	server.Metrics.TimeGetTransactions(func() {
+		transactions, err := persistence.LoadTransactions(server.Storage, tenant)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write(emptyJSONArray)
+			return
+		}
 
-	w.Header().Set("Content-Type", "application/json")
-	resp, err := utils.JSON.Marshal(transactions)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(emptyJSONArray)
-	} else {
-		w.WriteHeader(http.StatusOK)
-		w.Write(resp)
-	}
+		w.Header().Set("Content-Type", "application/json")
+		resp, err := utils.JSON.Marshal(transactions)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write(emptyJSONArray)
+		} else {
+			w.WriteHeader(http.StatusOK)
+			w.Write(resp)
+		}
+	})
 	return
 }
 
-// GetTransaction returns existing transaction
-func GetTransaction(server *Server, tenant, id string, w http.ResponseWriter, r *http.Request) {
-	transaction, err := persistence.LoadTransaction(server.Storage, tenant, id)
-	if err != nil || transaction == nil {
+// GetTransaction returns single existing transactions
+func GetTransaction(server *Server, tenant string, transaction string, w http.ResponseWriter, r *http.Request) {
+	server.Metrics.TimeGetTransaction(func() {
+
+		transactions, err := persistence.LoadTransaction(server.Storage, tenant, transaction)
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write(emptyJSONArray)
+			return
+		}
+
+		if transactions == nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotFound)
+			w.Write(emptyJSONObject)
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(emptyJSONObject)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	resp, err := utils.JSON.Marshal(transaction)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(emptyJSONObject)
-		return
-	}
-
-	w.WriteHeader(http.StatusOK)
-	w.Write(resp)
-
+		resp, err := utils.JSON.Marshal(transactions)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write(emptyJSONArray)
+		} else {
+			w.WriteHeader(http.StatusOK)
+			w.Write(resp)
+		}
+	})
 	return
 }
