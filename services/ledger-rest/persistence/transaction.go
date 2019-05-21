@@ -35,8 +35,13 @@ func LoadTransactions(storage *localfs.Storage, tenant string) ([]string, error)
 }
 
 func LoadTransaction(storage *localfs.Storage, tenant string, id string) (*model.Transaction, error) {
-	dataPath := utils.TransactionPath(tenant, id)
-	data, err := storage.ReadFileFully(dataPath)
+	path := utils.TransactionPath(tenant, id)
+	ok, err := storage.Exists(path)
+	if err != nil || !ok {
+		return nil, nil
+	}
+
+	data, err := storage.ReadFileFully(path)
 	if err != nil {
 		return nil, err
 	}
