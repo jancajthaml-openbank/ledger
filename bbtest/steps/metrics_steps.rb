@@ -1,16 +1,7 @@
 require_relative 'placeholders'
 
+require 'deepsort'
 require 'json'
-
-step "metrics for tenant :tenant should report :count :transaction_status transactions" do |tenant, count, status|
-  metrics_file = "/reports/metrics.#{tenant}.json"
-
-  eventually(timeout: 3) {
-    expect(File.file?(metrics_file)).to be(true)
-    metrics = File.open(metrics_file, 'rb') { |f| JSON.parse(f.read) }
-    expect(metrics["#{status}Transactions"]).to eq(count)
-  }
-end
 
 step "metrics file :path should have following keys:" do |path, keys|
   expected_keys = keys.split("\n").map(&:strip).reject { |x| x.empty? }
@@ -22,4 +13,25 @@ step "metrics file :path should have following keys:" do |path, keys|
   metrics_keys = File.open(path, 'rb') { |f| JSON.parse(f.read).keys }
 
   expect(metrics_keys).to match_array(expected_keys)
+end
+
+step "metrics file :path reports:" do |path, data|
+  eventually(timeout: 3, backoff: 0.5) {
+    expect(File.file?(path)).to be(true)
+  }
+
+  expected_data = data.split("\n").map(&:strip)
+    .reject { |x| x.empty? }
+    .map { |l| l.chomp.split(' ', 2) }
+    .map { |k,v| [k,v.to_i] }
+
+  expected_data = Hash[expected_data]
+  expected_data.deep_sort!
+
+  eventually(timeout: 3, backoff: 1) {
+    metrics_data = File.open(path, 'rb') { |f| JSON.parse(f.read) }
+    metrics_data.deep_sort!
+
+    expect(metrics_data).to eq(expected_data)
+  }
 end

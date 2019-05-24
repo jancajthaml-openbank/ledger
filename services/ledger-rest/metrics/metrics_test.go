@@ -9,11 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetFilename(t *testing.T) {
-	assert.Equal(t, "/a/b/c.e", getFilename("/a/b/c.e"))
-}
-
-func TestMetricsPersist(t *testing.T) {
+func TestMetrics(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
