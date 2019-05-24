@@ -16,7 +16,7 @@ case "$1" in
       echo "LEDGER_LAKE_HOSTNAME=localhost" >> /etc/init/ledger.conf
       echo "LEDGER_TRANSACTION_INTEGRITY_SCANINTERVAL=120s" >> /etc/init/ledger.conf
       echo "LEDGER_METRICS_REFRESHRATE=1s" >> /etc/init/ledger.conf
-      echo "LEDGER_METRICS_OUTPUT=/opt/ledger/metrics/metrics.json" >> /etc/init/ledger.conf
+      echo "LEDGER_METRICS_OUTPUT=/opt/ledger/metrics" >> /etc/init/ledger.conf
     fi
 
     secrets=$(sed -n -e 's/^.*LEDGER_SECRETS=//p' /etc/init/ledger.conf 2>/dev/null | awk '{gsub(/^ +| +$/,"")} {print $0}')
