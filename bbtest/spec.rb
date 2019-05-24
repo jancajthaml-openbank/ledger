@@ -15,9 +15,10 @@ RSpec.configure do |config|
 
   config.register_ordering(:global) do |items|
     (install, others) = items.partition { |spec| spec.metadata[:install] }
+    (metrics, others) = others.partition { |spec| spec.metadata[:metrics] }
     (uninstall, others) = others.partition { |spec| spec.metadata[:uninstall] }
 
-    install + others.shuffle + uninstall
+    install + metrics + others.shuffle + uninstall
   end
 
   $unit = UnitHelper.new()

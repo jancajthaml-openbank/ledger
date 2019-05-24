@@ -46,7 +46,7 @@ func Initialize() Program {
 	utils.SetupLogger(cfg.LogLevel)
 
 	storage := localfs.NewStorage(cfg.RootStorage)
-	metricsDaemon := metrics.NewMetrics(ctx, cfg.Tenant, cfg.MetricsOutput, cfg.MetricsRefreshRate)
+	metricsDaemon := metrics.NewMetrics(ctx, cfg.MetricsOutput, cfg.MetricsRefreshRate)
 
 	actorSystemDaemon := actor.NewActorSystem(ctx, cfg.Tenant, cfg.LakeHostname, &metricsDaemon, &storage)
 	transactionFinalizerDaemon := persistence.NewTransactionFinalizer(ctx, cfg.TransactionIntegrityScanInterval, &metricsDaemon, &storage, actor.ProcessLocalMessage(&actorSystemDaemon))

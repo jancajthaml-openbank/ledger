@@ -1,5 +1,5 @@
 Package: ledger
-Version: 1.0.2+metrics-gathering
+Version: 1.0.2+hydrate-metrics
 Section: misc
 Priority: extra
 Architecture: amd64

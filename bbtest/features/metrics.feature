@@ -1,3 +1,4 @@
+@metrics
 Feature: Metrics test
 
   Scenario: metrics report expected results
@@ -12,8 +13,17 @@ Feature: Metrics test
     And   pasive account M1/B with currency EUR exist
     And   1 EUR is transferred from M1/A to M1/B
 
-    Then  metrics for tenant M1 should report 1 promised transactions
-    And   metrics for tenant M1 should report 1 committed transactions
+    Then metrics file /reports/metrics.M1.json reports:
+    """
+      promisedTransactions 1
+      promisedTransfers 1
+      committedTransactions 1
+      committedTransfers 1
+      rollbackedTransactions 0
+      rollbackedTransfers 0
+      forwardedTransactions 0
+      forwardedTransfers 0
+    """
 
   Scenario: metrics have expected keys
     Given vault is empty
@@ -40,4 +50,52 @@ Feature: Metrics test
       forwardTransferLatency
       getTransactionLatency
       getTransactionsLatency
+    """
+
+  Scenario: metrics can remembers previous values after reboot
+    Given vault is empty
+    And   tenant M3 is onbdoarded
+    And   ledger is reconfigured with
+    """
+      METRICS_REFRESHRATE=1s
+    """
+
+    Then metrics file /reports/metrics.M3.json reports:
+    """
+      promisedTransactions 0
+      promisedTransfers 0
+      committedTransactions 0
+      committedTransfers 0
+      rollbackedTransactions 0
+      rollbackedTransfers 0
+      forwardedTransactions 0
+      forwardedTransfers 0
+    """
+
+    When  pasive account M3/A with currency EUR exist
+    And   pasive account M3/B with currency EUR exist
+    And   1 EUR is transferred from M3/A to M3/B
+    Then metrics file /reports/metrics.M3.json reports:
+    """
+      promisedTransactions 1
+      promisedTransfers 1
+      committedTransactions 1
+      committedTransfers 1
+      rollbackedTransactions 0
+      rollbackedTransfers 0
+      forwardedTransactions 0
+      forwardedTransfers 0
+    """
+
+    When ledger is restarted
+    Then metrics file /reports/metrics.M3.json reports:
+    """
+      promisedTransactions 1
+      promisedTransfers 1
+      committedTransactions 1
+      committedTransfers 1
+      rollbackedTransactions 0
+      rollbackedTransfers 0
+      forwardedTransactions 0
+      forwardedTransfers 0
     """

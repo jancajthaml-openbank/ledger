@@ -9,16 +9,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetFilename(t *testing.T) {
-	assert.Equal(t, "/a/b/c.d.e", getFilename("/a/b/c.e", "d"))
-	assert.Equal(t, "/a/b/c.d", getFilename("/a/b/c.d", ""))
-}
-
-func TestMetricsPersist(t *testing.T) {
+func TestMetrics(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	entity := NewMetrics(ctx, "tenant", "output", time.Hour)
+	entity := NewMetrics(ctx, "", time.Hour)
 
 	t.Log("TransactionPromised properly increments number of promised transactions and transfers")
 	{

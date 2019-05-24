@@ -29,15 +29,11 @@ func loadConfFromEnv() Configuration {
 	tenant := getEnvString("LEDGER_TENANT", "")
 	lakeHostname := getEnvString("LEDGER_LAKE_HOSTNAME", "")
 	transactionIntegrityScanInterval := getEnvDuration("LEDGER_TRANSACTION_INTEGRITY_SCANINTERVAL", time.Minute)
-	metricsOutput := getEnvString("LEDGER_METRICS_OUTPUT", "")
+	metricsOutput := getEnvFilename("LEDGER_METRICS_OUTPUT", "/tmp")
 	metricsRefreshRate := getEnvDuration("LEDGER_METRICS_REFRESHRATE", time.Second)
 
 	if tenant == "" || lakeHostname == "" || storage == "" {
 		log.Fatal("missing required parameter to run")
-	}
-
-	if metricsOutput != "" && os.MkdirAll(filepath.Dir(metricsOutput), os.ModePerm) != nil {
-		log.Fatal("unable to assert metrics output")
 	}
 
 	return Configuration{
@@ -46,9 +42,21 @@ func loadConfFromEnv() Configuration {
 		RootStorage:                      storage + "/" + "t_" + tenant,
 		LogLevel:                         logLevel,
 		MetricsRefreshRate:               metricsRefreshRate,
-		MetricsOutput:                    metricsOutput,
+		MetricsOutput:                    metricsOutput + "/metrics." + tenant + ".json",
 		TransactionIntegrityScanInterval: transactionIntegrityScanInterval,
 	}
+}
+
+func getEnvFilename(key, fallback string) string {
+	var value = strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return fallback
+	}
+	value = filepath.Clean(value)
+	if os.MkdirAll(value, os.ModePerm) != nil {
+		return fallback
+	}
+	return value
 }
 
 func getEnvString(key, fallback string) string {

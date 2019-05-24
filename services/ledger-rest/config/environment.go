@@ -30,15 +30,11 @@ func loadConfFromEnv() Configuration {
 	rootStorage := getEnvString("LEDGER_STORAGE", "/data")
 	lakeHostname := getEnvString("LEDGER_LAKE_HOSTNAME", "")
 	port := getEnvInteger("LEDGER_HTTP_PORT", 4401)
-	metricsOutput := getEnvString("LEDGER_METRICS_OUTPUT", "")
+	metricsOutput := getEnvFilename("LEDGER_METRICS_OUTPUT", "/tmp")
 	metricsRefreshRate := getEnvDuration("LEDGER_METRICS_REFRESHRATE", time.Second)
 
 	if lakeHostname == "" || secrets == "" || rootStorage == "" {
 		log.Fatal("missing required parameter to run")
-	}
-
-	if metricsOutput != "" && os.MkdirAll(filepath.Dir(metricsOutput), os.ModePerm) != nil {
-		log.Fatal("unable to assert metrics output")
 	}
 
 	return Configuration{
@@ -48,8 +44,20 @@ func loadConfFromEnv() Configuration {
 		LakeHostname:       lakeHostname,
 		LogLevel:           logLevel,
 		MetricsRefreshRate: metricsRefreshRate,
-		MetricsOutput:      metricsOutput,
+		MetricsOutput:      metricsOutput + "/metrics.json",
 	}
+}
+
+func getEnvFilename(key, fallback string) string {
+	var value = strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return fallback
+	}
+	value = filepath.Clean(value)
+	if os.MkdirAll(value, os.ModePerm) != nil {
+		return fallback
+	}
+	return value
 }
 
 func getEnvString(key, fallback string) string {
