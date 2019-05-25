@@ -15,6 +15,7 @@
 package metrics
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -25,7 +26,27 @@ import (
 
 // MarshalJSON serialises Metrics as json preserving uint64
 func (entity *Metrics) MarshalJSON() ([]byte, error) {
-	return []byte("{\"promisedTransactions\":" + strconv.FormatInt(entity.promisedTransactions.Count(), 10) + ",\"promisedTransfers\":" + strconv.FormatInt(entity.promisedTransfers.Count(), 10) + ",\"committedTransactions\":" + strconv.FormatInt(entity.committedTransactions.Count(), 10) + ",\"committedTransfers\":" + strconv.FormatInt(entity.committedTransfers.Count(), 10) + ",\"rollbackedTransactions\":" + strconv.FormatInt(entity.rollbackedTransactions.Count(), 10) + ",\"rollbackedTransfers\":" + strconv.FormatInt(entity.rollbackedTransfers.Count(), 10) + ",\"forwardedTransactions\":" + strconv.FormatInt(entity.forwardedTransactions.Count(), 10) + ",\"forwardedTransfers\":" + strconv.FormatInt(entity.forwardedTransfers.Count(), 10) + "}"), nil
+	var buffer bytes.Buffer
+
+	buffer.WriteString("{\"promisedTransactions\":")
+	buffer.WriteString(strconv.FormatInt(entity.promisedTransactions.Count(), 10))
+	buffer.WriteString(",\"promisedTransfers\":")
+	buffer.WriteString(strconv.FormatInt(entity.promisedTransfers.Count(), 10))
+	buffer.WriteString(",\"committedTransactions\":")
+	buffer.WriteString(strconv.FormatInt(entity.committedTransactions.Count(), 10))
+	buffer.WriteString(",\"committedTransfers\":")
+	buffer.WriteString(strconv.FormatInt(entity.committedTransfers.Count(), 10))
+	buffer.WriteString(",\"rollbackedTransactions\":")
+	buffer.WriteString(strconv.FormatInt(entity.rollbackedTransactions.Count(), 10))
+	buffer.WriteString(",\"rollbackedTransfers\":")
+	buffer.WriteString(strconv.FormatInt(entity.rollbackedTransfers.Count(), 10))
+	buffer.WriteString(",\"forwardedTransactions\":")
+	buffer.WriteString(strconv.FormatInt(entity.forwardedTransactions.Count(), 10))
+	buffer.WriteString(",\"forwardedTransfers\":")
+	buffer.WriteString(strconv.FormatInt(entity.forwardedTransfers.Count(), 10))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
 }
 
 // UnmarshalJSON unmarshal json of Metrics entity
