@@ -22,7 +22,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/jancajthaml-openbank/ledger-unit/utils"
+	"github.com/jancajthaml-openbank/ledger-rest/utils"
 )
 
 // MarshalJSON serialises Metrics as json preserving uint64
