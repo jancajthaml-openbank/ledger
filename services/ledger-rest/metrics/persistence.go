@@ -15,6 +15,7 @@
 package metrics
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -26,7 +27,19 @@ import (
 
 // MarshalJSON serialises Metrics as json preserving uint64
 func (entity *Metrics) MarshalJSON() ([]byte, error) {
-	return []byte("{\"getTransactionLatency\":" + strconv.FormatFloat(entity.getTransactionLatency.Percentile(0.95), 'f', -1, 64) + ",\"getTransactionsLatency\":" + strconv.FormatFloat(entity.getTransactionsLatency.Percentile(0.95), 'f', -1, 64) + ",\"createTransactionLatency\":" + strconv.FormatFloat(entity.createTransactionLatency.Percentile(0.95), 'f', -1, 64) + ",\"forwardTransferLatency\":" + strconv.FormatFloat(entity.forwardTransferLatency.Percentile(0.95), 'f', -1, 64) + "}"), nil
+	var buffer bytes.Buffer
+
+	buffer.WriteString("{\"getTransactionLatency\":")
+	buffer.WriteString(strconv.FormatFloat(entity.getTransactionLatency.Percentile(0.95), 'f', -1, 64))
+	buffer.WriteString(",\"getTransactionsLatency\":")
+	buffer.WriteString(strconv.FormatFloat(entity.getTransactionsLatency.Percentile(0.95), 'f', -1, 64))
+	buffer.WriteString(",\"createTransactionLatency\":")
+	buffer.WriteString(strconv.FormatFloat(entity.createTransactionLatency.Percentile(0.95), 'f', -1, 64))
+	buffer.WriteString(",\"forwardTransferLatency\":")
+	buffer.WriteString(strconv.FormatFloat(entity.forwardTransferLatency.Percentile(0.95), 'f', -1, 64))
+	buffer.WriteString("}")
+
+	return buffer.Bytes(), nil
 }
 
 // UnmarshalJSON unmarshal json of Metrics entity
