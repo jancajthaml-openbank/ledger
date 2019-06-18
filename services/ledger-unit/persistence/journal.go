@@ -52,10 +52,6 @@ func PersistTransaction(storage *localfs.Storage, entity *model.Transaction) *mo
 
 	transactionPath := utils.TransactionPath(entity.IDTransaction)
 
-	//if storage.WriteFile(transactionStatePath, []byte(model.StatusDirty)) != nil {
-	//return nil
-	//}
-
 	data := entity.Serialise()
 	if storage.WriteFile(transactionPath, data) != nil {
 		return nil
@@ -66,15 +62,10 @@ func PersistTransaction(storage *localfs.Storage, entity *model.Transaction) *mo
 
 // UpdateTransaction persist update of transaction to disk
 func UpdateTransaction(storage *localfs.Storage, entity *model.Transaction) *model.Transaction {
-
 	//created := now()
 	// FIXME do not store transaction like this :/ or do so for integrity?
 
 	transactionPath := utils.TransactionPath(entity.IDTransaction)
-
-	//if storage.WriteFile(transactionStatePath, []byte(model.StatusDirty)) != nil {
-	//return nil
-	//}
 
 	data := entity.Serialise()
 	if storage.UpdateFile(transactionPath, data) != nil {
@@ -83,22 +74,6 @@ func UpdateTransaction(storage *localfs.Storage, entity *model.Transaction) *mod
 
 	return entity
 }
-
-// GetTransactionState returns transaction state from journal
-/*
-func GetTransactionState(storage *localfs.Storage, id string) (string, string) {
-	fullPath := utils.TransactionStatePath(id)
-	data, err := storage.ReadFileFully(fullPath)
-	if err != nil {
-		return "", ""
-	}
-	parts := strings.Split(string(data), " ")
-	if len(parts) == 1 {
-		return parts[0], ""
-	}
-	return parts[0], parts[1]
-}
-*/
 
 // IsTransferForwardedCredit returns true if transaction's credit side was forwarded
 func IsTransferForwardedCredit(storage *localfs.Storage, idTransaction, idTransfer string) (bool, error) {
@@ -149,42 +124,13 @@ func IsTransferForwardedDebit(storage *localfs.Storage, idTransaction, idTransfe
 }
 
 // AcceptForwardCredit accepts transaction credit forward request
-func AcceptForwardCredit(storage *localfs.Storage, targetTenant, targetTransaction, targetTransfer, originTransaction, originTransfer string) bool {
+func AcceptForwardCredit(storage *localfs.Storage, targetTenant, targetTransaction, targetTransfer, originTransaction, originTransfer string) error {
 	fullPath := utils.TransactionForwardPath(originTransaction)
-	return storage.AppendFile(fullPath, []byte(originTransfer+" credit "+targetTenant+" "+targetTransaction+" "+targetTransfer)) == nil
+	return storage.AppendFile(fullPath, []byte(originTransfer+" credit "+targetTenant+" "+targetTransaction+" "+targetTransfer))
 }
 
 // AcceptForwardDebit accepts transaction debit forward request
-func AcceptForwardDebit(storage *localfs.Storage, targetTenant, targetTransaction, targetTransfer, originTransaction, originTransfer string) bool {
+func AcceptForwardDebit(storage *localfs.Storage, targetTenant, targetTransaction, targetTransfer, originTransaction, originTransfer string) error {
 	fullPath := utils.TransactionForwardPath(originTransaction)
-	return storage.AppendFile(fullPath, []byte(originTransfer+" debit "+targetTenant+" "+targetTransaction+" "+targetTransfer)) == nil
+	return storage.AppendFile(fullPath, []byte(originTransfer+" debit "+targetTenant+" "+targetTransaction+" "+targetTransfer))
 }
-
-/*
-// AcceptTransaction accepts transaction
-func AcceptTransaction(storage *localfs.Storage, entity *model.Transaction) bool {
-
-	State
-
-	//fullPath := utils.TransactionStatePath(idTransaction)
-	//return storage.UpdateFile(fullPath, []byte(model.StatusAccepted)) == nil
-}
-
-// RejectTransaction rejects transaction
-func RejectTransaction(storage *localfs.Storage, entity *model.Transaction) bool {
-	//fullPath := utils.TransactionStatePath(idTransaction)
-	//return storage.UpdateFile(fullPath, []byte(model.StatusRejected)) == nil
-}
-
-// CommitTransaction changes state of transaction to committed
-func CommitTransaction(storage *localfs.Storage, entity *model.Transaction) bool {
-	//fullPath := utils.TransactionStatePath(idTransaction)
-	//return storage.UpdateFile(fullPath, []byte(model.StatusCommitted)) == nil
-}
-
-// RollbackTransaction changes state of transaction to rollbacked
-func RollbackTransaction(storage *localfs.Storage, entity *model.Transaction, reason string) bool {
-	//fullPath := utils.TransactionStatePath(idTransaction)
-	//return storage.UpdateFile(fullPath, []byte(model.StatusRollbacked+" "+reason)) == nil
-}
-*/

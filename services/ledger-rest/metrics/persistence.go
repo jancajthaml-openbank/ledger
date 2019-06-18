@@ -66,6 +66,7 @@ func (entity *Metrics) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// Persist stores metrics to disk
 func (metrics *Metrics) Persist() error {
 	if metrics == nil {
 		return fmt.Errorf("cannot persist nil reference")
@@ -89,19 +90,23 @@ func (metrics *Metrics) Persist() error {
 	return nil
 }
 
+// Hydrate loads metrics from disk
 func (metrics *Metrics) Hydrate() error {
 	if metrics == nil {
 		return fmt.Errorf("cannot hydrate nil reference")
+	}
+	fi, err := os.Stat(metrics.output)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		return err
 	}
 	f, err := os.OpenFile(metrics.output, os.O_RDONLY, os.ModePerm)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
-	fi, err := f.Stat()
-	if err != nil {
-		return err
-	}
 	buf := make([]byte, fi.Size())
 	_, err = f.Read(buf)
 	if err != nil && err != io.EOF {

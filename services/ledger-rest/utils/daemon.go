@@ -24,7 +24,7 @@ type Daemon interface {
 	WaitReady(deadline time.Duration) error
 }
 
-// Support provides support for graceful shutdown
+// DaemonSupport provides support for graceful shutdown
 type DaemonSupport struct {
 	ctx        context.Context
 	Cancel     context.CancelFunc
