@@ -1,5 +1,5 @@
 Package: ledger
-Version: 1.0.2+better-metrics-part-2
+Version: 1.0.2+persistence-improvements
 Section: misc
 Priority: extra
 Architecture: amd64

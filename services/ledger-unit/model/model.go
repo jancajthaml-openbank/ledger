@@ -228,30 +228,52 @@ func (entity *Transaction) Serialise() []byte {
 
 // Deserialise transaction from binary data
 func (entity *Transaction) Deserialise(data []byte) {
-	lines := strings.Split(string(data), "\n")
-	entity.State = lines[0]
-	entity.Transfers = make([]Transfer, len(lines)-2)
-
-	for i := range entity.Transfers {
-		transfer := strings.SplitN(lines[i+1], " ", 8)
-
-		amount, _ := new(money.Dec).SetString(transfer[6])
-
-		entity.Transfers[i] = Transfer{
-			IDTransfer: transfer[0],
-			Credit: Account{
-				Tenant: transfer[1],
-				Name:   transfer[2],
-			},
-			Debit: Account{
-				Tenant: transfer[3],
-				Name:   transfer[4],
-			},
-			ValueDate: transfer[5],
-			Amount:    amount,
-			Currency:  transfer[7],
-		}
+	if entity == nil {
+		return
 	}
 
-	return
+	entity.Transfers = make([]Transfer, 0)
+
+	var j = bytes.IndexByte(data, '\n')
+
+	entity.State = string(data[0:j])
+
+	var i = j + 1
+	var transfer []string
+
+scan:
+	j = bytes.IndexByte(data[i:], '\n')
+	if j < 0 {
+		if len(data) > 0 {
+			transfer = strings.SplitN(string(data[i:]), " ", 8)
+			goto parse
+		}
+		return
+	}
+	j += i
+	transfer = strings.SplitN(string(data[i:j]), " ", 8)
+
+parse:
+	if len(transfer) != 8 {
+		return
+	}
+	amount, _ := new(money.Dec).SetString(transfer[6])
+
+	entity.Transfers = append(entity.Transfers, Transfer{
+		IDTransfer: transfer[0],
+		Credit: Account{
+			Tenant: transfer[1],
+			Name:   transfer[2],
+		},
+		Debit: Account{
+			Tenant: transfer[3],
+			Name:   transfer[4],
+		},
+		ValueDate: transfer[5],
+		Amount:    amount,
+		Currency:  transfer[7],
+	})
+
+	i = j + 1
+	goto scan
 }

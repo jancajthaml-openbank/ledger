@@ -342,10 +342,10 @@ func AcceptingForward(s *ActorSystem) func(interface{}, system.Context) {
 		switch state.Forward.Side {
 
 		case "credit":
-			ok = persistence.AcceptForwardCredit(s.Storage, state.Forward.Target.Tenant, state.Transaction.IDTransaction, state.Transaction.Transfers[0].IDTransfer, state.Forward.IDTransaction, state.Forward.IDTransfer)
+			ok = persistence.AcceptForwardCredit(s.Storage, state.Forward.Target.Tenant, state.Transaction.IDTransaction, state.Transaction.Transfers[0].IDTransfer, state.Forward.IDTransaction, state.Forward.IDTransfer) != nil
 
 		case "debit":
-			ok = persistence.AcceptForwardDebit(s.Storage, state.Forward.Target.Tenant, state.Transaction.IDTransaction, state.Transaction.Transfers[0].IDTransfer, state.Forward.IDTransaction, state.Forward.IDTransfer)
+			ok = persistence.AcceptForwardDebit(s.Storage, state.Forward.Target.Tenant, state.Transaction.IDTransaction, state.Transaction.Transfers[0].IDTransfer, state.Forward.IDTransaction, state.Forward.IDTransfer) != nil
 
 		}
 

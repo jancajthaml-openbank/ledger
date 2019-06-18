@@ -173,7 +173,7 @@ func CreateTransaction(server *Server, tenant string, w http.ResponseWriter, r *
 // GetTransactions returns list of existing transactions
 func GetTransactions(server *Server, tenant string, w http.ResponseWriter, r *http.Request) {
 	server.Metrics.TimeGetTransactions(func() {
-		transactions, err := persistence.LoadTransactions(server.Storage, tenant)
+		transactions, err := persistence.LoadTransactionsIDS(server.Storage, tenant)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusInternalServerError)

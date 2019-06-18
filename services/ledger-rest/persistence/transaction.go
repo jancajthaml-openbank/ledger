@@ -21,7 +21,8 @@ import (
 	localfs "github.com/jancajthaml-openbank/local-fs"
 )
 
-func LoadTransactions(storage *localfs.Storage, tenant string) ([]string, error) {
+// LoadTransactionsIDS loads transaction ids from storage
+func LoadTransactionsIDS(storage *localfs.Storage, tenant string) ([]string, error) {
 	path := utils.TransactionsPath(tenant)
 	ok, err := storage.Exists(path)
 	if err != nil || !ok {
@@ -34,6 +35,7 @@ func LoadTransactions(storage *localfs.Storage, tenant string) ([]string, error)
 	return transactions, nil
 }
 
+// LoadTransactions loads transaction storage
 func LoadTransaction(storage *localfs.Storage, tenant string, id string) (*model.Transaction, error) {
 	path := utils.TransactionPath(tenant, id)
 	ok, err := storage.Exists(path)

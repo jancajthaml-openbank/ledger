@@ -22,8 +22,6 @@ const (
 	// EventRollback represents rollback prefix
 	EventRollback = "2"
 
-	// StatusDirty is initial lock-like state of transaction
-	//StatusDirty = "dirty"
 	// StatusNew represents NEW transaction
 	StatusNew = "new"
 	// StatusAccepted represents ACCEPTED transaction
