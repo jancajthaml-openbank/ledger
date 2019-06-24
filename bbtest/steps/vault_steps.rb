@@ -9,7 +9,7 @@ end
 step ":activity account :account with currency :currency exist" do |activity, account, currency|
   (tenant, account) = account.split('/')
 
-  VaultHelper.create_account(tenant, account, currency, activity)
+  VaultHelper.create_account(tenant, account, "test", currency, activity)
 end
 
 step ":account balance should be :amount :currency" do |account, amount, currency|

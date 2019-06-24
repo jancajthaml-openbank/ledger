@@ -1,5 +1,5 @@
 Package: ledger
-Version: 1.0.2+persistence-improvements
+Version: 1.0.2+account-format
 Section: misc
 Priority: extra
 Architecture: amd64
