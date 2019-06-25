@@ -2,26 +2,34 @@
 
 set -e
 
+if [ "$(ps -o comm -p 1 --no-headers | tr -d ' ')" = "systemd" ] ; then
+  SYSTEMD_AVAIL=true
+else
+  SYSTEMD_AVAIL=false
+fi
+
+enable() {
+  wanted_by=$(cat /lib/systemd/system/${1} | sed -n -e 's/^.*WantedBy=//p')
+  mkdir -p /etc/systemd/system/${wanted_by}.wants
+  ln -s \
+    "/lib/systemd/system/${1}" \
+    "/etc/systemd/system/${wanted_by}.wants/${1}"
+}
+
 case "$1" in
 
   configure)
-    if [ -f "/etc/init/ledger.conf" ] ; then
-      if [ -d /run/systemd/system ] ; then
-        systemctl unmask \
-          ledger.path \
-          ledger-unit.service \
-          ledger-rest.service \
-          ledger.service \
-        >/dev/null
+    if [ -f /etc/init/ledger.conf ] ; then
 
-        systemctl enable \
-          ledger.path \
-          ledger-rest.service \
-          ledger.service \
-        >/dev/null
+      enable ledger.path
+      enable ledger.service
+      enable ledger-rest.service
 
+      if [ ${SYSTEMD_AVAIL} ] ; then
+        (systemctl daemon-reload || :)
         (systemctl start ledger.service >/dev/null || :)
       fi
+
     else
       (>&2 echo "/etc/init/ledger.conf file not found")
       exit 1
