@@ -471,10 +471,14 @@ jobs:
           name: Unit test ledger-rest
           command: /home/circleci/project/dev/lifecycle/test --pkg ledger-rest
           no_output_timeout: 5m
+      - store_test_results:
+          path: /home/circleci/project/reports/unit-tests-ledger-rest
       - run:
           name: Unit test ledger-unit
           command: /home/circleci/project/dev/lifecycle/test --pkg ledger-unit
           no_output_timeout: 5m
+      - store_test_results:
+          path: /home/circleci/project/reports/unit-tests-ledger-unit
 
   # -------------------------------------------------------------------------- #
 
