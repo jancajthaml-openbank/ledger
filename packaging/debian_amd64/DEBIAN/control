@@ -1,5 +1,5 @@
 Package: ledger
-Version: 1.0.2+account-format
+Version: 1.0.4+collect-test-coverage
 Section: misc
 Priority: extra
 Architecture: amd64

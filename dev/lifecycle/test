@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eu
+set -e
 trap exit INT TERM
 
 TARGET_PACKAGE=""
@@ -28,11 +28,38 @@ if [ ! "${TARGET_PACKAGE}" ] ; then
   exit 1
 fi
 
+coverage_out=$(tempfile)
+test_out=$(tempfile)
+reports_out=$(pwd)/reports
+
+mkdir -p ${reports_out} ${reports_out}/unit-tests-${TARGET_PACKAGE}
+
 cd /go/src/github.com/jancajthaml-openbank/${TARGET_PACKAGE}
+
+# run unit tests and collect coverage
+
+2>&1 \
+  go test \
+  -v ./... \
+  -coverprofile=${coverage_out} \
+  -coverpkg=./... \
+  -timeout=20s | tee ${test_out}
+
+go2xunit \
+  -fail \
+  -input ${test_out} \
+  -output ${reports_out}/unit-tests-${TARGET_PACKAGE}/results.xml
+
+go tool cover \
+  --html=${coverage_out} \
+  -o ${reports_out}/unit-tests-${TARGET_PACKAGE}/coverage.html
+
+# run only benchmarks
 
 GOMAXPROCS=1 \
   go test \
   -v ./... \
-  -benchmem \
+  -run=^$ \
   -bench=. \
-  -timeout=20s
+  -benchmem \
+  -timeout=1m
