@@ -15,47 +15,11 @@
 package metrics
 
 import (
-	"context"
 	"fmt"
 	"time"
 
-	"github.com/jancajthaml-openbank/ledger-unit/utils"
-
-	metrics "github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
 )
-
-// Metrics represents metrics subroutine
-type Metrics struct {
-	utils.DaemonSupport
-	output                 string
-	refreshRate            time.Duration
-	promisedTransactions   metrics.Counter
-	promisedTransfers      metrics.Counter
-	committedTransactions  metrics.Counter
-	committedTransfers     metrics.Counter
-	rollbackedTransactions metrics.Counter
-	rollbackedTransfers    metrics.Counter
-	forwardedTransactions  metrics.Counter
-	forwardedTransfers     metrics.Counter
-}
-
-// NewMetrics returns metrics fascade
-func NewMetrics(ctx context.Context, output string, refreshRate time.Duration) Metrics {
-	return Metrics{
-		DaemonSupport:          utils.NewDaemonSupport(ctx),
-		output:                 output,
-		refreshRate:            refreshRate,
-		promisedTransactions:   metrics.NewCounter(),
-		promisedTransfers:      metrics.NewCounter(),
-		committedTransactions:  metrics.NewCounter(),
-		committedTransfers:     metrics.NewCounter(),
-		rollbackedTransactions: metrics.NewCounter(),
-		rollbackedTransfers:    metrics.NewCounter(),
-		forwardedTransactions:  metrics.NewCounter(),
-		forwardedTransfers:     metrics.NewCounter(),
-	}
-}
 
 // TransactionPromised increments transactions promised by one
 func (metrics *Metrics) TransactionPromised(transfers int) {

@@ -3,6 +3,13 @@ require_relative 'placeholders'
 require 'deepsort'
 require 'json'
 
+step "metrics file :path has permissions :permissions" do |path, permissions|
+  expect(File.file?(path)).to be(true)
+
+  actual = File.stat(path).mode.to_s(8).split('')[-4..-1].join
+  expect(actual).to eq(permissions)
+end
+
 step "metrics file :path should have following keys:" do |path, keys|
   expected_keys = keys.split("\n").map(&:strip).reject { |x| x.empty? }
 

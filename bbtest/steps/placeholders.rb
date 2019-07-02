@@ -29,6 +29,18 @@ placeholder :path do
   end
 end
 
+placeholder :permissions do
+  match(/-?[r-][w-][x-][r-][w-][x-][r-][w-][x-]/) do |permissions|
+    perm = permissions.reverse[0...9].reverse.chars.each_slice(3).map { |part|
+      (part[0] == 'r' ? 4 : 0) +
+      (part[1] == 'w' ? 2 : 0) +
+      (part[2] == 'x' ? 1 : 0)
+    }.join('')
+
+    "0#{perm}"
+  end
+end
+
 placeholder :http_method do
   match(/(GET|get|POST|post|PATCH|patch|DELETE|delete)/) do |http_method|
     http_method.downcase

@@ -15,58 +15,14 @@
 package metrics
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
-	"strconv"
-	"time"
 
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
 )
 
-// MarshalJSON serialises Metrics as json preserving uint64
-func (entity *Metrics) MarshalJSON() ([]byte, error) {
-	var buffer bytes.Buffer
-
-	buffer.WriteString("{\"getTransactionLatency\":")
-	buffer.WriteString(strconv.FormatFloat(entity.getTransactionLatency.Percentile(0.95), 'f', -1, 64))
-	buffer.WriteString(",\"getTransactionsLatency\":")
-	buffer.WriteString(strconv.FormatFloat(entity.getTransactionsLatency.Percentile(0.95), 'f', -1, 64))
-	buffer.WriteString(",\"createTransactionLatency\":")
-	buffer.WriteString(strconv.FormatFloat(entity.createTransactionLatency.Percentile(0.95), 'f', -1, 64))
-	buffer.WriteString(",\"forwardTransferLatency\":")
-	buffer.WriteString(strconv.FormatFloat(entity.forwardTransferLatency.Percentile(0.95), 'f', -1, 64))
-	buffer.WriteString("}")
-
-	return buffer.Bytes(), nil
-}
-
-// UnmarshalJSON unmarshal json of Metrics entity
-func (entity *Metrics) UnmarshalJSON(data []byte) error {
-	if entity == nil {
-		return fmt.Errorf("cannot unmarshall to nil pointer")
-	}
-	all := struct {
-		GetTransactionLatency    float64 `json:"getTransactionLatency"`
-		GetTransactionsLatency   float64 `json:"getTransactionsLatency"`
-		CreateTransactionLatency float64 `json:"createTransactionLatency"`
-		ForwardTransferLatency   float64 `json:"forwardTransferLatency"`
-	}{}
-	err := utils.JSON.Unmarshal(data, &all)
-	if err != nil {
-		return err
-	}
-
-	entity.getTransactionLatency.Update(time.Duration(all.GetTransactionLatency))
-	entity.getTransactionsLatency.Update(time.Duration(all.GetTransactionsLatency))
-	entity.createTransactionLatency.Update(time.Duration(all.CreateTransactionLatency))
-	entity.forwardTransferLatency.Update(time.Duration(all.ForwardTransferLatency))
-
-	return nil
-}
-
-// Persist stores metrics to disk
+// Persist saved metrics state to storage
 func (metrics *Metrics) Persist() error {
 	if metrics == nil {
 		return fmt.Errorf("cannot persist nil reference")
@@ -76,7 +32,7 @@ func (metrics *Metrics) Persist() error {
 	if err != nil {
 		return err
 	}
-	f, err := os.OpenFile(tempFile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	f, err := os.OpenFile(tempFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 	if err != nil {
 		return err
 	}
@@ -90,7 +46,7 @@ func (metrics *Metrics) Persist() error {
 	return nil
 }
 
-// Hydrate loads metrics from disk
+// Hydrate loads metrics state from storage
 func (metrics *Metrics) Hydrate() error {
 	if metrics == nil {
 		return fmt.Errorf("cannot hydrate nil reference")
@@ -102,7 +58,7 @@ func (metrics *Metrics) Hydrate() error {
 		}
 		return err
 	}
-	f, err := os.OpenFile(metrics.output, os.O_RDONLY, os.ModePerm)
+	f, err := os.OpenFile(metrics.output, os.O_RDONLY, 0444)
 	if err != nil {
 		return err
 	}
