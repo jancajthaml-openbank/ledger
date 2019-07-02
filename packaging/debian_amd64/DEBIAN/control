@@ -1,5 +1,5 @@
 Package: ledger
-Version: 1.0.4+persistence-unit-test-coverage
+Version: 1.0.4+prepare-config-at-start-of-bbtest
 Section: misc
 Priority: extra
 Architecture: amd64

@@ -72,6 +72,25 @@ class UnitHelper
     raise "no package to install" unless File.file?('/etc/bbtest/packages/ledger.deb')
   end
 
+  def prepare_config()
+    defaults = {
+      "STORAGE" => "/data",
+      "LOG_LEVEL" => "DEBUG",
+      "HTTP_PORT" => "4401",
+      "SECRETS" => "/opt/ledger/secrets",
+      "LAKE_HOSTNAME" => "localhost",
+      "TRANSACTION_INTEGRITY_SCANINTERVAL" => "120s",
+      "METRICS_REFRESHRATE" => "1s",
+      "METRICS_OUTPUT" => "/reports",
+    }
+
+    config = Array[defaults.map {|k,v| "LEDGER_#{k}=#{v}"}]
+    config = config.join("\n").inspect.delete('\"')
+
+    %x(mkdir -p /etc/init)
+    %x(echo '#{config}' > /etc/init/ledger.conf)
+  end
+
   def cleanup()
     %x(systemctl -t service --no-legend | awk '{ print $1 }' | sort -t @ -k 2 -g)
       .split("\n")

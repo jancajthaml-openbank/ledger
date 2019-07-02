@@ -36,6 +36,7 @@ RSpec.configure do |config|
     print "[ downloading unit ]\n"
 
     $unit.download()
+    $unit.prepare_config()
 
     print "[ suite started    ]\n"
   end
