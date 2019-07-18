@@ -69,9 +69,9 @@ pipeline {
                         returnStdout: true
                     ).trim()
 
-                    env.LICENSE = "Apache-2.0"                     // fixme read from sources
-                    env.PROJECT_NAME = "Ledger"                      // fixme read from sources
-                    env.PROJECT_DESCRIPTION = "Transaction ledger" // fixme read from sources
+                    env.LICENSE = "Apache-2.0"
+                    env.PROJECT_NAME = "openbank ledger"
+                    env.PROJECT_DESCRIPTION = "OpenBanking ledger service"
                     env.PROJECT_AUTHOR = "Jan Cajthaml <jan.cajthaml@gmail.com>"
                     env.HOME = "${WORKSPACE}"
                     env.GOPATH = "${WORKSPACE}/go"
@@ -131,14 +131,14 @@ pipeline {
                         --pkg ledger-rest
                     """
                     sh """
-                        ${HOME}/dev/lifecycle/sec \
-                        --pkg ledger-rest
+                        ${HOME}/dev/lifecycle/lint \
+                        --pkg ledger-unit
                     """
                 }
                 dir(env.PROJECT_PATH) {
                     sh """
-                        ${HOME}/dev/lifecycle/lint \
-                        --pkg ledger-unit
+                        ${HOME}/dev/lifecycle/sec \
+                        --pkg ledger-rest
                     """
                     sh """
                         ${HOME}/dev/lifecycle/sec \
@@ -163,6 +163,8 @@ pipeline {
                         --pkg ledger-rest \
                         --output ${HOME}/reports
                     """
+                }
+                dir(env.PROJECT_PATH) {
                     sh """
                         ${HOME}/dev/lifecycle/test \
                         --pkg ledger-unit \
@@ -188,6 +190,8 @@ pipeline {
                         --arch linux/amd64 \
                         --output ${HOME}/packaging/bin
                     """
+                }
+                dir(env.PROJECT_PATH) {
                     sh """
                         ${HOME}/dev/lifecycle/package \
                         --pkg ledger-unit \
@@ -225,7 +229,7 @@ pipeline {
                             --tty \
                             --require ${HOME}/bbtest/spec.rb \
                             --format documentation \
-                            --format RspecJunitFormatter \
+                            --format RSpec::JUnit \
                             --out ${HOME}/reports/blackbox-tests/results.xml \
                             --pattern ${HOME}/bbtest/features/\\*.feature
                         """
@@ -248,8 +252,8 @@ pipeline {
     post {
         always {
             script {
-                sh "docker rmi -f registry.hub.docker.com/openbank/lake:amd64-${env.VERSION_MAIN}-${env.VERSION_META} || :"
-                sh "docker rmi -f lake:amd64-${env.GIT_COMMIT} || :"
+                sh "docker rmi -f registry.hub.docker.com/openbank/ledger:amd64-${env.VERSION_MAIN}-${env.VERSION_META} || :"
+                sh "docker rmi -f ledger:amd64-${env.GIT_COMMIT} || :"
                 sh """
                     docker images \
                         --no-trunc \
