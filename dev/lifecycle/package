@@ -5,12 +5,13 @@ trap exit INT TERM
 
 TARGET_ARCHITECTURE="linux/amd64"
 TARGET_PACKAGE=""
+OUTPUT=""
 
 package_service() {
-  local working_dir=/go/src/github.com/jancajthaml-openbank/${TARGET_PACKAGE}
+  local working_dir=${GOPATH}/src/github.com/jancajthaml-openbank/${TARGET_PACKAGE}
   local arch=${TARGET_ARCHITECTURE#*/}
   local platform=${TARGET_ARCHITECTURE%%/*}
-  local output=$(pwd)/packaging/bin/${TARGET_PACKAGE}-${platform}-${arch}
+  local output=${OUTPUT}/${TARGET_PACKAGE}-${platform}-${arch}
 
   if [ -f ${output} ] ; then
     rm -f ${output}
@@ -97,6 +98,12 @@ case $key in
     shift
   ;;
 
+  --output)
+    OUTPUT="$2"
+    shift
+    shift
+  ;;
+
   *)
     shift
   ;;
@@ -104,8 +111,13 @@ case $key in
 esac
 done
 
-if [ ! "${TARGET_PACKAGE}" ] ; then
+if [ -z "${TARGET_PACKAGE}" ] ; then
   (>&2 echo "[error] target package not provided")
+  exit 1
+fi
+
+if [ -z "${OUTPUT}" ] ; then
+  (>&2 echo "[error] output not provided")
   exit 1
 fi
 

@@ -5,7 +5,7 @@ ConditionPathExists=/etc/init/ledger.conf
 
 [Service]
 Type=oneshot
-ExecStart=/bin/true
+ExecStart=/bin/echo start ledger namespace
 RemainAfterExit=yes
 
 [Install]

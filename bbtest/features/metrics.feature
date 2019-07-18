@@ -9,7 +9,7 @@ Feature: Metrics test
       METRICS_REFRESHRATE=1s
     """
 
-    Then metrics file /reports/metrics.M2.json should have following keys:
+    Then metrics file /tmp/reports/metrics.M2.json should have following keys:
     """
       promisedTransactions
       promisedTransfers
@@ -20,15 +20,15 @@ Feature: Metrics test
       forwardedTransactions
       forwardedTransfers
     """
-    And metrics file /reports/metrics.M2.json has permissions -rw-r--r--
-    And metrics file /reports/metrics.json should have following keys:
+    And metrics file /tmp/reports/metrics.M2.json has permissions -rw-r--r--
+    And metrics file /tmp/reports/metrics.json should have following keys:
     """
       createTransactionLatency
       forwardTransferLatency
       getTransactionLatency
       getTransactionsLatency
     """
-    And metrics file /reports/metrics.json has permissions -rw-r--r--
+    And metrics file /tmp/reports/metrics.json has permissions -rw-r--r--
 
   Scenario: metrics report expected results
     Given vault is empty
@@ -42,7 +42,7 @@ Feature: Metrics test
     And   pasive account M1/B with currency EUR exist
     And   1 EUR is transferred from M1/A to M1/B
 
-    Then metrics file /reports/metrics.M1.json reports:
+    Then metrics file /tmp/reports/metrics.M1.json reports:
     """
       promisedTransactions 1
       promisedTransfers 1
@@ -62,7 +62,7 @@ Feature: Metrics test
       METRICS_REFRESHRATE=1s
     """
 
-    Then metrics file /reports/metrics.M3.json reports:
+    Then metrics file /tmp/reports/metrics.M3.json reports:
     """
       promisedTransactions 0
       promisedTransfers 0
@@ -77,7 +77,7 @@ Feature: Metrics test
     When  pasive account M3/A with currency EUR exist
     And   pasive account M3/B with currency EUR exist
     And   1 EUR is transferred from M3/A to M3/B
-    Then metrics file /reports/metrics.M3.json reports:
+    Then metrics file /tmp/reports/metrics.M3.json reports:
     """
       promisedTransactions 1
       promisedTransfers 1
@@ -90,7 +90,7 @@ Feature: Metrics test
     """
 
     When ledger is restarted
-    Then metrics file /reports/metrics.M3.json reports:
+    Then metrics file /tmp/reports/metrics.M3.json reports:
     """
       promisedTransactions 1
       promisedTransfers 1

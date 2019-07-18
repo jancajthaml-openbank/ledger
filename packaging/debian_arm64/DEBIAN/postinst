@@ -20,14 +20,14 @@ case "$1" in
 
   configure)
     if [ -f /etc/init/ledger.conf ] ; then
-
       enable ledger.path
       enable ledger.service
       enable ledger-rest.service
 
       if [ ${SYSTEMD_AVAIL} ] ; then
-        (systemctl daemon-reload || :)
-        (systemctl start ledger.service >/dev/null || :)
+        systemctl daemon-reload
+        systemctl start ledger.service
+        systemctl start ledger.path
       fi
 
     else
