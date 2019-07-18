@@ -43,7 +43,7 @@ fi
 coverage_out=$(tempfile)
 test_out=$(tempfile)
 
-mkdir -p ${OUTPUT} ${OUTPUT}/unit-tests-${TARGET_PACKAGE}
+mkdir -p ${OUTPUT} ${OUTPUT}/unit-tests
 cd ${GOPATH}/src/github.com/jancajthaml-openbank/${TARGET_PACKAGE}
 
 # run unit tests and collect coverage
@@ -61,11 +61,11 @@ sed -i 's/\x1b\[[0-9;]*m//g' ${test_out}
 go2xunit \
   -fail \
   -input ${test_out} \
-  -output ${OUTPUT}/unit-tests-${TARGET_PACKAGE}/results.xml
+  -output ${OUTPUT}/unit-tests/${TARGET_PACKAGE}-results.xml
 
 go tool cover \
   --html=${coverage_out} \
-  -o ${OUTPUT}/unit-tests-${TARGET_PACKAGE}/coverage.html
+  -o ${OUTPUT}/unit-tests/${TARGET_PACKAGE}-coverage.html
 
 # run only benchmarks
 

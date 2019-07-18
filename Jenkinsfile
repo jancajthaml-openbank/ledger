@@ -264,14 +264,6 @@ pipeline {
             script {
                 archiveArtifacts(
                     allowEmptyArchive: true,
-                    artifacts: 'reports/graph_metrics.count_*.png'
-                )
-                archiveArtifacts(
-                    allowEmptyArchive: true,
-                    artifacts: 'reports/perf-*.log'
-                )
-                archiveArtifacts(
-                    allowEmptyArchive: true,
                     artifacts: 'reports/bbtest-*.log'
                 )
                 archiveArtifacts(
@@ -282,20 +274,20 @@ pipeline {
                     allowMissing: true,
                     alwaysLinkToLastBuild: false,
                     keepAll: true,
-                    reportDir: 'reports/unit-tests-ledger-rest',
-                    reportFiles: 'coverage.html',
-                    reportName: 'Ledger-Rest | Unit Test Coverage'
+                    reportDir: 'reports/unit-tests',
+                    reportFiles: 'ledger-rest-coverage.html',
+                    reportName: 'Ledger Rest | Unit Test Coverage'
                 ])
                 publishHTML(target: [
                     allowMissing: true,
                     alwaysLinkToLastBuild: false,
                     keepAll: true,
-                    reportDir: 'reports/unit-tests-ledger-unit',
-                    reportFiles: 'coverage.html',
-                    reportName: 'Ledger-Unit | Unit Test Coverage'
+                    reportDir: 'reports/unit-tests',
+                    reportFiles: 'ledger-unit-coverage.html',
+                    reportName: 'Ledger Unit | Unit Test Coverage'
                 ])
-                junit 'reports/unit-tests-ledger-rest/results.xml'
-                junit 'reports/unit-tests-ledger-unit/results.xml'
+                junit 'reports/unit-tests/ledger-rest-results.xml'
+                junit 'reports/unit-tests/ledger-unit-results.xml'
                 junit 'reports/blackbox-tests/results.xml'
             }
             cleanWs()

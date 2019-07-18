@@ -499,7 +499,7 @@ jobs:
               --output /home/circleci/project/reports
           no_output_timeout: 5m
       - store_test_results:
-          path: /home/circleci/project/reports/unit-tests-ledger-rest
+          path: /home/circleci/project/reports/unit-tests
       - run:
           name: Unit test ledger-unit
           command: |
@@ -508,7 +508,7 @@ jobs:
               --output /home/circleci/project/reports
           no_output_timeout: 5m
       - store_test_results:
-          path: /home/circleci/project/reports/unit-tests-ledger-unit
+          path: /home/circleci/project/reports/unit-tests
 
   # -------------------------------------------------------------------------- #
 
