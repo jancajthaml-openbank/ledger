@@ -52,8 +52,6 @@ if [ -z "${TARGET_ARCHITECTURE}" ] ; then
   exit 1
 fi
 
-
-
 DEB_SOURCES="${SOURCE}/debian_${TARGET_ARCHITECTURE}"
 BIN_SOURCES="${SOURCE}/bin"
 
