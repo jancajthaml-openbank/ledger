@@ -5,6 +5,8 @@ ConditionPathExists=/etc/init/ledger.conf
 
 [Path]
 PathChanged=/etc/init/ledger.conf
+PathModified=/etc/init/ledger.conf
+Unit=ledger.service
 
 [Install]
 WantedBy=ledger.service

@@ -11,7 +11,7 @@ step "journalctl of :unit contains following" do |unit, expected|
     idx = actual_lines_merged.length - 1
 
     loop do
-      break if idx < 0 or actual_lines_merged[idx].include? ": Starting"
+      break if idx < 0 or actual_lines_merged[idx].include?("INFO >>> Start <<<")
       actual_lines << actual_lines_merged[idx]
       idx -= 1
     end
@@ -25,7 +25,7 @@ step "journalctl of :unit contains following" do |unit, expected|
         found = true
         break
       }
-      raise "#{line} was not found in logs:\n#{actual_lines_merged.join("\n")}" unless found
+      raise "#{line} was not found in logs:\nlast:\n#{actual_lines.join("\n")}\nfull:\n#{actual_lines_merged.join("\n")}" unless found
     }
   }
 end

@@ -23,7 +23,7 @@ case $key in
 esac
 done
 
-if [ ! "${TARGET_PACKAGE}" ] ; then
+if [ -z "${TARGET_PACKAGE}" ] ; then
   (>&2 echo "[error] target package not provided")
   exit 1
 fi
@@ -42,7 +42,7 @@ scan() {
   (/go/bin/ineffassign ${1} || :)
 }
 
-find /go/src/github.com/jancajthaml-openbank/${TARGET_PACKAGE} \
+find ${GOPATH}/src/github.com/jancajthaml-openbank/${TARGET_PACKAGE} \
   -name "*.go" \
   -not \
   -path "*vendor/*" \

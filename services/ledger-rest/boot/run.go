@@ -78,8 +78,6 @@ func (app Program) WaitInterrupt() {
 
 // Run runs the application
 func (app Program) Run() {
-	log.Info(">>> Start <<<")
-
 	go app.metrics.Start()
 	go app.actorSystem.Start()
 	go app.systemControl.Start()
@@ -103,6 +101,4 @@ func (app Program) Run() {
 	app.systemControl.Stop()
 	app.metrics.Stop()
 	app.cancel()
-
-	log.Info(">>> Stop <<<")
 }

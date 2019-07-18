@@ -1,4 +1,6 @@
+require 'rspec/junit'
 require 'turnip/rspec'
+require 'time'
 require 'json'
 require 'thread'
 
@@ -9,9 +11,9 @@ RSpec.configure do |config|
   config.color = true
   config.fail_fast = true
 
-  Dir.glob("./helpers/*_helper.rb") { |f| load f }
+  Dir.glob("#{__dir__}/helpers/*_helper.rb") { |f| load f }
   config.include EventuallyHelper, :type => :feature
-  Dir.glob("./steps/*_steps.rb") { |f| load f, true }
+  Dir.glob("#{__dir__}/steps/*_steps.rb") { |f| load f, true }
 
   config.register_ordering(:global) do |items|
     (install, others) = items.partition { |spec| spec.metadata[:install] }
@@ -28,10 +30,8 @@ RSpec.configure do |config|
 
     LakeMock.start()
 
-    ["/reports"].each { |folder|
-      FileUtils.mkdir_p folder
-      %x(rm -rf #{folder}/*)
-    }
+    %x(mkdir -p /tmp/reports)
+    %x(rm -rf /tmp/reports/*.json /tmp/reports/*.log)
 
     print "[ downloading unit ]\n"
 
@@ -54,9 +54,7 @@ RSpec.configure do |config|
 
     print "[ suite cleaning ]\n"
 
-    ["/data"].each { |folder|
-      %x(rm -rf #{folder}/*)
-    }
+    %x(rm -rf /data/*)
 
     print "[ suite ended    ]"
   end

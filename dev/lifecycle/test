@@ -4,6 +4,7 @@ set -e
 trap exit INT TERM
 
 TARGET_PACKAGE=""
+OUTPUT=""
 
 while [ $# -gt 0 ] ; do
 key="$1"
@@ -16,6 +17,12 @@ case $key in
     shift
   ;;
 
+  --output)
+    OUTPUT="$2"
+    shift
+    shift
+  ;;
+
   *)
     shift
   ;;
@@ -23,41 +30,47 @@ case $key in
 esac
 done
 
-if [ ! "${TARGET_PACKAGE}" ] ; then
+if [ -z "${TARGET_PACKAGE}" ] ; then
   (>&2 echo "[error] target package not provided")
+  exit 1
+fi
+
+if [ -z "${OUTPUT}" ] ; then
+  (>&2 echo "[error] output not provided")
   exit 1
 fi
 
 coverage_out=$(tempfile)
 test_out=$(tempfile)
-reports_out=$(pwd)/reports
 
-mkdir -p ${reports_out} ${reports_out}/unit-tests-${TARGET_PACKAGE}
-
-cd /go/src/github.com/jancajthaml-openbank/${TARGET_PACKAGE}
+mkdir -p ${OUTPUT} ${OUTPUT}/unit-tests-${TARGET_PACKAGE}
+cd ${GOPATH}/src/github.com/jancajthaml-openbank/${TARGET_PACKAGE}
 
 # run unit tests and collect coverage
 
-2>&1 \
-  go test \
+2>&1 GOMAXPROCS=1 \
+  grc go test \
   -v ./... \
   -coverprofile=${coverage_out} \
   -coverpkg=./... \
   -timeout=20s | tee ${test_out}
 
+# remove anscii colors from file
+sed -i 's/\x1b\[[0-9;]*m//g' ${test_out}
+
 go2xunit \
   -fail \
   -input ${test_out} \
-  -output ${reports_out}/unit-tests-${TARGET_PACKAGE}/results.xml
+  -output ${OUTPUT}/unit-tests-${TARGET_PACKAGE}/results.xml
 
 go tool cover \
   --html=${coverage_out} \
-  -o ${reports_out}/unit-tests-${TARGET_PACKAGE}/coverage.html
+  -o ${OUTPUT}/unit-tests-${TARGET_PACKAGE}/coverage.html
 
 # run only benchmarks
 
 GOMAXPROCS=1 \
-  go test \
+  grc go test \
   -v ./... \
   -run=^$ \
   -bench=. \

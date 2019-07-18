@@ -15,11 +15,25 @@
 package main
 
 import (
+	log "github.com/sirupsen/logrus"
+
 	"github.com/jancajthaml-openbank/ledger-unit/boot"
+	"github.com/jancajthaml-openbank/ledger-unit/utils"
 )
 
+func exit(program *boot.Program) {
+	program.Stop()
+	log.Info(">>> Stop <<<")
+}
+
+func start() boot.Program {
+	log.SetFormatter(new(utils.LogFormat))
+	log.Info(">>> Start <<<")
+	return boot.Initialize()
+}
+
 func main() {
-	program := boot.Initialize()
-	defer program.Stop()
+	program := start()
+	defer exit(&program)
 	program.Run()
 }

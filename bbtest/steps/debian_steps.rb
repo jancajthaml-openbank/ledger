@@ -1,6 +1,6 @@
 
 step "package :package is installed" do |package|
-  out = %x(apt-get -y install -f /etc/bbtest/packages/#{package})
+  out = %x(apt-get -y install -f /tmp/packages/#{package})
   expect($?).to be_success, out
 
   expect(File.file?("/etc/init/ledger.conf")).to be(true)

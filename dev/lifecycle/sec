@@ -23,11 +23,13 @@ case $key in
 esac
 done
 
-if [ ! "${TARGET_PACKAGE}" ] ; then
+if [ -z "${TARGET_PACKAGE}" ] ; then
   (>&2 echo "[error] target package not provided")
   exit 1
 fi
 
-cd /go/src/github.com/jancajthaml-openbank/${TARGET_PACKAGE}
+cd ${GOPATH}/src/github.com/jancajthaml-openbank/${TARGET_PACKAGE}
 
-gosec ./...
+gosec \
+  -exclude=G104,G302,G402,G304 \
+  ./...

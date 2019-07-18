@@ -1,5 +1,5 @@
 Package: ledger
-Version: 1.0.4+prepare-config-at-start-of-bbtest
+Version: 1.0.4+jenkins-pipeline
 Section: misc
 Priority: extra
 Architecture: amd64
