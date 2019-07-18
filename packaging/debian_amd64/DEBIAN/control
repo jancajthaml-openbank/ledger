@@ -1,5 +1,5 @@
 Package: ledger
-Version: 1.0.4+jenkins-pipeline
+Version: 1.0.4+master
 Section: misc
 Priority: extra
 Architecture: amd64
