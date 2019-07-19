@@ -290,9 +290,18 @@ pipeline {
                     reportFiles: 'ledger-unit-coverage.html',
                     reportName: 'Ledger Unit | Unit Test Coverage'
                 ])
-                junit 'reports/unit-tests/ledger-rest-results.xml'
-                junit 'reports/unit-tests/ledger-unit-results.xml'
-                junit 'reports/blackbox-tests/results.xml'
+                junit(
+                    allowEmptyResults: true,
+                    testResults: 'reports/unit-tests/ledger-rest-results.xml'
+                )
+                junit(
+                    allowEmptyResults: true,
+                    testResults: 'reports/unit-tests/ledger-unit-results.xml'
+                )
+                junit(
+                    allowEmptyResults: true,
+                    testResults: 'reports/blackbox-tests/results.xml'
+                )
             }
             cleanWs()
         }
