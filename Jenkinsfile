@@ -70,23 +70,23 @@ pipeline {
                     ).trim()
 
                     env.LICENSE = "Apache-2.0"
-                    env.PROJECT_NAME = "openbank bondster-bco"
-                    env.PROJECT_DESCRIPTION = "OpenBanking bondster-bco service"
+                    env.PROJECT_NAME = "openbank ledger"
+                    env.PROJECT_DESCRIPTION = "OpenBanking ledger service"
                     env.PROJECT_AUTHOR = "Jan Cajthaml <jan.cajthaml@gmail.com>"
                     env.HOME = "${WORKSPACE}"
                     env.GOPATH = "${WORKSPACE}/go"
                     env.XDG_CACHE_HOME = "${env.GOPATH}/.cache"
-                    env.PROJECT_PATH = "${env.GOPATH}/src/github.com/jancajthaml-openbank/bondster-bco"
+                    env.PROJECT_PATH = "${env.GOPATH}/src/github.com/jancajthaml-openbank/ledger"
 
                     sh """
                         mkdir -p \
                             ${env.GOPATH}/src/github.com/jancajthaml-openbank && \
                         mv \
-                            ${WORKSPACE}/services/bondster-bco-rest \
-                            ${env.GOPATH}/src/github.com/jancajthaml-openbank/bondster-bco-rest
+                            ${WORKSPACE}/services/ledger-rest \
+                            ${env.GOPATH}/src/github.com/jancajthaml-openbank/ledger-rest
                         mv \
-                            ${WORKSPACE}/services/bondster-bco-import \
-                            ${env.GOPATH}/src/github.com/jancajthaml-openbank/bondster-bco-import
+                            ${WORKSPACE}/services/ledger-unit \
+                            ${env.GOPATH}/src/github.com/jancajthaml-openbank/ledger-unit
                     """
                 }
             }
@@ -104,13 +104,13 @@ pipeline {
                 dir(env.PROJECT_PATH) {
                     sh """
                         ${HOME}/dev/lifecycle/sync \
-                        --pkg bondster-bco-rest
+                        --pkg ledger-rest
                     """
                 }
                 dir(env.PROJECT_PATH) {
                     sh """
                         ${HOME}/dev/lifecycle/sync \
-                        --pkg bondster-bco-import
+                        --pkg ledger-unit
                     """
                 }
             }
@@ -128,21 +128,21 @@ pipeline {
                 dir(env.PROJECT_PATH) {
                     sh """
                         ${HOME}/dev/lifecycle/lint \
-                        --pkg bondster-bco-rest
+                        --pkg ledger-rest
                     """
                     sh """
                         ${HOME}/dev/lifecycle/lint \
-                        --pkg bondster-bco-import
+                        --pkg ledger-unit
                     """
                 }
                 dir(env.PROJECT_PATH) {
                     sh """
                         ${HOME}/dev/lifecycle/sec \
-                        --pkg bondster-bco-rest
+                        --pkg ledger-rest
                     """
                     sh """
                         ${HOME}/dev/lifecycle/sec \
-                        --pkg bondster-bco-import
+                        --pkg ledger-unit
                     """
                 }
             }
@@ -160,14 +160,14 @@ pipeline {
                 dir(env.PROJECT_PATH) {
                     sh """
                         ${HOME}/dev/lifecycle/test \
-                        --pkg bondster-bco-rest \
+                        --pkg ledger-rest \
                         --output ${HOME}/reports
                     """
                 }
                 dir(env.PROJECT_PATH) {
                     sh """
                         ${HOME}/dev/lifecycle/test \
-                        --pkg bondster-bco-import \
+                        --pkg ledger-unit \
                         --output ${HOME}/reports
                     """
                 }
@@ -186,7 +186,7 @@ pipeline {
                 dir(env.PROJECT_PATH) {
                     sh """
                         ${HOME}/dev/lifecycle/package \
-                        --pkg bondster-bco-rest \
+                        --pkg ledger-rest \
                         --arch linux/amd64 \
                         --output ${HOME}/packaging/bin
                     """
@@ -194,7 +194,7 @@ pipeline {
                 dir(env.PROJECT_PATH) {
                     sh """
                         ${HOME}/dev/lifecycle/package \
-                        --pkg bondster-bco-import \
+                        --pkg ledger-unit \
                         --arch linux/amd64 \
                         --output ${HOME}/packaging/bin
                     """
@@ -213,7 +213,7 @@ pipeline {
         stage('Package Docker') {
             steps {
                 script {
-                    DOCKER_IMAGE_AMD64 = docker.build("openbank/bondster-bco:${env.GIT_COMMIT}", dockerOptions())
+                    DOCKER_IMAGE_AMD64 = docker.build("openbank/ledger:${env.GIT_COMMIT}", dockerOptions())
                 }
             }
         }
@@ -246,8 +246,8 @@ pipeline {
     post {
         always {
             script {
-                sh "docker rmi -f registry.hub.docker.com/openbank/bondster-bco:amd64-${env.VERSION_MAIN}-${env.VERSION_META} || :"
-                sh "docker rmi -f bondster-bco:amd64-${env.GIT_COMMIT} || :"
+                sh "docker rmi -f registry.hub.docker.com/openbank/ledger:amd64-${env.VERSION_MAIN}-${env.VERSION_META} || :"
+                sh "docker rmi -f ledger:amd64-${env.GIT_COMMIT} || :"
                 sh """
                     docker images \
                         --no-trunc \
@@ -278,24 +278,24 @@ pipeline {
                     alwaysLinkToLastBuild: false,
                     keepAll: true,
                     reportDir: 'reports/unit-tests',
-                    reportFiles: 'bondster-bco-rest-coverage.html',
-                    reportName: 'Bondster BCO Rest | Unit Test Coverage'
+                    reportFiles: 'ledger-rest-coverage.html',
+                    reportName: 'Ledger Rest | Unit Test Coverage'
                 ])
                 publishHTML(target: [
                     allowMissing: true,
                     alwaysLinkToLastBuild: false,
                     keepAll: true,
                     reportDir: 'reports/unit-tests',
-                    reportFiles: 'bondster-bco-import-coverage.html',
-                    reportName: 'Bondster BCO Import | Unit Test Coverage'
+                    reportFiles: 'ledger-unit-coverage.html',
+                    reportName: 'Ledger Unit | Unit Test Coverage'
                 ])
                 junit(
                     allowEmptyResults: true,
-                    testResults: 'reports/unit-tests/bondster-bco-rest-results.xml'
+                    testResults: 'reports/unit-tests/ledger-rest-results.xml'
                 )
                 junit(
                     allowEmptyResults: true,
-                    testResults: 'reports/unit-tests/bondster-bco-import-results.xml'
+                    testResults: 'reports/unit-tests/ledger-unit-results.xml'
                 )
                 cucumber(
                     allowEmptyResults: true,
