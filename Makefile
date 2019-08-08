@@ -65,7 +65,6 @@ test:
 release:
 	@docker-compose run --rm release -v $(VERSION)+$(META) -t ${GITHUB_RELEASE_TOKEN}
 
-
 .PHONY: bbtest
 bbtest:
 	@(docker rm -f $$(docker ps -a --filter="name=ledger_bbtest_amd64" -q) &> /dev/null || :)
