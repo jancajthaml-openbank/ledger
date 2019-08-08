@@ -8,5 +8,5 @@ Feature: Persistent journal
     When  0.00000000001 EUR is transferred with id X from JOURNAL/A to JOURNAL/B
 
     Then transaction X of tenant JOURNAL should be
-      | key            | value     |
-      | state          | committed |
+      | key   | value     |
+      | state | committed |
