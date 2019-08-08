@@ -1,9 +1,9 @@
 Feature: High level Transfer workflow
 
   Scenario: Transfer forward
-    Given vault is empty
-    And   ledger is running
-    And   tenant FORWARD is onbdoarded
+    Given unit "ledger-rest.service" is running
+    And   vault is empty
+    And   tenant FORWARD is onboarded
     And   pasive account FORWARD/OriginCredit with currency EUR exist
     And   pasive account FORWARD/OriginDebit with currency EUR exist
     And   pasive account FORWARD/Target with currency EUR exist
@@ -42,31 +42,26 @@ Feature: High level Transfer workflow
         ]
       }
     """
-    Then  request should succeed
     Then  FORWARD/OriginDebit balance should be -3 EUR
     And   FORWARD/OriginCredit balance should be 3 EUR
     And   FORWARD/Target balance should be 0 EUR
 
-    When  forward_id transfer_1 credit side is forwarded to FORWARD/Target from tenant FORWARD
-    Then  request should succeed
+    When  forward_id transfer_1 credit side is forwarded from tenant FORWARD to FORWARD/Target
     Then  FORWARD/OriginDebit balance should be -3 EUR
     And   FORWARD/OriginCredit balance should be 2 EUR
     And   FORWARD/Target balance should be 1 EUR
 
-    When  forward_id transfer_2 credit side is forwarded to FORWARD/Target from tenant FORWARD
-    Then  request should succeed
+    When  forward_id transfer_2 credit side is forwarded from tenant FORWARD to FORWARD/Target
     Then  FORWARD/OriginDebit balance should be -3 EUR
     And   FORWARD/OriginCredit balance should be 0 EUR
     And   FORWARD/Target balance should be 3 EUR
 
-    When  forward_id transfer_1 debit side is forwarded to FORWARD/Target from tenant FORWARD
-    Then  request should succeed
+    When  forward_id transfer_1 debit side is forwarded from tenant FORWARD to FORWARD/Target
     Then  FORWARD/OriginDebit balance should be -2 EUR
     And   FORWARD/OriginCredit balance should be 0 EUR
     And   FORWARD/Target balance should be 2 EUR
 
-    When  forward_id transfer_2 debit side is forwarded to FORWARD/Target from tenant FORWARD
-    Then  request should succeed
+    When  forward_id transfer_2 debit side is forwarded from tenant FORWARD to FORWARD/Target
     Then  FORWARD/OriginDebit balance should be 0 EUR
     And   FORWARD/OriginCredit balance should be 0 EUR
     And   FORWARD/Target balance should be 0 EUR

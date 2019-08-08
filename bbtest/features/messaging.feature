@@ -2,8 +2,7 @@ Feature: Messaging behaviour
 
   Scenario: create transaction
     Given vault is empty
-    And   lake is empty
-    And   tenant MSG1 is onbdoarded
+    And   tenant MSG1 is onboarded
     And   pasive account MSG1/A with currency EUR exist
     And   pasive account MSG1/B with currency EUR exist
 

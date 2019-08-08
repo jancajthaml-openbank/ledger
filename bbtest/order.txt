@@ -1,0 +1,10 @@
+features/install.feature
+features/configuration.feature
+features/management.feature
+features/metrics.feature
+features/journal.feature
+features/messaging.feature
+features/api.feature
+features/transaction.feature
+features/transfer.feature
+features/uninstall.feature

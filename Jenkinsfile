@@ -224,14 +224,8 @@ pipeline {
                     BBTEST_IMAGE.withRun(bbtestOptions()) { c ->
                         sh """
                             docker exec -t ${c.id} \
-                            rspec \
-                            --colour \
-                            --tty \
-                            --require ${HOME}/bbtest/spec.rb \
-                            --format documentation \
-                            --format RSpec::JUnit \
-                            --out ${HOME}/reports/blackbox-tests/results.xml \
-                            --pattern ${HOME}/bbtest/features/\\*.feature
+                            python3 \
+                            ${HOME}/bbtest/main.py
                         """
                     }
                 }
