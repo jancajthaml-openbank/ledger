@@ -70,23 +70,23 @@ pipeline {
                     ).trim()
 
                     env.LICENSE = "Apache-2.0"
-                    env.PROJECT_NAME = "openbank ledger"
-                    env.PROJECT_DESCRIPTION = "OpenBanking ledger service"
+                    env.PROJECT_NAME = "openbank bondster-bco"
+                    env.PROJECT_DESCRIPTION = "OpenBanking bondster-bco service"
                     env.PROJECT_AUTHOR = "Jan Cajthaml <jan.cajthaml@gmail.com>"
                     env.HOME = "${WORKSPACE}"
                     env.GOPATH = "${WORKSPACE}/go"
                     env.XDG_CACHE_HOME = "${env.GOPATH}/.cache"
-                    env.PROJECT_PATH = "${env.GOPATH}/src/github.com/jancajthaml-openbank/ledger"
+                    env.PROJECT_PATH = "${env.GOPATH}/src/github.com/jancajthaml-openbank/bondster-bco"
 
                     sh """
                         mkdir -p \
                             ${env.GOPATH}/src/github.com/jancajthaml-openbank && \
                         mv \
-                            ${WORKSPACE}/services/ledger-rest \
-                            ${env.GOPATH}/src/github.com/jancajthaml-openbank/ledger-rest
+                            ${WORKSPACE}/services/bondster-bco-rest \
+                            ${env.GOPATH}/src/github.com/jancajthaml-openbank/bondster-bco-rest
                         mv \
-                            ${WORKSPACE}/services/ledger-unit \
-                            ${env.GOPATH}/src/github.com/jancajthaml-openbank/ledger-unit
+                            ${WORKSPACE}/services/bondster-bco-import \
+                            ${env.GOPATH}/src/github.com/jancajthaml-openbank/bondster-bco-import
                     """
                 }
             }
@@ -104,13 +104,13 @@ pipeline {
                 dir(env.PROJECT_PATH) {
                     sh """
                         ${HOME}/dev/lifecycle/sync \
-                        --pkg ledger-rest
+                        --pkg bondster-bco-rest
                     """
                 }
                 dir(env.PROJECT_PATH) {
                     sh """
                         ${HOME}/dev/lifecycle/sync \
-                        --pkg ledger-unit
+                        --pkg bondster-bco-import
                     """
                 }
             }
@@ -128,21 +128,21 @@ pipeline {
                 dir(env.PROJECT_PATH) {
                     sh """
                         ${HOME}/dev/lifecycle/lint \
-                        --pkg ledger-rest
+                        --pkg bondster-bco-rest
                     """
                     sh """
                         ${HOME}/dev/lifecycle/lint \
-                        --pkg ledger-unit
+                        --pkg bondster-bco-import
                     """
                 }
                 dir(env.PROJECT_PATH) {
                     sh """
                         ${HOME}/dev/lifecycle/sec \
-                        --pkg ledger-rest
+                        --pkg bondster-bco-rest
                     """
                     sh """
                         ${HOME}/dev/lifecycle/sec \
-                        --pkg ledger-unit
+                        --pkg bondster-bco-import
                     """
                 }
             }
@@ -160,14 +160,14 @@ pipeline {
                 dir(env.PROJECT_PATH) {
                     sh """
                         ${HOME}/dev/lifecycle/test \
-                        --pkg ledger-rest \
+                        --pkg bondster-bco-rest \
                         --output ${HOME}/reports
                     """
                 }
                 dir(env.PROJECT_PATH) {
                     sh """
                         ${HOME}/dev/lifecycle/test \
-                        --pkg ledger-unit \
+                        --pkg bondster-bco-import \
                         --output ${HOME}/reports
                     """
                 }
@@ -186,7 +186,7 @@ pipeline {
                 dir(env.PROJECT_PATH) {
                     sh """
                         ${HOME}/dev/lifecycle/package \
-                        --pkg ledger-rest \
+                        --pkg bondster-bco-rest \
                         --arch linux/amd64 \
                         --output ${HOME}/packaging/bin
                     """
@@ -194,7 +194,7 @@ pipeline {
                 dir(env.PROJECT_PATH) {
                     sh """
                         ${HOME}/dev/lifecycle/package \
-                        --pkg ledger-unit \
+                        --pkg bondster-bco-import \
                         --arch linux/amd64 \
                         --output ${HOME}/packaging/bin
                     """
@@ -213,7 +213,7 @@ pipeline {
         stage('Package Docker') {
             steps {
                 script {
-                    DOCKER_IMAGE_AMD64 = docker.build("openbank/ledger:${env.GIT_COMMIT}", dockerOptions())
+                    DOCKER_IMAGE_AMD64 = docker.build("openbank/bondster-bco:${env.GIT_COMMIT}", dockerOptions())
                 }
             }
         }
@@ -246,8 +246,8 @@ pipeline {
     post {
         always {
             script {
-                sh "docker rmi -f registry.hub.docker.com/openbank/ledger:amd64-${env.VERSION_MAIN}-${env.VERSION_META} || :"
-                sh "docker rmi -f ledger:amd64-${env.GIT_COMMIT} || :"
+                sh "docker rmi -f registry.hub.docker.com/openbank/bondster-bco:amd64-${env.VERSION_MAIN}-${env.VERSION_META} || :"
+                sh "docker rmi -f bondster-bco:amd64-${env.GIT_COMMIT} || :"
                 sh """
                     docker images \
                         --no-trunc \
@@ -260,41 +260,47 @@ pipeline {
                 sh "docker system prune"
             }
             script {
-                archiveArtifacts(
-                    allowEmptyArchive: true,
-                    artifacts: 'reports/bbtest-*.log'
-                )
-                archiveArtifacts(
-                    allowEmptyArchive: true,
-                    artifacts: 'packaging/bin/*'
-                )
+                dir('reports') {
+                    archiveArtifacts(
+                        allowEmptyArchive: true,
+                        artifacts: 'blackbox-tests/**/*'
+                    )
+                }
+                dir('packaging/bin') {
+                    archiveArtifacts(
+                        allowEmptyArchive: true,
+                        artifacts: '*'
+                    )
+                }
+
                 publishHTML(target: [
                     allowMissing: true,
                     alwaysLinkToLastBuild: false,
                     keepAll: true,
                     reportDir: 'reports/unit-tests',
-                    reportFiles: 'ledger-rest-coverage.html',
-                    reportName: 'Ledger Rest | Unit Test Coverage'
+                    reportFiles: 'bondster-bco-rest-coverage.html',
+                    reportName: 'Bondster BCO Rest | Unit Test Coverage'
                 ])
                 publishHTML(target: [
                     allowMissing: true,
                     alwaysLinkToLastBuild: false,
                     keepAll: true,
                     reportDir: 'reports/unit-tests',
-                    reportFiles: 'ledger-unit-coverage.html',
-                    reportName: 'Ledger Unit | Unit Test Coverage'
+                    reportFiles: 'bondster-bco-import-coverage.html',
+                    reportName: 'Bondster BCO Import | Unit Test Coverage'
                 ])
                 junit(
                     allowEmptyResults: true,
-                    testResults: 'reports/unit-tests/ledger-rest-results.xml'
+                    testResults: 'reports/unit-tests/bondster-bco-rest-results.xml'
                 )
                 junit(
                     allowEmptyResults: true,
-                    testResults: 'reports/unit-tests/ledger-unit-results.xml'
+                    testResults: 'reports/unit-tests/bondster-bco-import-results.xml'
                 )
-                junit(
+                cucumber(
                     allowEmptyResults: true,
-                    testResults: 'reports/blackbox-tests/results.xml'
+                    fileIncludePattern: '*',
+                    jsonReportDirectory: 'reports/blackbox-tests/cucumber'
                 )
             }
             cleanWs()
