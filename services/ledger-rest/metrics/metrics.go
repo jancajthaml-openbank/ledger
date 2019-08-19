@@ -26,16 +26,6 @@ func (metrics *Metrics) TimeForwardTransfer(f func()) {
 	metrics.forwardTransferLatency.Time(f)
 }
 
-// TimeGetTransaction measure execution of GetTransaction
-func (metrics *Metrics) TimeGetTransaction(f func()) {
-	metrics.getTransactionLatency.Time(f)
-}
-
-// TimeGetTransactions measure execution of GetTransaction
-func (metrics *Metrics) TimeGetTransactions(f func()) {
-	metrics.getTransactionsLatency.Time(f)
-}
-
 // TimeCreateTransaction measure execution of CreateTransaction
 func (metrics *Metrics) TimeCreateTransaction(f func()) {
 	metrics.createTransactionLatency.Time(f)

@@ -17,8 +17,6 @@ package actor
 import (
 	"time"
 
-	"github.com/jancajthaml-openbank/ledger-rest/model"
-
 	"github.com/rs/xid"
 
 	system "github.com/jancajthaml-openbank/actor-system"
@@ -26,7 +24,7 @@ import (
 )
 
 // ForwardTransfer forward existing transfer to different vault
-func ForwardTransfer(sys *ActorSystem, tenant string, transaction string, transfer string, forward model.TransferForward) (result interface{}) {
+func ForwardTransfer(sys *ActorSystem, tenant string, transaction string, transfer string, forward TransferForward) (result interface{}) {
 	sys.Metrics.TimeForwardTransfer(func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -56,7 +54,7 @@ func ForwardTransfer(sys *ActorSystem, tenant string, transaction string, transf
 
 		case <-time.After(3 * time.Second):
 			log.Warnf("Forward transfer %s/%s/%s timeout", tenant, transaction, transfer)
-			result = new(model.ReplyTimeout)
+			result = new(ReplyTimeout)
 			return
 		}
 	})

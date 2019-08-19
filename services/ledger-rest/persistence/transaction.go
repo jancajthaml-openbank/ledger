@@ -15,7 +15,7 @@
 package persistence
 
 import (
-	"github.com/jancajthaml-openbank/ledger-rest/model"
+	"github.com/jancajthaml-openbank/ledger-rest/actor"
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
@@ -36,7 +36,7 @@ func LoadTransactionsIDS(storage *localfs.Storage, tenant string) ([]string, err
 }
 
 // LoadTransactions loads transaction storage
-func LoadTransaction(storage *localfs.Storage, tenant string, id string) (*model.Transaction, error) {
+func LoadTransaction(storage *localfs.Storage, tenant string, id string) (*actor.Transaction, error) {
 	path := utils.TransactionPath(tenant, id)
 	ok, err := storage.Exists(path)
 	if err != nil || !ok {
@@ -48,7 +48,7 @@ func LoadTransaction(storage *localfs.Storage, tenant string, id string) (*model
 		return nil, err
 	}
 
-	result := new(model.Transaction)
+	result := new(actor.Transaction)
 	result.IDTransaction = id
 	result.Deserialise(data)
 	return result, nil

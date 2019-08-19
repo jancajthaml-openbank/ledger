@@ -33,6 +33,12 @@ type Configuration struct {
 	MetricsRefreshRate time.Duration
 	// MetricsOutput represents output file for metrics persistence
 	MetricsOutput string
+	// MinFreeDiskSpace respresents threshold for minimum disk free space to
+	// be possible operating
+	MinFreeDiskSpace uint64
+	// MinFreeMemory respresents threshold for minimum available memory to
+	// be possible operating
+	MinFreeMemory uint64
 }
 
 // GetConfig loads application configuration

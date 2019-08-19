@@ -22,7 +22,7 @@ import (
 	"github.com/jancajthaml-openbank/ledger-rest/api"
 	"github.com/jancajthaml-openbank/ledger-rest/config"
 	"github.com/jancajthaml-openbank/ledger-rest/metrics"
-	"github.com/jancajthaml-openbank/ledger-rest/systemd"
+	"github.com/jancajthaml-openbank/ledger-rest/system"
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
@@ -35,7 +35,9 @@ type Program struct {
 	actorSystem   actor.ActorSystem
 	metrics       metrics.Metrics
 	rest          api.Server
-	systemControl systemd.SystemControl
+	systemControl system.SystemControl
+	diskMonitor   system.DiskMonitor
+	memoryMonitor system.MemoryMonitor
 	cancel        context.CancelFunc
 }
 
@@ -47,13 +49,15 @@ func Initialize() Program {
 
 	utils.SetupLogger(cfg.LogLevel)
 
-	systemControlDaemon := systemd.NewSystemControl(ctx)
+	systemControlDaemon := system.NewSystemControl(ctx)
+	diskMonitorDaemon := system.NewDiskMonitor(ctx, cfg.MinFreeDiskSpace, cfg.RootStorage)
+	memoryMonitorDaemon := system.NewMemoryMonitor(ctx, cfg.MinFreeMemory)
 
 	storage := localfs.NewStorage(cfg.RootStorage)
 	metricsDaemon := metrics.NewMetrics(ctx, cfg.MetricsOutput, cfg.MetricsRefreshRate)
 
 	actorSystemDaemon := actor.NewActorSystem(ctx, cfg.LakeHostname, &metricsDaemon)
-	restDaemon := api.NewServer(ctx, cfg.ServerPort, cfg.SecretsPath, &actorSystemDaemon, &systemControlDaemon, &metricsDaemon, &storage)
+	restDaemon := api.NewServer(ctx, cfg.ServerPort, cfg.SecretsPath, &actorSystemDaemon, &systemControlDaemon, &diskMonitorDaemon, &memoryMonitorDaemon, &storage)
 
 	return Program{
 		cfg:           cfg,
@@ -62,6 +66,8 @@ func Initialize() Program {
 		actorSystem:   actorSystemDaemon,
 		rest:          restDaemon,
 		systemControl: systemControlDaemon,
+		diskMonitor:   diskMonitorDaemon,
+		memoryMonitor: memoryMonitorDaemon,
 		cancel:        cancel,
 	}
 }

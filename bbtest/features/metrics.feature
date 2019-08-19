@@ -23,8 +23,6 @@ Feature: Metrics test
       | key                      |
       | createTransactionLatency |
       | forwardTransferLatency   |
-      | getTransactionLatency    |
-      | getTransactionsLatency   |
     And metrics file /tmp/reports/blackbox-tests/metrics/metrics.json has permissions -rw-r--r--
 
   Scenario: metrics can remembers previous values after reboot

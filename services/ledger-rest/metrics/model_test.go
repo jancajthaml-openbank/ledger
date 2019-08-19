@@ -28,14 +28,10 @@ func TestMarshalJSON(t *testing.T) {
 	t.Log("happy path")
 	{
 		entity := Metrics{
-			getTransactionLatency:    metrics.NewTimer(),
-			getTransactionsLatency:   metrics.NewTimer(),
 			createTransactionLatency: metrics.NewTimer(),
 			forwardTransferLatency:   metrics.NewTimer(),
 		}
 
-		entity.getTransactionLatency.Update(time.Duration(1))
-		entity.getTransactionsLatency.Update(time.Duration(2))
 		entity.createTransactionLatency.Update(time.Duration(3))
 		entity.forwardTransferLatency.Update(time.Duration(4))
 
@@ -43,7 +39,7 @@ func TestMarshalJSON(t *testing.T) {
 
 		require.Nil(t, err)
 
-		data := []byte("{\"getTransactionLatency\":1,\"getTransactionsLatency\":2,\"createTransactionLatency\":3,\"forwardTransferLatency\":4}")
+		data := []byte("{\"createTransactionLatency\":3,\"forwardTransferLatency\":4}")
 
 		assert.Equal(t, data, actual)
 	}
@@ -68,8 +64,6 @@ func TestUnmarshalJSON(t *testing.T) {
 	t.Log("error on malformed data")
 	{
 		entity := Metrics{
-			getTransactionLatency:    metrics.NewTimer(),
-			getTransactionsLatency:   metrics.NewTimer(),
 			createTransactionLatency: metrics.NewTimer(),
 			forwardTransferLatency:   metrics.NewTimer(),
 		}
@@ -81,17 +75,13 @@ func TestUnmarshalJSON(t *testing.T) {
 	t.Log("happy path")
 	{
 		entity := Metrics{
-			getTransactionLatency:    metrics.NewTimer(),
-			getTransactionsLatency:   metrics.NewTimer(),
 			createTransactionLatency: metrics.NewTimer(),
 			forwardTransferLatency:   metrics.NewTimer(),
 		}
 
-		data := []byte("{\"getTransactionLatency\":1,\"getTransactionsLatency\":2,\"createTransactionLatency\":3,\"forwardTransferLatency\":4}")
+		data := []byte("{\"createTransactionLatency\":3,\"forwardTransferLatency\":4}")
 		require.Nil(t, entity.UnmarshalJSON(data))
 
-		assert.Equal(t, float64(1), entity.getTransactionLatency.Percentile(0.95))
-		assert.Equal(t, float64(2), entity.getTransactionsLatency.Percentile(0.95))
 		assert.Equal(t, float64(3), entity.createTransactionLatency.Percentile(0.95))
 		assert.Equal(t, float64(4), entity.forwardTransferLatency.Percentile(0.95))
 

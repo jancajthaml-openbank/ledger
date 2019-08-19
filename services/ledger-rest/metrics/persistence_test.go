@@ -29,8 +29,6 @@ func TestPersist(t *testing.T) {
 	{
 		entity := Metrics{
 			output:                   "/sys/kernel/security",
-			getTransactionLatency:    metrics.NewTimer(),
-			getTransactionsLatency:   metrics.NewTimer(),
 			createTransactionLatency: metrics.NewTimer(),
 			forwardTransferLatency:   metrics.NewTimer(),
 		}
@@ -47,8 +45,6 @@ func TestPersist(t *testing.T) {
 
 		entity := Metrics{
 			output:                   tmpfile.Name(),
-			getTransactionLatency:    metrics.NewTimer(),
-			getTransactionsLatency:   metrics.NewTimer(),
 			createTransactionLatency: metrics.NewTimer(),
 			forwardTransferLatency:   metrics.NewTimer(),
 		}
@@ -81,14 +77,10 @@ func TestHydrate(t *testing.T) {
 		defer os.Remove(tmpfile.Name())
 
 		old := Metrics{
-			getTransactionLatency:    metrics.NewTimer(),
-			getTransactionsLatency:   metrics.NewTimer(),
 			createTransactionLatency: metrics.NewTimer(),
 			forwardTransferLatency:   metrics.NewTimer(),
 		}
 
-		old.getTransactionLatency.Update(time.Duration(1))
-		old.getTransactionsLatency.Update(time.Duration(2))
 		old.createTransactionLatency.Update(time.Duration(3))
 		old.forwardTransferLatency.Update(time.Duration(4))
 
@@ -99,16 +91,12 @@ func TestHydrate(t *testing.T) {
 
 		entity := Metrics{
 			output:                   tmpfile.Name(),
-			getTransactionLatency:    metrics.NewTimer(),
-			getTransactionsLatency:   metrics.NewTimer(),
 			createTransactionLatency: metrics.NewTimer(),
 			forwardTransferLatency:   metrics.NewTimer(),
 		}
 
 		require.Nil(t, entity.Hydrate())
 
-		assert.Equal(t, float64(1), entity.getTransactionLatency.Percentile(0.95))
-		assert.Equal(t, float64(2), entity.getTransactionsLatency.Percentile(0.95))
 		assert.Equal(t, float64(3), entity.createTransactionLatency.Percentile(0.95))
 		assert.Equal(t, float64(4), entity.forwardTransferLatency.Percentile(0.95))
 	}
