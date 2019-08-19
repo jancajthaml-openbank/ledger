@@ -24,8 +24,7 @@ import (
 	"time"
 
 	"github.com/jancajthaml-openbank/ledger-rest/actor"
-	"github.com/jancajthaml-openbank/ledger-rest/metrics"
-	"github.com/jancajthaml-openbank/ledger-rest/systemd"
+	"github.com/jancajthaml-openbank/ledger-rest/system"
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
 
 	"github.com/gorilla/mux"
@@ -38,9 +37,10 @@ import (
 type Server struct {
 	utils.DaemonSupport
 	Storage       *localfs.Storage
-	SystemControl *systemd.SystemControl
+	SystemControl *system.SystemControl
+	DiskMonitor   *system.DiskMonitor
+	MemoryMonitor *system.MemoryMonitor
 	ActorSystem   *actor.ActorSystem
-	Metrics       *metrics.Metrics
 	underlying    *http.Server
 	router        *mux.Router
 	key           []byte
@@ -81,7 +81,7 @@ func cloneTLSConfig(cfg *tls.Config) *tls.Config {
 }
 
 // NewServer returns new secure server instance
-func NewServer(ctx context.Context, port int, secretsPath string, actorSystem *actor.ActorSystem, systemControl *systemd.SystemControl, metrics *metrics.Metrics, storage *localfs.Storage) Server {
+func NewServer(ctx context.Context, port int, secretsPath string, actorSystem *actor.ActorSystem, systemControl *system.SystemControl, diskMonitor *system.DiskMonitor, memoryMonitor *system.MemoryMonitor, storage *localfs.Storage) Server {
 	router := mux.NewRouter()
 
 	cert, err := ioutil.ReadFile(secretsPath + "/domain.local.crt")
@@ -97,9 +97,10 @@ func NewServer(ctx context.Context, port int, secretsPath string, actorSystem *a
 	result := Server{
 		DaemonSupport: utils.NewDaemonSupport(ctx),
 		Storage:       storage,
-		Metrics:       metrics,
 		ActorSystem:   actorSystem,
 		router:        router,
+		DiskMonitor:   diskMonitor,
+		MemoryMonitor: memoryMonitor,
 		SystemControl: systemControl,
 		underlying: &http.Server{
 			Addr:         fmt.Sprintf(":%d", port),

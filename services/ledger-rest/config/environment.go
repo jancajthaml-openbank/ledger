@@ -45,6 +45,8 @@ func loadConfFromEnv() Configuration {
 		LogLevel:           logLevel,
 		MetricsRefreshRate: metricsRefreshRate,
 		MetricsOutput:      metricsOutput + "/metrics.json",
+		MinFreeDiskSpace:   uint64(0),
+		MinFreeMemory:      uint64(0),
 	}
 }
 

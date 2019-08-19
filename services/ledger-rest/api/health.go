@@ -14,13 +14,46 @@
 
 package api
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/jancajthaml-openbank/ledger-rest/system"
+	"github.com/jancajthaml-openbank/ledger-rest/utils"
+)
 
 // HealtCheck returns 200 OK
 func HealtCheck(server *Server) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
+		units, err := server.SystemControl.GetUnitsProperties("ledger")
+		if err != nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write(emptyJSONObject)
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(emptyJSONObject)
+
+		resp, err := utils.JSON.Marshal(system.SystemStatus{
+			Units: units,
+			Memory: system.MemoryStatus{
+				Free:      server.MemoryMonitor.GetFreeMemory(),
+				Used:      server.MemoryMonitor.GetUsedMemory(),
+				IsHealthy: server.MemoryMonitor.IsHealthy(),
+			},
+			Storage: system.StorageStatus{
+				Free:      server.DiskMonitor.GetFreeDiskSpace(),
+				Used:      server.DiskMonitor.GetUsedDiskSpace(),
+				IsHealthy: server.DiskMonitor.IsHealthy(),
+			},
+		})
+		if err != nil {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write(emptyJSONArray)
+		} else {
+
+			w.WriteHeader(http.StatusOK)
+			w.Write(resp)
+		}
 	}
 }

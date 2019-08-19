@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package systemd
+package system
 
 import (
 	"context"
@@ -67,6 +67,38 @@ func (sys SystemControl) ListUnits(prefix string) ([]string, error) {
 	sort.Slice(result, func(i, j int) bool {
 		return result[i] < result[j]
 	})
+
+	return result, nil
+}
+
+// GetUnitsProperties return unit properties
+func (sys SystemControl) GetUnitsProperties(prefix string) (map[string]UnitStatus, error) {
+	log.Debugf("Getting units %+v status", prefix)
+
+	units, err := sys.underlying.ListUnits()
+	if err != nil {
+		return nil, err
+	}
+
+	var result = make(map[string]UnitStatus)
+	for _, unit := range units {
+		if !strings.HasPrefix(unit.Name, prefix) {
+			continue
+		}
+		properties, err := sys.underlying.GetUnitProperties(unit.Name)
+
+		if err != nil {
+			result[unit.Name] = UnitStatus{
+				Status:          unit.SubState,
+				StatusChangedAt: 0,
+			}
+		} else {
+			result[unit.Name] = UnitStatus{
+				Status:          unit.SubState,
+				StatusChangedAt: properties["StateChangeTimestamp"].(uint64),
+			}
+		}
+	}
 
 	return result, nil
 }

@@ -19,7 +19,6 @@ import (
 	"net/http"
 
 	"github.com/jancajthaml-openbank/ledger-rest/actor"
-	"github.com/jancajthaml-openbank/ledger-rest/model"
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
 
 	"github.com/gorilla/mux"
@@ -69,7 +68,7 @@ func ForwardTransfer(server *Server, tenant string, transaction string, transfer
 		return
 	}
 
-	var req = new(model.TransferForward)
+	var req = new(actor.TransferForward)
 	err = utils.JSON.Unmarshal(data, req)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -80,13 +79,13 @@ func ForwardTransfer(server *Server, tenant string, transaction string, transfer
 
 	switch actor.ForwardTransfer(server.ActorSystem, tenant, transaction, transfer, *req).(type) {
 
-	case *model.TransactioMissing:
+	case *actor.TransactioMissing:
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
 		w.Write(emptyJSONArray)
 		return
 
-	case *model.TransactionCreated:
+	case *actor.TransactionCreated:
 		resp, err := utils.JSON.Marshal(req)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
@@ -100,7 +99,7 @@ func ForwardTransfer(server *Server, tenant string, transaction string, transfer
 		w.Write(resp)
 		return
 
-	case *model.TransactionRejected:
+	case *actor.TransactionRejected:
 		resp, err := utils.JSON.Marshal(req)
 		if err != nil {
 			w.Header().Set("Content-Type", "application/json")
@@ -114,19 +113,19 @@ func ForwardTransfer(server *Server, tenant string, transaction string, transfer
 		w.Write(resp)
 		return
 
-	case *model.TransactionRefused:
+	case *actor.TransactionRefused:
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusExpectationFailed)
 		w.Write(emptyJSONObject)
 		return
 
-	case *model.TransactionDuplicate:
+	case *actor.TransactionDuplicate:
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusConflict)
 		w.Write(emptyJSONObject)
 		return
 
-	case *model.TransactionRace, *model.ReplyTimeout:
+	case *actor.TransactionRace, *actor.ReplyTimeout:
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusGatewayTimeout)
 		w.Write(emptyJSONObject)

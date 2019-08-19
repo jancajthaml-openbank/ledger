@@ -17,26 +17,6 @@ func TestMetrics(t *testing.T) {
 	delay := 1e8
 	delta := 1e8
 
-	t.Log("TimeGetTransaction properly times run of GetAccount function")
-	{
-		require.Equal(t, int64(0), entity.getTransactionLatency.Count())
-		entity.TimeGetTransaction(func() {
-			time.Sleep(time.Duration(delay))
-		})
-		assert.Equal(t, int64(1), entity.getTransactionLatency.Count())
-		assert.InDelta(t, entity.getTransactionLatency.Percentile(0.95), delay, delta)
-	}
-
-	t.Log("TimeGetTransactions properly times run of GetAccount function")
-	{
-		require.Equal(t, int64(0), entity.getTransactionsLatency.Count())
-		entity.TimeGetTransactions(func() {
-			time.Sleep(time.Duration(delay))
-		})
-		assert.Equal(t, int64(1), entity.getTransactionsLatency.Count())
-		assert.InDelta(t, entity.getTransactionsLatency.Percentile(0.95), delay, delta)
-	}
-
 	t.Log("TimeCreateTransaction properly times run of CreateAccount function")
 	{
 		require.Equal(t, int64(0), entity.createTransactionLatency.Count())

@@ -30,8 +30,6 @@ type Metrics struct {
 	utils.DaemonSupport
 	output                   string
 	refreshRate              time.Duration
-	getTransactionLatency    metrics.Timer
-	getTransactionsLatency   metrics.Timer
 	createTransactionLatency metrics.Timer
 	forwardTransferLatency   metrics.Timer
 }
@@ -42,8 +40,6 @@ func NewMetrics(ctx context.Context, output string, refreshRate time.Duration) M
 		DaemonSupport:            utils.NewDaemonSupport(ctx),
 		output:                   output,
 		refreshRate:              refreshRate,
-		getTransactionLatency:    metrics.NewTimer(),
-		getTransactionsLatency:   metrics.NewTimer(),
 		createTransactionLatency: metrics.NewTimer(),
 		forwardTransferLatency:   metrics.NewTimer(),
 	}
@@ -55,18 +51,13 @@ func (metrics *Metrics) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("cannot marshall nil")
 	}
 
-	if metrics.getTransactionLatency == nil || metrics.getTransactionsLatency == nil ||
-		metrics.createTransactionLatency == nil || metrics.forwardTransferLatency == nil {
+	if metrics.createTransactionLatency == nil || metrics.forwardTransferLatency == nil {
 		return nil, fmt.Errorf("cannot marshall nil references")
 	}
 
 	var buffer bytes.Buffer
 
-	buffer.WriteString("{\"getTransactionLatency\":")
-	buffer.WriteString(strconv.FormatFloat(metrics.getTransactionLatency.Percentile(0.95), 'f', -1, 64))
-	buffer.WriteString(",\"getTransactionsLatency\":")
-	buffer.WriteString(strconv.FormatFloat(metrics.getTransactionsLatency.Percentile(0.95), 'f', -1, 64))
-	buffer.WriteString(",\"createTransactionLatency\":")
+	buffer.WriteString("{\"createTransactionLatency\":")
 	buffer.WriteString(strconv.FormatFloat(metrics.createTransactionLatency.Percentile(0.95), 'f', -1, 64))
 	buffer.WriteString(",\"forwardTransferLatency\":")
 	buffer.WriteString(strconv.FormatFloat(metrics.forwardTransferLatency.Percentile(0.95), 'f', -1, 64))
@@ -81,8 +72,7 @@ func (metrics *Metrics) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("cannot unmarshall to nil")
 	}
 
-	if metrics.getTransactionLatency == nil || metrics.getTransactionsLatency == nil ||
-		metrics.createTransactionLatency == nil || metrics.forwardTransferLatency == nil {
+	if metrics.createTransactionLatency == nil || metrics.forwardTransferLatency == nil {
 		return fmt.Errorf("cannot unmarshall to nil references")
 	}
 
@@ -97,8 +87,6 @@ func (metrics *Metrics) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	metrics.getTransactionLatency.Update(time.Duration(aux.GetTransactionLatency))
-	metrics.getTransactionsLatency.Update(time.Duration(aux.GetTransactionsLatency))
 	metrics.createTransactionLatency.Update(time.Duration(aux.CreateTransactionLatency))
 	metrics.forwardTransferLatency.Update(time.Duration(aux.ForwardTransferLatency))
 

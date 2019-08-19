@@ -18,8 +18,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jancajthaml-openbank/ledger-rest/model"
-
 	system "github.com/jancajthaml-openbank/actor-system"
 	log "github.com/sirupsen/logrus"
 )
@@ -76,22 +74,22 @@ func ProcessRemoteMessage(s *ActorSystem) system.ProcessRemoteMessage {
 			message = FatalError
 
 		case RespCreateTransaction:
-			message = new(model.TransactionCreated)
+			message = new(TransactionCreated)
 
 		case RespTransactionRefused:
-			message = new(model.TransactionRefused)
+			message = new(TransactionRefused)
 
 		case RespTransactionRejected:
-			message = new(model.TransactionRejected)
+			message = new(TransactionRejected)
 
 		case RespTransactionRace:
-			message = new(model.TransactionRace)
+			message = new(TransactionRace)
 
 		case RespTransactionMissing:
-			message = new(model.TransactioMissing)
+			message = new(TransactioMissing)
 
 		case RespTransactionDuplicate:
-			message = new(model.TransactionDuplicate)
+			message = new(TransactionDuplicate)
 
 		default:
 			log.Warnf("Deserialization of unsuported message [remote %v -> local %v] : %+v", from, to, msg)
