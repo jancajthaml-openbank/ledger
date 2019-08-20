@@ -8,7 +8,7 @@ import os
 
 
 def create_transfer(context, tenant):
-  uri = "https://127.0.0.1:4401/transaction/{}".format(tenant)
+  uri = "https://127.0.0.1/transaction/{}".format(tenant)
 
   ctx = ssl.create_default_context()
   ctx.check_hostname = False
@@ -53,7 +53,7 @@ def create_custom_transfer(context, tenant):
 
 @when('{transaction} {transfer} {side} side is forwarded from tenant {tenantFrom} to {tenantTo}/{accountTo}')
 def forward_transfer(context, transaction, transfer, side, tenantFrom, tenantTo, accountTo):
-  uri = "https://127.0.0.1:4401/transaction/{}/{}/{}".format(tenantFrom, transaction, transfer)
+  uri = "https://127.0.0.1/transaction/{}/{}/{}".format(tenantFrom, transaction, transfer)
 
   payload = json.dumps({
     'side': side,
