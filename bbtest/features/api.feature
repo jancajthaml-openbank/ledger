@@ -3,7 +3,7 @@ Feature: REST
   Scenario: Tenant API
     Given unit "ledger-rest.service" is running
 
-    When I request HTTP https://127.0.0.1:4401/tenant
+    When I request HTTP https://127.0.0.1/tenant
       | key    | value |
       | method | GET   |
     Then HTTP response is
@@ -13,21 +13,21 @@ Feature: REST
       []
       """
 
-    When I request HTTP https://127.0.0.1:4401/tenant/APITESTA
+    When I request HTTP https://127.0.0.1/tenant/APITESTA
       | key    | value |
       | method | POST  |
     Then HTTP response is
       | key    | value |
       | status | 200   |
 
-    When I request HTTP https://127.0.0.1:4401/tenant/APITESTB
+    When I request HTTP https://127.0.0.1/tenant/APITESTB
       | key    | value |
       | method |  POST |
     Then HTTP response is
       | key    | value |
       | status | 200   |
 
-    When I request HTTP https://127.0.0.1:4401/tenant
+    When I request HTTP https://127.0.0.1/tenant
       | key    | value |
       | method | GET   |
     Then HTTP response is
@@ -39,14 +39,14 @@ Feature: REST
       ]
       """
 
-    When I request HTTP https://127.0.0.1:4401/tenant/APITESTC
+    When I request HTTP https://127.0.0.1/tenant/APITESTC
       | key    | value |
       | method | POST  |
     Then HTTP response is
       | key    | value |
       | status | 200   |
 
-    When I request HTTP https://127.0.0.1:4401/tenant/APITESTC
+    When I request HTTP https://127.0.0.1/tenant/APITESTC
       | key    | value  |
       | method | DELETE |
     Then HTTP response is
@@ -61,7 +61,7 @@ Feature: REST
     And   pasive account API/xxx with currency XXX exist
     And   pasive account API/yyy with currency XXX exist
 
-    When I request HTTP https://127.0.0.1:4401/transaction/API
+    When I request HTTP https://127.0.0.1/transaction/API
       | key    | value |
       | method | POST  |
       """
@@ -86,14 +86,14 @@ Feature: REST
       | key    | value |
       | status | 417   |
 
-    When I request HTTP https://127.0.0.1:4401/transaction/API/unique_transaction_id
+    When I request HTTP https://127.0.0.1/transaction/API/unique_transaction_id
       | key    | value |
       | method | GET   |
     Then HTTP response is
       | key    | value |
       | status | 404   |
 
-    When I request HTTP https://127.0.0.1:4401/transaction/API
+    When I request HTTP https://127.0.0.1/transaction/API
       | key    | value |
       | method | POST  |
       """
@@ -142,7 +142,7 @@ Feature: REST
       }
       """
 
-    When I request HTTP https://127.0.0.1:4401/transaction/API/unique_transaction_id
+    When I request HTTP https://127.0.0.1/transaction/API/unique_transaction_id
       | key    | value |
       | method | GET   |
     Then HTTP response is
@@ -171,7 +171,7 @@ Feature: REST
       }
       """
 
-    When I request HTTP https://127.0.0.1:4401/transaction/API
+    When I request HTTP https://127.0.0.1/transaction/API
       | key    | value |
       | method | GET   |
     Then HTTP response is
@@ -183,7 +183,7 @@ Feature: REST
       ]
       """
 
-    When I request HTTP https://127.0.0.1:4401/transaction/API
+    When I request HTTP https://127.0.0.1/transaction/API
       | key    | value |
       | method | POST  |
       """
@@ -232,7 +232,7 @@ Feature: REST
       }
       """
 
-    When I request HTTP https://127.0.0.1:4401/transaction/API
+    When I request HTTP https://127.0.0.1/transaction/API
       | key    | value |
       | method | POST  |
       """
@@ -264,7 +264,7 @@ Feature: REST
   Scenario: Health API
     Given unit "vault-rest.service" is running
 
-    When I request HTTP https://127.0.0.1:4401/health
+    When I request HTTP https://127.0.0.1/health
       | key    | value |
       | method | GET   |
     Then HTTP response is
