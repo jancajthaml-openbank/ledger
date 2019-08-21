@@ -15,6 +15,8 @@ case "$1" in
       echo "LEDGER_SECRETS=/opt/ledger/secrets" >> /etc/init/ledger.conf
       echo "LEDGER_LAKE_HOSTNAME=localhost" >> /etc/init/ledger.conf
       echo "LEDGER_TRANSACTION_INTEGRITY_SCANINTERVAL=120s" >> /etc/init/ledger.conf
+      echo "LEDGER_MEMORY_THRESHOLD=0" >> /etc/init/ledger.conf
+      echo "LEDGER_STORAGE_THRESHOLD=0" >> /etc/init/ledger.conf
       echo "LEDGER_METRICS_REFRESHRATE=1s" >> /etc/init/ledger.conf
       echo "LEDGER_METRICS_OUTPUT=/opt/ledger/metrics" >> /etc/init/ledger.conf
     fi
