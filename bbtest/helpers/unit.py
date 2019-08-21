@@ -18,10 +18,12 @@ class UnitHelper(object):
     return {
       "STORAGE": "/data",
       "LOG_LEVEL": "DEBUG",
-      "HTTP_PORT": "443",
+      "HTTP_PORT": 443,
       "SECRETS": "/opt/ledger/secrets",
       "LAKE_HOSTNAME": "localhost",
       "TRANSACTION_INTEGRITY_SCANINTERVAL": "120s",
+      "MEMORY_THRESHOLD": 0,
+      "STORAGE_THRESHOLD": 0,
       "METRICS_REFRESHRATE": "1s",
       "METRICS_OUTPUT": "/tmp/reports/blackbox-tests/metrics",
       #"METRICS_CONTINUOUS": "true",  # fixme implement

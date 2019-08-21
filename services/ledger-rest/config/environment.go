@@ -30,6 +30,8 @@ func loadConfFromEnv() Configuration {
 	rootStorage := getEnvString("LEDGER_STORAGE", "/data")
 	lakeHostname := getEnvString("LEDGER_LAKE_HOSTNAME", "")
 	port := getEnvInteger("LEDGER_HTTP_PORT", 4401)
+	minFreeDiskSpace := getEnvInteger("VAULT_STORAGE_THRESHOLD", 0)
+	minFreeMemory := getEnvInteger("VAULT_MEMORY_THRESHOLD", 0)
 	metricsOutput := getEnvFilename("LEDGER_METRICS_OUTPUT", "/tmp")
 	metricsRefreshRate := getEnvDuration("LEDGER_METRICS_REFRESHRATE", time.Second)
 
@@ -45,8 +47,8 @@ func loadConfFromEnv() Configuration {
 		LogLevel:           logLevel,
 		MetricsRefreshRate: metricsRefreshRate,
 		MetricsOutput:      metricsOutput + "/metrics.json",
-		MinFreeDiskSpace:   uint64(0),
-		MinFreeMemory:      uint64(0),
+		MinFreeDiskSpace:   uint64(minFreeDiskSpace),
+		MinFreeMemory:      uint64(minFreeMemory),
 	}
 }
 

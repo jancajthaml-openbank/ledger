@@ -21,7 +21,7 @@ import (
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
 )
 
-// HealtCheck returns 200 OK
+// HealtCheck returns 200 OK if service is healthy, 503 otherwise
 func HealtCheck(server *Server) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		units, err := server.SystemControl.GetUnitsProperties("ledger")
@@ -32,9 +32,7 @@ func HealtCheck(server *Server) func(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-
-		resp, err := utils.JSON.Marshal(system.SystemStatus{
+		status := system.SystemStatus{
 			Units: units,
 			Memory: system.MemoryStatus{
 				Free:      server.MemoryMonitor.GetFreeMemory(),
@@ -46,12 +44,17 @@ func HealtCheck(server *Server) func(w http.ResponseWriter, r *http.Request) {
 				Used:      server.DiskMonitor.GetUsedDiskSpace(),
 				IsHealthy: server.DiskMonitor.IsHealthy(),
 			},
-		})
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		resp, err := utils.JSON.Marshal(status)
 		if err != nil {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			w.Write(emptyJSONArray)
+		} else if !status.Storage.IsHealthy || !status.Memory.IsHealthy {
+			w.WriteHeader(http.StatusServiceUnavailable)
+			w.Write(resp)
 		} else {
-
 			w.WriteHeader(http.StatusOK)
 			w.Write(resp)
 		}
