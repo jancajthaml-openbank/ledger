@@ -25,9 +25,9 @@ case "$1" in
       enable ledger-rest.service
 
       if [ ${SYSTEMD_AVAIL} ] ; then
-        systemctl daemon-reload
-        systemctl start ledger.service
-        systemctl start ledger.path
+        (systemctl daemon-reload || :)
+        (systemctl start ledger.service || :)
+        (systemctl start ledger.path || :)
       fi
 
     else

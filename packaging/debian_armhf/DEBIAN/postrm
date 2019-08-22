@@ -58,7 +58,7 @@ case "$1" in
 
   upgrade|deconfigure)
     if [ ${SYSTEMD_AVAIL} ] ; then
-      systemctl stop ledger 2> /dev/null || :
+      (systemctl stop ledger 2> /dev/null || :)
     fi
   ;;
 
