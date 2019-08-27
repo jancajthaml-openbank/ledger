@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"runtime"
 	"strconv"
 	"time"
 
@@ -55,12 +56,17 @@ func (metrics *Metrics) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("cannot marshall nil references")
 	}
 
+	var stats = new(runtime.MemStats)
+	runtime.ReadMemStats(stats)
+
 	var buffer bytes.Buffer
 
 	buffer.WriteString("{\"createTransactionLatency\":")
 	buffer.WriteString(strconv.FormatFloat(metrics.createTransactionLatency.Percentile(0.95), 'f', -1, 64))
 	buffer.WriteString(",\"forwardTransferLatency\":")
 	buffer.WriteString(strconv.FormatFloat(metrics.forwardTransferLatency.Percentile(0.95), 'f', -1, 64))
+	buffer.WriteString(",\"memoryAllocated\":")
+	buffer.WriteString(strconv.FormatUint(stats.Sys, 10))
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
