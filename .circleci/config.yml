@@ -529,7 +529,7 @@ jobs:
 
             docker exec -it $(\
               docker run -d -t \
-                --cap-add SYS_ADMIN \
+                --cpuset-cpus=1 \
                 -e IMAGE_VERSION="${IMAGE_VERSION}" \
                 -e UNIT_VERSION="${UNIT_VERSION}" \
                 -e UNIT_ARCH=amd64 \

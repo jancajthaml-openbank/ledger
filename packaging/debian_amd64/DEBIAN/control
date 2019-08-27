@@ -1,5 +1,5 @@
 Package: ledger
-Version: 1.1.0+health-check-status
+Version: 1.1.1+metrics-memory
 Section: misc
 Priority: extra
 Architecture: amd64
