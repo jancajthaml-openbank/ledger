@@ -174,9 +174,6 @@ def check_http_response(context):
   if 'status' in options:
     assert response['status'] == options['status'], 'expected status {} actual {}'.format(options['status'], response['status'])
 
-  for _ in range(20):
-    print(response['body'])
-
   if context.text:
     def diff(path, a, b):
       if type(a) == list:
