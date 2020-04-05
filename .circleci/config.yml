@@ -212,18 +212,22 @@ jobs:
                 VERSION=${tags}
               fi
               META=$(echo -e ${CIRCLE_BRANCH} | sed 's:.*/::')
+              echo -e "${VERSION#v}" > /home/circleci/project/TAG_VERSION
               echo -e "${VERSION}+${META}" > /home/circleci/project/DEBIAN_VERSION
               echo -e "${VERSION}-${META}" > /home/circleci/project/DOCKER_VERSION
             else
+              echo -e "${CIRCLE_TAG#v}" > /home/circleci/project/TAG_VERSION
               echo -e "${CIRCLE_TAG}" > /home/circleci/project/DEBIAN_VERSION
               echo -e "${CIRCLE_TAG}" > /home/circleci/project/DOCKER_VERSION
             fi
 
+            cat /home/circleci/project/TAG_VERSION
             cat /home/circleci/project/DEBIAN_VERSION
             cat /home/circleci/project/DOCKER_VERSION
       - save_cache:
           key: versions-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
+            - /home/circleci/project/TAG_VERSION
             - /home/circleci/project/DEBIAN_VERSION
             - /home/circleci/project/DOCKER_VERSION
 
@@ -477,20 +481,22 @@ jobs:
       - run:
           name: Package for docker
           command: |
-            VERSION=$(cat /home/circleci/project/DOCKER_VERSION)
-            docker build -t openbank/ledger:${VERSION} .
+            DOCKER_VERSION=$(cat /home/circleci/project/DOCKER_VERSION)
+            TAG_VERSION=$(cat /home/circleci/project/TAG_VERSION)
 
-            docker tag openbank/ledger:${VERSION} \
-              docker.pkg.github.com/jancajthaml-openbank/ledger/ledger:${VERSION}
+            docker build -t openbank/ledger:${DOCKER_VERSION} .
 
-            docker tag openbank/ledger:${VERSION} \
-              docker.io/openbank/ledger:${VERSION}
+            docker tag openbank/ledger:${DOCKER_VERSION} \
+              docker.pkg.github.com/jancajthaml-openbank/ledger/ledger:${TAG_VERSION}
+
+            docker tag openbank/ledger:${DOCKER_VERSION} \
+              docker.io/openbank/ledger:${DOCKER_VERSION}
 
             docker login docker.pkg.github.com -u jancajthaml -p ${GITHUB_RELEASE_TOKEN}
-            docker push docker.pkg.github.com/jancajthaml-openbank/ledger/ledger:${VERSION}
+            docker push docker.pkg.github.com/jancajthaml-openbank/ledger/ledger:${TAG_VERSION}
 
             docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
-            docker push docker.io/openbank/ledger:${VERSION}
+            docker push docker.io/openbank/ledger:${DOCKER_VERSION}
 
   # -------------------------------------------------------------------------- #
 
