@@ -1,6 +1,8 @@
 # ledger
 
-Service responsible for transaction negotiation and transaction audit trail.
+Service responsible for transaction negotiation and transaction journal.
+
+![Health Check](https://github.com/jancajthaml-openbank/ledger/workflows/Health%20Check/badge.svg)
 
 [![godoc for jancajthaml-openbank/ledger](https://godoc.org/github.com/nathany/looper?status.svg)](https://godoc.org/github.com/jancajthaml-openbank/ledger) [![CircleCI](https://circleci.com/gh/jancajthaml-openbank/ledger/tree/master.svg?style=shield)](https://circleci.com/gh/jancajthaml-openbank/ledger/tree/master)
 
