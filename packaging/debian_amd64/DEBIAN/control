@@ -1,5 +1,5 @@
 Package: ledger
-Version: 1.1.1+metrics-memory
+Version: 1.1.1+improve-daemons
 Section: misc
 Priority: extra
 Architecture: amd64

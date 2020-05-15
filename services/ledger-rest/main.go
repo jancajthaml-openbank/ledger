@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,19 +21,13 @@ import (
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
 )
 
-func exit(program *boot.Program) {
-	program.Stop()
-	log.Info(">>> Stop <<<")
-}
-
-func start() boot.Program {
+func main() {
 	log.SetFormatter(new(utils.LogFormat))
 	log.Info(">>> Start <<<")
-	return boot.Initialize()
-}
-
-func main() {
-	program := start()
-	defer exit(&program)
-	program.Run()
+	program := boot.Initialize()
+	defer func() {
+		program.Stop()
+		log.Info(">>> Stop <<<")
+	}()
+	program.Start()
 }

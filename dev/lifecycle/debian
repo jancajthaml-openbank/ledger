@@ -209,61 +209,18 @@ check_files() {
   chmod 0755 "${DEB_SOURCES}/DEBIAN/postinst"
   chmod 0755 "${DEB_SOURCES}/DEBIAN/postrm"
   chmod 0755 "${DEB_SOURCES}/DEBIAN/preinst"
+  chmod 0755 "${DEB_SOURCES}/usr/bin/ledger-rest"
+  chmod 0755 "${DEB_SOURCES}/usr/bin/ledger-unit"
 }
 
 ################################################################################
 
-case ${TARGET_ARCHITECTURE} in
-
-  armhf)
-    arm-linux-gnueabihf-objcopy \
-      --strip-debug \
-      --strip-unneeded \
-      "${BIN_SOURCES}/ledger-rest-linux-${TARGET_ARCHITECTURE}" \
-      "${DEB_SOURCES}/usr/bin/ledger-rest"
-    arm-linux-gnueabihf-objcopy \
-      --strip-debug \
-      --strip-unneeded \
-      "${BIN_SOURCES}/ledger-unit-linux-${TARGET_ARCHITECTURE}" \
-      "${DEB_SOURCES}/usr/bin/ledger-unit"
-  ;;
-
-  arm64)
-    aarch64-linux-gnu-objcopy \
-      --strip-debug \
-      --strip-unneeded \
-      "${BIN_SOURCES}/ledger-rest-linux-${TARGET_ARCHITECTURE}" \
-      "${DEB_SOURCES}/usr/bin/ledger-rest"
-    aarch64-linux-gnu-objcopy \
-      --strip-debug \
-      --strip-unneeded \
-      "${BIN_SOURCES}/ledger-unit-linux-${TARGET_ARCHITECTURE}" \
-      "${DEB_SOURCES}/usr/bin/ledger-unit"
-  ;;
-
-  amd64)
-    objcopy \
-      --strip-debug \
-      --strip-unneeded \
-      "${BIN_SOURCES}/ledger-rest-linux-${TARGET_ARCHITECTURE}" \
-      "${DEB_SOURCES}/usr/bin/ledger-rest"
-    objcopy \
-      --strip-debug \
-      --strip-unneeded \
-      "${BIN_SOURCES}/ledger-unit-linux-${TARGET_ARCHITECTURE}" \
-      "${DEB_SOURCES}/usr/bin/ledger-unit"
-  ;;
-
-  *)
-    cp \
-      "${BIN_SOURCES}/ledger-rest-linux-${TARGET_ARCHITECTURE}" \
-      "${DEB_SOURCES}/usr/bin/ledger-rest"
-    cp \
-      "${BIN_SOURCES}/ledger-unit-linux-${TARGET_ARCHITECTURE}" \
-      "${DEB_SOURCES}/usr/bin/ledger-unit"
-  ;;
-
-esac
+cp \
+  "${BIN_SOURCES}/ledger-rest-linux-${TARGET_ARCHITECTURE}" \
+  "${DEB_SOURCES}/usr/bin/ledger-rest"
+cp \
+  "${BIN_SOURCES}/ledger-unit-linux-${TARGET_ARCHITECTURE}" \
+  "${DEB_SOURCES}/usr/bin/ledger-unit"
 
 generate_changelog
 generate_manpage

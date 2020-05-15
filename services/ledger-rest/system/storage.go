@@ -16,7 +16,6 @@ package system
 
 import (
 	"context"
-	"fmt"
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -42,7 +41,7 @@ func NewDiskMonitor(ctx context.Context, limit uint64, rootStorage string) DiskM
 	free := uint64(0)
 	used := uint64(0)
 	return DiskMonitor{
-		DaemonSupport: utils.NewDaemonSupport(ctx),
+		DaemonSupport: utils.NewDaemonSupport(ctx, "storage-check"),
 		rootStorage:   rootStorage,
 		limit:         limit,
 		free:          &free,
@@ -88,37 +87,8 @@ func (monitor *DiskMonitor) CheckDiskSpace() {
 	return
 }
 
-// WaitReady wait for daemon to be ready
-func (monitor DiskMonitor) WaitReady(deadline time.Duration) (err error) {
-	defer func() {
-		if e := recover(); e != nil {
-			switch x := e.(type) {
-			case string:
-				err = fmt.Errorf(x)
-			case error:
-				err = x
-			default:
-				err = fmt.Errorf("unknown panic")
-			}
-		}
-	}()
-
-	ticker := time.NewTicker(deadline)
-	select {
-	case <-monitor.IsReady:
-		ticker.Stop()
-		err = nil
-		return
-	case <-ticker.C:
-		err = fmt.Errorf("daemon was not ready within %v seconds", deadline)
-		return
-	}
-}
-
-// Start handles everything needed to start daemon
+// Start handles everything needed to start storage daemon
 func (monitor DiskMonitor) Start() {
-	defer monitor.MarkDone()
-
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
@@ -129,19 +99,24 @@ func (monitor DiskMonitor) Start() {
 	case <-monitor.CanStart:
 		break
 	case <-monitor.Done():
+		monitor.MarkDone()
 		return
 	}
 
 	log.Info("Start disk space monitor daemon")
 
-	for {
-		select {
-		case <-monitor.Done():
-			log.Info("Stopping disk space monitor daemon")
-			log.Info("Stop disk space monitor daemon")
-			return
-		case <-ticker.C:
-			monitor.CheckDiskSpace()
+	go func() {
+		for {
+			select {
+			case <-monitor.Done():
+				monitor.MarkDone()
+				return
+			case <-ticker.C:
+				monitor.CheckDiskSpace()
+			}
 		}
-	}
+	}()
+
+	<-monitor.IsDone
+	log.Info("Stop disk space monitor daemon")
 }

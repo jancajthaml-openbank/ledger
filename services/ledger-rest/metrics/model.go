@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ type Metrics struct {
 // NewMetrics returns metrics fascade
 func NewMetrics(ctx context.Context, output string, refreshRate time.Duration) Metrics {
 	return Metrics{
-		DaemonSupport:            utils.NewDaemonSupport(ctx),
+		DaemonSupport:            utils.NewDaemonSupport(ctx, "metrics"),
 		output:                   output,
 		refreshRate:              refreshRate,
 		createTransactionLatency: metrics.NewTimer(),

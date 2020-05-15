@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@ package persistence
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/jancajthaml-openbank/ledger-unit/metrics"
@@ -39,7 +38,7 @@ type TransactionFinalizer struct {
 // NewTransactionFinalizer returns snapshot updater fascade
 func NewTransactionFinalizer(ctx context.Context, scanInterval time.Duration, metrics *metrics.Metrics, storage *localfs.Storage, callback func(msg interface{}, to system.Coordinates, from system.Coordinates)) TransactionFinalizer {
 	return TransactionFinalizer{
-		DaemonSupport: utils.NewDaemonSupport(ctx),
+		DaemonSupport: utils.NewDaemonSupport(ctx, " transaction-finalizer"),
 		callback:      callback,
 		metrics:       metrics,
 		storage:       storage,
@@ -48,97 +47,11 @@ func NewTransactionFinalizer(ctx context.Context, scanInterval time.Duration, me
 }
 
 func (scan TransactionFinalizer) performIntegrityScan() {
-
+	log.Warn("Transaction finalization not implemented")
 }
 
-/*
-// FIXME unit test coverage
-// FIXME maximum events to params
-func (updater SnapshotUpdater) updateSaturated() {
-  accounts := updater.getAccounts()
-  var numberOfSnapshotsUpdated int64
-
-  for _, name := range accounts {
-    version := updater.getVersion(name)
-    if version == -1 {
-      continue
-    }
-    if updater.getEvents(name, version) >= updater.saturationThreshold {
-      log.Debugf("Request %v to update snapshot version from %d to %d", name, version, version+1)
-      msg := model.Update{Version: version}
-      to := system.Coordinates{Name: name}
-      from := system.Coordinates{Name: "snapshot_saturation_cron"}
-      updater.callback(msg, to, from)
-
-      numberOfSnapshotsUpdated++
-    }
-  }
-  updater.metrics.SnapshotsUpdated(numberOfSnapshotsUpdated)
-}
-
-func (updater SnapshotUpdater) getAccounts() []string {
-  result, err := updater.storage.ListDirectory(utils.RootPath(), true)
-  if err != nil {
-    return nil
-  }
-  return result
-}
-
-func (updater SnapshotUpdater) getVersion(name string) int {
-  result, err := updater.storage.ListDirectory(utils.SnapshotsPath(name), false)
-  if err != nil || len(result) == 0 {
-    return -1
-  }
-
-  version, err := strconv.Atoi(result[0])
-  if err != nil {
-    return -1
-  }
-
-  return version
-}
-
-func (updater SnapshotUpdater) getEvents(name string, version int) int {
-  result, err := updater.storage.CountFiles(utils.EventPath(name, version))
-  if err != nil {
-    return -1
-  }
-  return result
-}*/
-
-// WaitReady wait for snapshot updated to be ready
-func (scan TransactionFinalizer) WaitReady(deadline time.Duration) (err error) {
-	defer func() {
-		if e := recover(); e != nil {
-			switch x := e.(type) {
-			case string:
-				err = fmt.Errorf(x)
-			case error:
-				err = x
-			default:
-				err = fmt.Errorf("unknown panic")
-			}
-		}
-	}()
-
-	ticker := time.NewTicker(deadline)
-	select {
-	case <-scan.IsReady:
-		ticker.Stop()
-		err = nil
-		return
-	case <-ticker.C:
-		err = fmt.Errorf("daemon was not ready within %v seconds", deadline)
-		return
-	}
-}
-
-// Start handles everything needed to start snapshot updater daemon it runs scan
-// of accounts snapshots and events and orders accounts to update their snapshot
-// if number of events in given version is larger than threshold
+// Start handles everything needed to start transaction finalizer daemon
 func (scan TransactionFinalizer) Start() {
-	defer scan.MarkDone()
-
 	ticker := time.NewTicker(scan.scanInterval)
 	defer ticker.Stop()
 
@@ -148,21 +61,26 @@ func (scan TransactionFinalizer) Start() {
 	case <-scan.CanStart:
 		break
 	case <-scan.Done():
+		scan.MarkDone()
 		return
 	}
 
-	log.Infof("Start transaction integrity check daemon, scan each %v", scan.scanInterval)
+	log.Infof("Start transaction-finalizer check daemon, scan each %v", scan.scanInterval)
 
-	for {
-		select {
-		case <-scan.Done():
-			log.Info("Stopping transaction integrity check daemon")
-			log.Info("Stop transaction integrity check daemon")
-			return
-		case <-ticker.C:
-			//updater.metrics.TimeUpdateSaturatedSnapshots(func() {
-			scan.performIntegrityScan()
-			//})
+	go func() {
+		for {
+			select {
+			case <-scan.Done():
+				scan.MarkDone()
+				return
+			case <-ticker.C:
+				//scan.metrics.TimeFinalizeTransactions(func() {
+				scan.performIntegrityScan()
+				//})
+			}
 		}
-	}
+	}()
+
+	<-scan.IsDone
+	log.Info("Stop transaction-finalizer daemon")
 }
