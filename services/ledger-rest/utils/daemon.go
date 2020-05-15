@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,32 +16,65 @@ package utils
 
 import (
 	"context"
+	"fmt"
 	"time"
 )
 
 // Daemon contract for type using support
 type Daemon interface {
-	WaitReady(deadline time.Duration) error
+	Start()
+	Stop()
+	WaitReady(time.Duration) error
 }
 
 // DaemonSupport provides support for graceful shutdown
 type DaemonSupport struct {
+	name       string
 	ctx        context.Context
-	Cancel     context.CancelFunc
+	cancel     context.CancelFunc
 	ExitSignal chan struct{}
 	IsReady    chan interface{}
+	IsDone     chan interface{}
 	CanStart   chan interface{}
 }
 
 // NewDaemonSupport constructor
-func NewDaemonSupport(parentCtx context.Context) DaemonSupport {
+func NewDaemonSupport(parentCtx context.Context, name string) DaemonSupport {
 	ctx, cancel := context.WithCancel(parentCtx)
 	return DaemonSupport{
-		ctx:        ctx,
-		Cancel:     cancel,
-		ExitSignal: make(chan struct{}),
-		IsReady:    make(chan interface{}),
-		CanStart:   make(chan interface{}),
+		name:     name,
+		ctx:      ctx,
+		cancel:   cancel,
+		IsReady:  make(chan interface{}),
+		IsDone:   make(chan interface{}),
+		CanStart: make(chan interface{}),
+	}
+}
+
+// WaitReady wait for daemon to be ready withing given deadline
+func (daemon DaemonSupport) WaitReady(deadline time.Duration) (err error) {
+	defer func() {
+		if e := recover(); e != nil {
+			switch x := e.(type) {
+			case string:
+				err = fmt.Errorf(x)
+			case error:
+				err = x
+			default:
+				err = fmt.Errorf("%s-daemon unknown panic", daemon.name)
+			}
+		}
+	}()
+
+	ticker := time.NewTicker(deadline)
+	select {
+	case <-daemon.IsReady:
+		ticker.Stop()
+		err = nil
+		return
+	case <-ticker.C:
+		err = fmt.Errorf("%s-daemon was not ready within %v seconds", daemon.name, deadline)
+		return
 	}
 }
 
@@ -52,7 +85,7 @@ func (daemon DaemonSupport) GreenLight() {
 
 // MarkDone signals daemon is finished
 func (daemon DaemonSupport) MarkDone() {
-	close(daemon.ExitSignal)
+	close(daemon.IsDone)
 }
 
 // MarkReady signals daemon is ready
@@ -65,14 +98,7 @@ func (daemon DaemonSupport) Done() <-chan struct{} {
 	return daemon.ctx.Done()
 }
 
-// Stop daemon and wait for graceful shutdown
+// Stop cancels context
 func (daemon DaemonSupport) Stop() {
-	daemon.Cancel()
-	<-daemon.ExitSignal
-}
-
-// Start daemon and wait for it to be ready
-func (daemon DaemonSupport) Start() {
-	daemon.MarkReady()
-	<-daemon.IsReady
+	daemon.cancel()
 }

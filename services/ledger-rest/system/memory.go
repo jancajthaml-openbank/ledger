@@ -16,7 +16,6 @@ package system
 
 import (
 	"context"
-	"fmt"
 	"runtime"
 	"sync/atomic"
 	"syscall"
@@ -43,7 +42,7 @@ func NewMemoryMonitor(ctx context.Context, limit uint64) MemoryMonitor {
 	used := uint64(0)
 
 	return MemoryMonitor{
-		DaemonSupport: utils.NewDaemonSupport(ctx),
+		DaemonSupport: utils.NewDaemonSupport(ctx, "memory-check"),
 		limit:         limit,
 		free:          &free,
 		used:          &used,
@@ -95,37 +94,8 @@ func (monitor *MemoryMonitor) CheckMemoryAllocation() {
 	return
 }
 
-// WaitReady wait for daemon to be ready
-func (monitor MemoryMonitor) WaitReady(deadline time.Duration) (err error) {
-	defer func() {
-		if e := recover(); e != nil {
-			switch x := e.(type) {
-			case string:
-				err = fmt.Errorf(x)
-			case error:
-				err = x
-			default:
-				err = fmt.Errorf("unknown panic")
-			}
-		}
-	}()
-
-	ticker := time.NewTicker(deadline)
-	select {
-	case <-monitor.IsReady:
-		ticker.Stop()
-		err = nil
-		return
-	case <-ticker.C:
-		err = fmt.Errorf("daemon was not ready within %v seconds", deadline)
-		return
-	}
-}
-
-// Start handles everything needed to start daemon
+// Start handles everything needed to start memory daemon
 func (monitor MemoryMonitor) Start() {
-	defer monitor.MarkDone()
-
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
@@ -136,19 +106,24 @@ func (monitor MemoryMonitor) Start() {
 	case <-monitor.CanStart:
 		break
 	case <-monitor.Done():
+		monitor.MarkDone()
 		return
 	}
 
-	log.Info("Start memory monitor daemon")
+	log.Info("Start memory-monitor daemon")
 
-	for {
-		select {
-		case <-monitor.Done():
-			log.Info("Stopping memory monitor daemon")
-			log.Info("Stop memory monitor daemon")
-			return
-		case <-ticker.C:
-			monitor.CheckMemoryAllocation()
+	go func() {
+		for {
+			select {
+			case <-monitor.Done():
+				monitor.MarkDone()
+				return
+			case <-ticker.C:
+				monitor.CheckMemoryAllocation()
+			}
 		}
-	}
+	}()
+
+	<-monitor.IsDone
+	log.Info("Stop memory-monitor daemon")
 }

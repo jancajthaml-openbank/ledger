@@ -235,11 +235,7 @@ jobs:
 
   deps:
     docker:
-      - image: circleci/golang:1.11
-        environment:
-          - LANG: C.UTF-8
-          - GOOS: linux
-          - GO111MODULE: "on"
+      - image: jancajthaml/go:latest
     working_directory: /home/circleci/project
     steps:
       - checkout

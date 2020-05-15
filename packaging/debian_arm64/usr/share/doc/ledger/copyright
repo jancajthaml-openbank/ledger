@@ -3,5 +3,5 @@ Upstream-Name: openbank-ledger
 Source: https://github.com/jancajthaml-openbank/ledger
 
 Files: *
-Copyright: 2019 Jan Cajthaml <jan.cajthaml@gmail.com>
+Copyright: 2020 Jan Cajthaml <jan.cajthaml@gmail.com>
 License: Apache

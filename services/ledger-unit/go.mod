@@ -1,4 +1,6 @@
-module github.com/jancajthaml-openbank/ledger/services/ledger-unit
+module github.com/jancajthaml-openbank/ledger-unit
+
+go 1.14
 
 require (
 	github.com/jancajthaml-openbank/actor-system v1.0.0

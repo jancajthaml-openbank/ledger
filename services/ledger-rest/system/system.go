@@ -42,7 +42,7 @@ func NewSystemControl(ctx context.Context) SystemControl {
 	}
 
 	return SystemControl{
-		DaemonSupport: utils.NewDaemonSupport(ctx),
+		DaemonSupport: utils.NewDaemonSupport(ctx, "system-control"),
 		underlying:    conn,
 	}
 }
@@ -166,36 +166,10 @@ func (sys SystemControl) EnableUnit(name string) error {
 	return nil
 }
 
-// WaitReady wait for system to be ready
-func (sys SystemControl) WaitReady(deadline time.Duration) (err error) {
-	defer func() {
-		if e := recover(); e != nil {
-			switch x := e.(type) {
-			case string:
-				err = fmt.Errorf(x)
-			case error:
-				err = x
-			default:
-				err = fmt.Errorf("unknown panic")
-			}
-		}
-	}()
-
-	ticker := time.NewTicker(deadline)
-	select {
-	case <-sys.IsReady:
-		ticker.Stop()
-		err = nil
-		return
-	case <-ticker.C:
-		err = fmt.Errorf("daemon was not ready within %v seconds", deadline)
-		return
-	}
-}
-
-// Start handles everything needed to start http-server daemon
+// Start handles everything needed to start system-control daemon
 func (sys SystemControl) Start() {
-	defer sys.MarkDone()
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
 
 	sys.MarkReady()
 
@@ -203,17 +177,22 @@ func (sys SystemControl) Start() {
 	case <-sys.CanStart:
 		break
 	case <-sys.Done():
+		sys.MarkDone()
 		return
 	}
 
 	log.Info("Start system-control daemon")
 
-	<-sys.ExitSignal
-}
+	go func() {
+		for {
+			select {
+			case <-sys.Done():
+				sys.MarkDone()
+				return
+			}
+		}
+	}()
 
-// Stop shutdowns systemctl fascade
-func (sys *SystemControl) Stop() {
-	log.Info("Stopping system-control daemon")
-	sys.Cancel()
-	return
+	<-sys.IsDone
+	log.Info("Stop system-control daemon")
 }

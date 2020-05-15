@@ -95,13 +95,13 @@ func NewServer(ctx context.Context, port int, secretsPath string, actorSystem *a
 	}
 
 	result := Server{
-		DaemonSupport: utils.NewDaemonSupport(ctx),
+		DaemonSupport: utils.NewDaemonSupport(ctx, "http-server"),
 		Storage:       storage,
 		ActorSystem:   actorSystem,
 		router:        router,
+		SystemControl: systemControl,
 		DiskMonitor:   diskMonitor,
 		MemoryMonitor: memoryMonitor,
-		SystemControl: systemControl,
 		underlying: &http.Server{
 			Addr:         fmt.Sprintf(":%d", port),
 			ReadTimeout:  5 * time.Second,
@@ -140,44 +140,14 @@ func (server Server) HandleFunc(path string, handle Endpoint, methods ...string)
 	return server.router.HandleFunc(path, handle(&server)).Methods(methods...)
 }
 
-// WaitReady wait for server to be ready
-func (server Server) WaitReady(deadline time.Duration) (err error) {
-	defer func() {
-		if e := recover(); e != nil {
-			switch x := e.(type) {
-			case string:
-				err = fmt.Errorf(x)
-			case error:
-				err = x
-			default:
-				err = fmt.Errorf("unknown panic")
-			}
-		}
-	}()
-
-	ticker := time.NewTicker(deadline)
-	select {
-	case <-server.IsReady:
-		ticker.Stop()
-		err = nil
-		return
-	case <-ticker.C:
-		err = fmt.Errorf("daemon was not ready within %v seconds", deadline)
-		return
-	}
-}
-
 // Start handles everything needed to start http-server daemon
 func (server Server) Start() {
-	defer server.MarkDone()
-
 	config := cloneTLSConfig(server.underlying.TLSConfig)
 
 	config.Certificates = make([]tls.Certificate, 1)
 
 	cert, err := tls.X509KeyPair(server.cert, server.key)
 	if err != nil {
-		server.MarkReady()
 		return
 	}
 
@@ -189,35 +159,41 @@ func (server Server) Start() {
 	}
 	defer ln.Close()
 
-	go func() {
-		tlsListener := tls.NewListener(tcpKeepAliveListener{ln.(*net.TCPListener)}, config)
-		err := server.underlying.Serve(tlsListener)
-		if err != nil && err != http.ErrServerClosed {
-			log.Errorf("Server error %v", err)
-		}
-		log.Info("Stop http-server daemon")
-	}()
-
 	server.MarkReady()
 
 	select {
 	case <-server.CanStart:
 		break
 	case <-server.Done():
+		server.MarkDone()
 		return
 	}
 
-	log.Infof("Start http-server daemon, listening on :%d", ln.Addr().(*net.TCPAddr).Port)
+	go func() {
+		log.Infof("Start http-server daemon, listening on :%d", ln.Addr().(*net.TCPAddr).Port)
+		tlsListener := tls.NewListener(tcpKeepAliveListener{ln.(*net.TCPListener)}, config)
+		err := server.underlying.Serve(tlsListener)
+		if err != nil && err != http.ErrServerClosed {
+			log.Errorf("http-server error %v", err)
+			server.Stop()
+			return
+		}
+	}()
 
-	<-server.ExitSignal
-}
+	go func() {
+		for {
+			select {
+			case <-server.Done():
+				log.Info("Stopping http-server daemon")
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				server.underlying.Shutdown(ctx)
+				cancel()
+				server.MarkDone()
+				return
+			}
+		}
+	}()
 
-// Stop tries to shut down http-server daemon gracefully within 5 seconds
-func (server Server) Stop() {
-	log.Info("Stopping http-server daemon")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	server.underlying.Shutdown(ctx)
-	server.Cancel()
-	return
+	<-server.IsDone
+	log.Info("Stop http-server daemon")
 }

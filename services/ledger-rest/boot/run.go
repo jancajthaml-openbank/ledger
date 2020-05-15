@@ -70,7 +70,6 @@ func (prog Program) GreenLight() {
 	prog.diskMonitor.GreenLight()
 	prog.memoryMonitor.GreenLight()
 	prog.metrics.GreenLight()
-	prog.actorSystem.GreenLight()
 	prog.systemControl.GreenLight()
 	prog.rest.GreenLight()
 }
@@ -80,12 +79,21 @@ func (prog Program) WaitInterrupt() {
 	<-prog.interrupt
 }
 
-// Run runs the application
-func (prog Program) Run() {
+// WaitStop wait for daemons to stop
+func (prog Program) WaitStop() {
+	<-prog.rest.IsDone
+	<-prog.systemControl.IsDone
+	<-prog.diskMonitor.IsDone
+	<-prog.memoryMonitor.IsDone
+	<-prog.metrics.IsDone
+}
+
+// Start runs the application
+func (prog Program) Start() {
+	go prog.actorSystem.Start()
 	go prog.diskMonitor.Start()
 	go prog.memoryMonitor.Start()
 	go prog.metrics.Start()
-	go prog.actorSystem.Start()
 	go prog.systemControl.Start()
 	go prog.rest.Start()
 
@@ -102,11 +110,6 @@ func (prog Program) Run() {
 	log.Info(">>> Stopping <<<")
 	utils.NotifyServiceStopping()
 
-	prog.rest.Stop()
-	prog.actorSystem.Stop()
-	prog.systemControl.Stop()
-	prog.diskMonitor.Stop()
-	prog.memoryMonitor.Stop()
-	prog.metrics.Stop()
 	prog.cancel()
+	prog.WaitStop()
 }

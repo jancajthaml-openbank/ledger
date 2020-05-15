@@ -1,4 +1,6 @@
-module github.com/jancajthaml-openbank/ledger/services/ledger-rest
+module github.com/jancajthaml-openbank/ledger-rest
+
+go 1.14
 
 require (
 	github.com/coreos/go-systemd v0.0.0-20181031085051-9002847aa142
