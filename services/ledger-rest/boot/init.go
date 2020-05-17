@@ -30,8 +30,8 @@ import (
 
 // Program encapsulate initialized application
 type Program struct {
-	cfg           config.Configuration
 	interrupt     chan os.Signal
+	cfg           config.Configuration
 	actorSystem   actor.ActorSystem
 	metrics       metrics.Metrics
 	rest          api.Server
@@ -53,15 +53,15 @@ func Initialize() Program {
 	diskMonitorDaemon := system.NewDiskMonitor(ctx, cfg.MinFreeDiskSpace, cfg.RootStorage)
 	memoryMonitorDaemon := system.NewMemoryMonitor(ctx, cfg.MinFreeMemory)
 
-	storage := localfs.NewStorage(cfg.RootStorage)
+	storage := localfs.NewPlaintextStorage(cfg.RootStorage)
 	metricsDaemon := metrics.NewMetrics(ctx, cfg.MetricsOutput, cfg.MetricsRefreshRate)
 
 	actorSystemDaemon := actor.NewActorSystem(ctx, cfg.LakeHostname, &metricsDaemon)
 	restDaemon := api.NewServer(ctx, cfg.ServerPort, cfg.SecretsPath, &actorSystemDaemon, &systemControlDaemon, &diskMonitorDaemon, &memoryMonitorDaemon, &storage)
 
 	return Program{
-		cfg:           cfg,
 		interrupt:     make(chan os.Signal, 1),
+		cfg:           cfg,
 		metrics:       metricsDaemon,
 		actorSystem:   actorSystemDaemon,
 		rest:          restDaemon,

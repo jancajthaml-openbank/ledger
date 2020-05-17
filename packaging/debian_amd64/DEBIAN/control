@@ -1,5 +1,5 @@
 Package: ledger
-Version: 1.1.1+improve-daemons
+Version: 1.1.1+upgrade-localfs
 Section: misc
 Priority: extra
 Architecture: amd64

@@ -36,7 +36,7 @@ import (
 // api of http
 type Server struct {
 	utils.DaemonSupport
-	Storage       *localfs.Storage
+	Storage       *localfs.PlaintextStorage
 	SystemControl *system.SystemControl
 	DiskMonitor   *system.DiskMonitor
 	MemoryMonitor *system.MemoryMonitor
@@ -55,7 +55,7 @@ type tcpKeepAliveListener struct {
 
 func cloneTLSConfig(cfg *tls.Config) *tls.Config {
 	if cfg == nil {
-		return &tls.Config{}
+		return cfg
 	}
 	return &tls.Config{
 		Rand:                     cfg.Rand,
@@ -81,7 +81,7 @@ func cloneTLSConfig(cfg *tls.Config) *tls.Config {
 }
 
 // NewServer returns new secure server instance
-func NewServer(ctx context.Context, port int, secretsPath string, actorSystem *actor.ActorSystem, systemControl *system.SystemControl, diskMonitor *system.DiskMonitor, memoryMonitor *system.MemoryMonitor, storage *localfs.Storage) Server {
+func NewServer(ctx context.Context, port int, secretsPath string, actorSystem *actor.ActorSystem, systemControl *system.SystemControl, diskMonitor *system.DiskMonitor, memoryMonitor *system.MemoryMonitor, storage *localfs.PlaintextStorage) Server {
 	router := mux.NewRouter()
 
 	cert, err := ioutil.ReadFile(secretsPath + "/domain.local.crt")
@@ -103,7 +103,7 @@ func NewServer(ctx context.Context, port int, secretsPath string, actorSystem *a
 		DiskMonitor:   diskMonitor,
 		MemoryMonitor: memoryMonitor,
 		underlying: &http.Server{
-			Addr:         fmt.Sprintf(":%d", port),
+			Addr:         fmt.Sprintf("127.0.0.1:%d", port),
 			ReadTimeout:  5 * time.Second,
 			WriteTimeout: 5 * time.Second,
 			Handler:      router,

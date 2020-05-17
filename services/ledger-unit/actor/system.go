@@ -28,12 +28,12 @@ import (
 // ActorSystem represents actor system subroutine
 type ActorSystem struct {
 	system.Support
-	Storage *localfs.Storage
+	Storage *localfs.PlaintextStorage
 	Metrics *metrics.Metrics
 }
 
 // NewActorSystem returns actor system fascade
-func NewActorSystem(ctx context.Context, tenant string, lakeEndpoint string, metrics *metrics.Metrics, storage *localfs.Storage) ActorSystem {
+func NewActorSystem(ctx context.Context, tenant string, lakeEndpoint string, metrics *metrics.Metrics, storage *localfs.PlaintextStorage) ActorSystem {
 	result := ActorSystem{
 		Support: system.NewSupport(ctx, "LedgerUnit/"+tenant, lakeEndpoint),
 		Storage: storage,

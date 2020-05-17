@@ -24,7 +24,7 @@ import (
 )
 
 // LoadTransaction loads transaction from journal
-func LoadTransaction(storage *localfs.Storage, id string) (*model.Transaction, error) {
+func LoadTransaction(storage *localfs.PlaintextStorage, id string) (*model.Transaction, error) {
 	transactionPath := utils.TransactionPath(id)
 
 	data, err := storage.ReadFileFully(transactionPath)
@@ -39,14 +39,29 @@ func LoadTransaction(storage *localfs.Storage, id string) (*model.Transaction, e
 }
 
 // CreateTransaction persist transaction entity state to storage
-func CreateTransaction(storage *localfs.Storage) *model.Transaction {
+func CreateTransaction(storage *localfs.PlaintextStorage) *model.Transaction {
 	entity := new(model.Transaction)
 	entity.State = model.StatusNew
 	return PersistTransaction(storage, entity)
 }
 
 // PersistTransaction persist transaction to disk
-func PersistTransaction(storage *localfs.Storage, entity *model.Transaction) *model.Transaction {
+func PersistTransaction(storage *localfs.PlaintextStorage, entity *model.Transaction) *model.Transaction {
+	//created := now()
+	// FIXME do not store transaction like this :/ or do so for integrity?
+
+	transactionPath := utils.TransactionPath(entity.IDTransaction)
+
+	data := entity.Serialise()
+	if storage.WriteFileExclusive(transactionPath, data) != nil {
+		return nil
+	}
+
+	return entity
+}
+
+// UpdateTransaction persist update of transaction to disk
+func UpdateTransaction(storage *localfs.PlaintextStorage, entity *model.Transaction) *model.Transaction {
 	//created := now()
 	// FIXME do not store transaction like this :/ or do so for integrity?
 
@@ -60,23 +75,8 @@ func PersistTransaction(storage *localfs.Storage, entity *model.Transaction) *mo
 	return entity
 }
 
-// UpdateTransaction persist update of transaction to disk
-func UpdateTransaction(storage *localfs.Storage, entity *model.Transaction) *model.Transaction {
-	//created := now()
-	// FIXME do not store transaction like this :/ or do so for integrity?
-
-	transactionPath := utils.TransactionPath(entity.IDTransaction)
-
-	data := entity.Serialise()
-	if storage.UpdateFile(transactionPath, data) != nil {
-		return nil
-	}
-
-	return entity
-}
-
 // IsTransferForwardedCredit returns true if transaction's credit side was forwarded
-func IsTransferForwardedCredit(storage *localfs.Storage, idTransaction, idTransfer string) (bool, error) {
+func IsTransferForwardedCredit(storage *localfs.PlaintextStorage, idTransaction, idTransfer string) (bool, error) {
 	fullPath := utils.TransactionForwardPath(idTransaction)
 	ok, err := storage.Exists(fullPath)
 	if err != nil {
@@ -100,7 +100,7 @@ func IsTransferForwardedCredit(storage *localfs.Storage, idTransaction, idTransf
 }
 
 // IsTransferForwardedDebit returns true if transaction's debit side was forwarded
-func IsTransferForwardedDebit(storage *localfs.Storage, idTransaction, idTransfer string) (bool, error) {
+func IsTransferForwardedDebit(storage *localfs.PlaintextStorage, idTransaction, idTransfer string) (bool, error) {
 	fullPath := utils.TransactionForwardPath(idTransaction)
 	ok, err := storage.Exists(fullPath)
 	if err != nil {
@@ -124,13 +124,13 @@ func IsTransferForwardedDebit(storage *localfs.Storage, idTransaction, idTransfe
 }
 
 // AcceptForwardCredit accepts transaction credit forward request
-func AcceptForwardCredit(storage *localfs.Storage, targetTenant, targetTransaction, targetTransfer, originTransaction, originTransfer string) error {
+func AcceptForwardCredit(storage *localfs.PlaintextStorage, targetTenant, targetTransaction, targetTransfer, originTransaction, originTransfer string) error {
 	fullPath := utils.TransactionForwardPath(originTransaction)
 	return storage.AppendFile(fullPath, []byte(originTransfer+" credit "+targetTenant+" "+targetTransaction+" "+targetTransfer))
 }
 
 // AcceptForwardDebit accepts transaction debit forward request
-func AcceptForwardDebit(storage *localfs.Storage, targetTenant, targetTransaction, targetTransfer, originTransaction, originTransfer string) error {
+func AcceptForwardDebit(storage *localfs.PlaintextStorage, targetTenant, targetTransaction, targetTransfer, originTransaction, originTransfer string) error {
 	fullPath := utils.TransactionForwardPath(originTransaction)
 	return storage.AppendFile(fullPath, []byte(originTransfer+" debit "+targetTenant+" "+targetTransaction+" "+targetTransfer))
 }
