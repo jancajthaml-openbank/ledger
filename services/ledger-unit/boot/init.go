@@ -29,8 +29,8 @@ import (
 
 // Program encapsulate initialized application
 type Program struct {
-	cfg                  config.Configuration
 	interrupt            chan os.Signal
+	cfg                  config.Configuration
 	metrics              metrics.Metrics
 	actorSystem          actor.ActorSystem
 	transactionFinalizer persistence.TransactionFinalizer
@@ -45,15 +45,15 @@ func Initialize() Program {
 
 	utils.SetupLogger(cfg.LogLevel)
 
-	storage := localfs.NewStorage(cfg.RootStorage)
+	storage := localfs.NewPlaintextStorage(cfg.RootStorage)
 	metricsDaemon := metrics.NewMetrics(ctx, cfg.MetricsOutput, cfg.MetricsRefreshRate)
 
 	actorSystemDaemon := actor.NewActorSystem(ctx, cfg.Tenant, cfg.LakeHostname, &metricsDaemon, &storage)
 	transactionFinalizerDaemon := persistence.NewTransactionFinalizer(ctx, cfg.TransactionIntegrityScanInterval, &metricsDaemon, &storage, actor.ProcessLocalMessage(&actorSystemDaemon))
 
 	return Program{
-		cfg:                  cfg,
 		interrupt:            make(chan os.Signal, 1),
+		cfg:                  cfg,
 		metrics:              metricsDaemon,
 		actorSystem:          actorSystemDaemon,
 		transactionFinalizer: transactionFinalizerDaemon,

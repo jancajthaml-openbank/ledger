@@ -31,12 +31,12 @@ type TransactionFinalizer struct {
 	utils.DaemonSupport
 	callback     func(msg interface{}, to system.Coordinates, from system.Coordinates)
 	metrics      *metrics.Metrics
-	storage      *localfs.Storage
+	storage      *localfs.PlaintextStorage
 	scanInterval time.Duration
 }
 
 // NewTransactionFinalizer returns snapshot updater fascade
-func NewTransactionFinalizer(ctx context.Context, scanInterval time.Duration, metrics *metrics.Metrics, storage *localfs.Storage, callback func(msg interface{}, to system.Coordinates, from system.Coordinates)) TransactionFinalizer {
+func NewTransactionFinalizer(ctx context.Context, scanInterval time.Duration, metrics *metrics.Metrics, storage *localfs.PlaintextStorage, callback func(msg interface{}, to system.Coordinates, from system.Coordinates)) TransactionFinalizer {
 	return TransactionFinalizer{
 		DaemonSupport: utils.NewDaemonSupport(ctx, " transaction-finalizer"),
 		callback:      callback,
