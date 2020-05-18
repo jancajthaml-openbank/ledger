@@ -1,5 +1,5 @@
 Package: ledger
-Version: 1.1.1+upgrade-localfs
+Version: 1.1.1+health-check-on-pull-request
 Section: misc
 Priority: extra
 Architecture: amd64
