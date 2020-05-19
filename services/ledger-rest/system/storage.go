@@ -117,6 +117,6 @@ func (monitor DiskMonitor) Start() {
 		}
 	}()
 
-	<-monitor.IsDone
+	monitor.WaitStop()
 	log.Info("Stop disk space monitor daemon")
 }

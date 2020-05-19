@@ -13,7 +13,7 @@ func TestMetrics(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	entity := NewMetrics(ctx, "", time.Hour)
+	entity := NewMetrics(ctx, "/tmp", time.Hour)
 	delay := 1e8
 	delta := 1e8
 

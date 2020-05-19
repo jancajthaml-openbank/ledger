@@ -56,6 +56,16 @@ func (system ActorSystem) Stop() {
 	system.Support.Stop()
 }
 
+// WaitStop daemon noop
+func (system ActorSystem) WaitStop() {
+
+}
+
+// GreenLight daemon noop
+func (system ActorSystem) GreenLight() {
+
+}
+
 // WaitReady wait for system to be ready
 func (system ActorSystem) WaitReady(deadline time.Duration) (err error) {
 	defer func() {

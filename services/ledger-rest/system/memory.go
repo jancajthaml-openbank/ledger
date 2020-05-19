@@ -124,6 +124,6 @@ func (monitor MemoryMonitor) Start() {
 		}
 	}()
 
-	<-monitor.IsDone
+	monitor.WaitStop()
 	log.Info("Stop memory-monitor daemon")
 }

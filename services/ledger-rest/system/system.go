@@ -193,6 +193,6 @@ func (sys SystemControl) Start() {
 		}
 	}()
 
-	<-sys.IsDone
+	sys.WaitStop()
 	log.Info("Stop system-control daemon")
 }
