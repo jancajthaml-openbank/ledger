@@ -95,6 +95,11 @@ func (daemon DaemonSupport) MarkDone() {
 	close(daemon.done)
 }
 
+// IsCanceled returns if daemon is done
+func (daemon DaemonSupport) IsCanceled() bool {
+	return daemon.ctx.Err() != nil
+}
+
 // MarkReady signals daemon is ready
 func (daemon DaemonSupport) MarkReady() {
 	daemon.IsReady <- nil
