@@ -81,6 +81,6 @@ func (scan TransactionFinalizer) Start() {
 		}
 	}()
 
-	<-scan.IsDone
+	scan.WaitStop()
 	log.Info("Stop transaction-finalizer daemon")
 }

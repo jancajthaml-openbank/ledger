@@ -15,10 +15,48 @@
 package metrics
 
 import (
+	"context"
 	"time"
 
+	localfs "github.com/jancajthaml-openbank/local-fs"
+	"github.com/jancajthaml-openbank/ledger-unit/utils"
+	metrics "github.com/rcrowley/go-metrics"
 	log "github.com/sirupsen/logrus"
 )
+
+// Metrics holds metrics counters
+type Metrics struct {
+	utils.DaemonSupport
+	storage                localfs.PlaintextStorage
+	tenant                 string
+	refreshRate            time.Duration
+	promisedTransactions   metrics.Counter
+	promisedTransfers      metrics.Counter
+	committedTransactions  metrics.Counter
+	committedTransfers     metrics.Counter
+	rollbackedTransactions metrics.Counter
+	rollbackedTransfers    metrics.Counter
+	forwardedTransactions  metrics.Counter
+	forwardedTransfers     metrics.Counter
+}
+
+// NewMetrics returns blank metrics holder
+func NewMetrics(ctx context.Context, output string, tenant string, refreshRate time.Duration) Metrics {
+	return Metrics{
+		DaemonSupport:          utils.NewDaemonSupport(ctx, "metrics"),
+		storage:                localfs.NewPlaintextStorage(output),
+		tenant:                 tenant,
+		refreshRate:            refreshRate,
+		promisedTransactions:   metrics.NewCounter(),
+		promisedTransfers:      metrics.NewCounter(),
+		committedTransactions:  metrics.NewCounter(),
+		committedTransfers:     metrics.NewCounter(),
+		rollbackedTransactions: metrics.NewCounter(),
+		rollbackedTransfers:    metrics.NewCounter(),
+		forwardedTransactions:  metrics.NewCounter(),
+		forwardedTransfers:     metrics.NewCounter(),
+	}
+}
 
 // TransactionPromised increments transactions promised by one
 func (metrics *Metrics) TransactionPromised(transfers int) {
@@ -52,6 +90,8 @@ func (metrics Metrics) Start() {
 	if err := metrics.Hydrate(); err != nil {
 		log.Warn(err.Error())
 	}
+
+	metrics.Persist()
 	metrics.MarkReady()
 
 	select {
@@ -62,7 +102,7 @@ func (metrics Metrics) Start() {
 		return
 	}
 
-	log.Infof("Start metrics daemon, update each %v into %v", metrics.refreshRate, metrics.output)
+	log.Infof("Start metrics daemon, update each %v into %v", metrics.refreshRate, metrics.storage.Root)
 
 	go func() {
 		for {
@@ -77,6 +117,6 @@ func (metrics Metrics) Start() {
 		}
 	}()
 
-	<-metrics.IsDone
+	metrics.WaitStop()
 	log.Info("Stop metrics daemon")
 }

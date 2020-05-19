@@ -13,7 +13,7 @@ func TestMetrics(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	entity := NewMetrics(ctx, "", time.Hour)
+	entity := NewMetrics(ctx, "/tmp", "1", time.Hour)
 
 	t.Log("TransactionPromised properly increments number of promised transactions and transfers")
 	{

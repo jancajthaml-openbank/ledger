@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,11 +26,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Stop stops the application
-func (prog Program) Stop() {
-	close(prog.interrupt)
-}
-
 // WaitReady wait for daemons to be ready
 func (prog Program) WaitReady(deadline time.Duration) error {
 	errors := make([]error, 0)
@@ -49,10 +44,10 @@ func (prog Program) WaitReady(deadline time.Duration) error {
 		}()
 	}
 
-	wg.Add(3)
-	waitWithDeadline(prog.actorSystem)
-	waitWithDeadline(prog.transactionFinalizer)
-	waitWithDeadline(prog.metrics)
+	wg.Add(len(prog.daemons))
+	for _, daemon := range prog.daemons {
+		waitWithDeadline(daemon)
+	}
 	wg.Wait()
 
 	if len(errors) > 0 {
@@ -64,8 +59,16 @@ func (prog Program) WaitReady(deadline time.Duration) error {
 
 // GreenLight daemons
 func (prog Program) GreenLight() {
-	prog.metrics.GreenLight()
-	prog.transactionFinalizer.GreenLight()
+	for _, daemon := range prog.daemons {
+		daemon.GreenLight()
+	}
+}
+
+// WaitStop wait for daemons to stop
+func (prog Program) WaitStop() {
+	for _, daemon := range prog.daemons {
+		daemon.WaitStop()
+	}
 }
 
 // WaitInterrupt wait for signal
@@ -73,17 +76,16 @@ func (prog Program) WaitInterrupt() {
 	<-prog.interrupt
 }
 
-// WaitStop wait for daemons to stop
-func (prog Program) WaitStop() {
-	<-prog.transactionFinalizer.IsDone
-	<-prog.metrics.IsDone
+// Stop stops the application
+func (prog Program) Stop() {
+	close(prog.interrupt)
 }
 
 // Start runs the application
 func (prog Program) Start() {
-	go prog.actorSystem.Start()
-	go prog.metrics.Start()
-	go prog.transactionFinalizer.Start()
+	for _, daemon := range prog.daemons {
+		go daemon.Start()
+	}
 
 	if err := prog.WaitReady(5 * time.Second); err != nil {
 		log.Errorf("Error when starting daemons: %+v", err)

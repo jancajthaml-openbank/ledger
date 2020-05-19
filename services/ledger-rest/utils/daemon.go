@@ -24,6 +24,8 @@ import (
 type Daemon interface {
 	Start()
 	Stop()
+	GreenLight()
+	WaitStop()
 	WaitReady(time.Duration) error
 }
 
@@ -32,9 +34,9 @@ type DaemonSupport struct {
 	name       string
 	ctx        context.Context
 	cancel     context.CancelFunc
+	done       chan interface{}
 	ExitSignal chan struct{}
 	IsReady    chan interface{}
-	IsDone     chan interface{}
 	CanStart   chan interface{}
 }
 
@@ -45,13 +47,13 @@ func NewDaemonSupport(parentCtx context.Context, name string) DaemonSupport {
 		name:     name,
 		ctx:      ctx,
 		cancel:   cancel,
+		done:     make(chan interface{}),
 		IsReady:  make(chan interface{}),
-		IsDone:   make(chan interface{}),
 		CanStart: make(chan interface{}),
 	}
 }
 
-// WaitReady wait for daemon to be ready withing given deadline
+// WaitReady wait for daemon to be ready within given deadline
 func (daemon DaemonSupport) WaitReady(deadline time.Duration) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
@@ -78,6 +80,11 @@ func (daemon DaemonSupport) WaitReady(deadline time.Duration) (err error) {
 	}
 }
 
+// WaitStop cancels context
+func (daemon DaemonSupport) WaitStop() {
+	<-daemon.done
+}
+
 // GreenLight signals daemon to start work
 func (daemon DaemonSupport) GreenLight() {
 	daemon.CanStart <- nil
@@ -85,7 +92,7 @@ func (daemon DaemonSupport) GreenLight() {
 
 // MarkDone signals daemon is finished
 func (daemon DaemonSupport) MarkDone() {
-	close(daemon.IsDone)
+	close(daemon.done)
 }
 
 // MarkReady signals daemon is ready
