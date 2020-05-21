@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@ package actor
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/jancajthaml-openbank/ledger-rest/metrics"
@@ -26,65 +25,42 @@ import (
 
 // ActorSystem represents actor system subroutine
 type ActorSystem struct {
-	system.Support
+	system.System
 	Metrics *metrics.Metrics
 }
 
 // NewActorSystem returns actor system fascade
 func NewActorSystem(ctx context.Context, lakeEndpoint string, metrics *metrics.Metrics) ActorSystem {
 	result := ActorSystem{
-		Support: system.NewSupport(ctx, "LedgerRest", lakeEndpoint),
+		System:  system.NewSystem(ctx, "LedgerRest", lakeEndpoint),
 		Metrics: metrics,
 	}
 
-	result.Support.RegisterOnRemoteMessage(ProcessRemoteMessage(&result))
-
+	result.System.RegisterOnMessage(ProcessMessage(&result))
 	return result
 }
 
 // Start daemon noop
 func (system ActorSystem) Start() {
-	system.Support.Start()
+	system.System.Start()
 }
 
 // Stop daemon noop
 func (system ActorSystem) Stop() {
-	system.Support.Stop()
+	system.System.Stop()
 }
 
 // WaitStop daemon noop
 func (system ActorSystem) WaitStop() {
-
+	system.System.WaitStop()
 }
 
 // GreenLight daemon noop
 func (system ActorSystem) GreenLight() {
-
+	system.System.GreenLight()
 }
 
 // WaitReady wait for system to be ready
-func (system ActorSystem) WaitReady(deadline time.Duration) (err error) {
-	defer func() {
-		if e := recover(); e != nil {
-			switch x := e.(type) {
-			case string:
-				err = fmt.Errorf(x)
-			case error:
-				err = x
-			default:
-				err = fmt.Errorf("unknown panic")
-			}
-		}
-	}()
-
-	ticker := time.NewTicker(deadline)
-	select {
-	case <-system.Support.IsReady:
-		ticker.Stop()
-		err = nil
-		return
-	case <-ticker.C:
-		err = fmt.Errorf("actor-system was not ready within %v seconds", deadline)
-		return
-	}
+func (system ActorSystem) WaitReady(deadline time.Duration) error {
+	return system.System.WaitReady(deadline)
 }

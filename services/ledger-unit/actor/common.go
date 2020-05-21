@@ -15,7 +15,6 @@
 package actor
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/jancajthaml-openbank/ledger-unit/model"
@@ -25,36 +24,9 @@ import (
 	money "gopkg.in/inf.v0"
 )
 
-func asEnvelopes(s *ActorSystem, msg string) (system.Coordinates, system.Coordinates, []string, error) {
-	parts := strings.Split(msg, " ")
-
-	if len(parts) < 5 {
-		return system.Coordinates{}, system.Coordinates{}, nil, fmt.Errorf("invalid message received %+v", parts)
-	}
-
-	recieverRegion, senderRegion, receiverName, senderName := parts[0], parts[1], parts[2], parts[3]
-
-	from := system.Coordinates{
-		Name:   senderName,
-		Region: senderRegion,
-	}
-
-	to := system.Coordinates{
-		Name:   receiverName,
-		Region: recieverRegion,
-	}
-
-	return from, to, parts, nil
-}
-
 // ProcessRemoteMessage processing of remote message to this wall
-func ProcessRemoteMessage(s *ActorSystem) system.ProcessRemoteMessage {
-	return func(msg string) {
-		from, to, parts, err := asEnvelopes(s, msg)
-		if err != nil {
-			log.Warn(err.Error())
-			return
-		}
+func ProcessMessage(s *ActorSystem) system.ProcessMessage {
+	return func(msg string, to system.Coordinates, from system.Coordinates) {
 
 		defer func() {
 			if r := recover(); r != nil {
@@ -62,18 +34,21 @@ func ProcessRemoteMessage(s *ActorSystem) system.ProcessRemoteMessage {
 			}
 		}()
 
+		parts := strings.Split(msg, " ")
+
 		var (
 			message interface{}
 			ref     *system.Envelope
+			err     error
 		)
 
-		if parts[4] == ReqCreateTransaction {
-			if len(parts) > 6 {
+		if parts[0] == ReqCreateTransaction {
+			if len(parts) > 2 {
 				transaction := model.Transaction{
-					IDTransaction: parts[5],
+					IDTransaction: parts[1],
 				}
 
-				for _, transferPart := range parts[6:] {
+				for _, transferPart := range parts[2:] {
 					transferParts := strings.Split(transferPart, ";")
 					amount, _ := new(money.Dec).SetString(transferParts[5])
 					transfer := model.Transfer{
@@ -95,21 +70,18 @@ func ProcessRemoteMessage(s *ActorSystem) system.ProcessRemoteMessage {
 				message = transaction
 				ref, err = spawnTransactionActor(s, to.Name)
 				if err != nil {
-					log.Warnf("Unable to spray from [remote %v -> local %v] : %+v", from, to, parts[3:])
-					s.SendRemote(FatalErrorMessage(system.Context{
-						Receiver: to,
-						Sender:   from,
-					}))
+					log.Warnf("Unable to spray from [remote %v -> local %v] : %+v", from, to, msg)
+					s.SendMessage(FatalErrorMessage(), from, to)
 					return
 				}
 			}
-		} else if parts[4] == ReqForwardTransfer {
-			if len(parts) == 9 {
-				targetParts := strings.Split(parts[8], ";")
+		} else if parts[0] == ReqForwardTransfer {
+			if len(parts) == 5 {
+				targetParts := strings.Split(parts[4], ";")
 				message = model.TransferForward{
-					IDTransaction: parts[5],
-					IDTransfer:    parts[6],
-					Side:          parts[7],
+					IDTransaction: parts[1],
+					IDTransfer:    parts[2],
+					Side:          parts[3],
 					Target: model.Account{
 						Tenant: targetParts[0],
 						Name:   targetParts[1],
@@ -119,10 +91,7 @@ func ProcessRemoteMessage(s *ActorSystem) system.ProcessRemoteMessage {
 				ref, err = spawnForwardActor(s, to.Name)
 				if err != nil {
 					log.Warnf("Unable to spray from [remote %v -> local %v] : %+v", from, to, msg)
-					s.SendRemote(FatalErrorMessage(system.Context{
-						Receiver: to,
-						Sender:   from,
-					}))
+					s.SendMessage(FatalErrorMessage(), from, to)
 					return
 				}
 			}
@@ -133,7 +102,7 @@ func ProcessRemoteMessage(s *ActorSystem) system.ProcessRemoteMessage {
 				return
 			}
 
-			switch parts[4] {
+			switch parts[0] {
 
 			case FatalError:
 				message = model.FatalErrored{
@@ -152,13 +121,13 @@ func ProcessRemoteMessage(s *ActorSystem) system.ProcessRemoteMessage {
 				}
 
 			case PromiseRejected:
-				if len(parts) == 6 {
+				if len(parts) == 2 {
 					message = model.PromiseWasRejected{
 						Account: model.Account{
 							Tenant: from.Region[10:],
 							Name:   from.Name,
 						},
-						Reason: parts[5],
+						Reason: parts[1],
 					}
 				}
 
@@ -171,13 +140,13 @@ func ProcessRemoteMessage(s *ActorSystem) system.ProcessRemoteMessage {
 				}
 
 			case CommitRejected:
-				if len(parts) == 6 {
+				if len(parts) == 2 {
 					message = model.CommitWasRejected{
 						Account: model.Account{
 							Tenant: from.Region[10:],
 							Name:   from.Name,
 						},
-						Reason: parts[5],
+						Reason: parts[1],
 					}
 				}
 
@@ -190,13 +159,13 @@ func ProcessRemoteMessage(s *ActorSystem) system.ProcessRemoteMessage {
 				}
 
 			case RollbackRejected:
-				if len(parts) == 6 {
+				if len(parts) == 2 {
 					message = model.RollbackWasRejected{
 						Account: model.Account{
 							Tenant: from.Region[10:],
 							Name:   from.Name,
 						},
-						Reason: parts[5],
+						Reason: parts[1],
 					}
 				}
 
@@ -237,21 +206,4 @@ func spawnTransactionActor(s *ActorSystem, name string) (*system.Envelope, error
 
 	log.Debugf("%s ~ Transaction Actor Spawned", name)
 	return envelope, nil
-}
-
-// ProcessLocalMessage processing of local message to this ledger
-func ProcessLocalMessage(s *ActorSystem) system.ProcessLocalMessage {
-	return func(message interface{}, to system.Coordinates, from system.Coordinates) {
-		if to.Region != "" && to.Region != s.Name {
-			log.Warnf("Invalid region received [local %s -> local %s]", from, to)
-			return
-		}
-
-		ref, err := s.ActorOf(to.Name)
-		if err != nil {
-			log.Warnf("Actor not found [local %s]", to)
-			return
-		}
-		ref.Tell(message, to, from)
-	}
 }

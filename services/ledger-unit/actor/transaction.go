@@ -31,14 +31,22 @@ func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		switch msg := context.Data.(type) {
 		case model.Transaction:
 			if state.Ready {
-				s.SendRemote(TransactionRaceMessage(context, msg.IDTransaction))
+				s.SendMessage(
+					TransactionRaceMessage(msg.IDTransaction),
+					state.ReplyTo,
+					context.Receiver,
+				)
 				log.Warnf("Transaction already in progress %s", msg.IDTransaction)
 				return
 			}
-			state.Prepare(msg)
+			state.Prepare(msg, context.Sender)
 
 		default:
-			s.SendRemote(FatalErrorMessage(context))
+			s.SendMessage(
+				FatalErrorMessage(),
+				state.ReplyTo,
+				context.Receiver,
+			)
 			log.Warnf("Invalid message in InitialTransaction")
 			return
 		}
@@ -46,7 +54,11 @@ func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		if persistence.PersistTransaction(s.Storage, &state.Transaction) == nil {
 			current, err := persistence.LoadTransaction(s.Storage, state.Transaction.IDTransaction)
 			if err != nil {
-				s.SendRemote(FatalErrorMessage(context))
+				s.SendMessage(
+					FatalErrorMessage(),
+					state.ReplyTo,
+					context.Receiver,
+				)
 				return
 			}
 
@@ -56,16 +68,32 @@ func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 				if state.Transaction.IsSameAs(current) {
 					if current.State == model.StatusCommitted {
-						s.SendRemote(TransactionProcessedMessage(context, &state.Transaction))
+						s.SendMessage(
+							TransactionProcessedMessage(&state.Transaction),
+							state.ReplyTo,
+							context.Receiver,
+						)
 					} else {
-						s.SendRemote(TransactionRejectedMessage(context, &state.Transaction))
+						s.SendMessage(
+							TransactionRejectedMessage(&state.Transaction),
+							state.ReplyTo,
+							context.Receiver,
+						)
 					}
 				} else {
-					s.SendRemote(TransactionDuplicateMessage(context, &state.Transaction))
+					s.SendMessage(
+						TransactionDuplicateMessage(&state.Transaction),
+						state.ReplyTo,
+						context.Receiver,
+					)
 				}
 
 			default:
-				s.SendRemote(TransactionRaceMessage(context, state.Transaction.IDTransaction))
+				s.SendMessage(
+					TransactionRaceMessage(state.Transaction.IDTransaction),
+					state.ReplyTo,
+					context.Receiver,
+				)
 
 			}
 
@@ -75,7 +103,14 @@ func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		s.Metrics.TransactionPromised(len(state.Transaction.Transfers))
 
 		for account, task := range state.Negotiation {
-			s.SendRemote(PromiseOrderMessage(context, account, task))
+			s.SendMessage(
+				PromiseOrderMessage(task),
+				system.Coordinates{
+					Region: "VaultUnit/" + account.Tenant,
+					Name: account.Name,
+				},
+				context.Receiver,
+			)
 		}
 
 		state.ResetMarks()
@@ -107,7 +142,11 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		}
 
 		if state.OkResponses == 0 {
-			s.SendRemote(TransactionRefusedMessage(context, &state.Transaction))
+			s.SendMessage(
+				TransactionRefusedMessage(&state.Transaction),
+				state.ReplyTo,
+				context.Receiver,
+			)
 			log.Debugf("~ %v Promise Rejected All", state.Transaction.IDTransaction)
 			s.UnregisterActor(context.Sender.Name)
 			return
@@ -119,7 +158,11 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 			state.Transaction.State = model.StatusRejected
 
 			if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
-				s.SendRemote(TransactionRefusedMessage(context, &state.Transaction))
+				s.SendMessage(
+					TransactionRefusedMessage(&state.Transaction),
+					state.ReplyTo,
+					context.Receiver,
+				)
 				log.Warnf("~ %v Promise failed to reject transaction", state.Transaction.IDTransaction)
 				s.UnregisterActor(context.Sender.Name)
 				return
@@ -131,7 +174,14 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 			context.Self.Become(state, RollbackingTransaction(s))
 
 			for account, task := range state.Negotiation {
-				s.SendRemote(RollbackOrderMessage(context, account, task))
+				s.SendMessage(
+					RollbackOrderMessage(task),
+					system.Coordinates{
+						Region: "VaultUnit/" + account.Tenant,
+						Name: account.Name,
+					},
+					context.Receiver,
+				)
 			}
 
 			return
@@ -143,14 +193,25 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		// FIXME possible null here
 		if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
-			s.SendRemote(TransactionRefusedMessage(context, &state.Transaction))
+			s.SendMessage(
+				TransactionRefusedMessage(&state.Transaction),
+				state.ReplyTo,
+				context.Receiver,
+			)
 			log.Warnf("~ %v Promise failed to accept transaction", state.Transaction.IDTransaction)
 			s.UnregisterActor(context.Sender.Name)
 			return
 		}
 
 		for account, task := range state.Negotiation {
-			s.SendRemote(CommitOrderMessage(context, account, task))
+			s.SendMessage(
+				CommitOrderMessage(task),
+				system.Coordinates{
+					Region: "VaultUnit/" + account.Tenant,
+					Name: account.Name,
+				},
+				context.Receiver,
+			)
 		}
 
 		state.ResetMarks()
@@ -187,14 +248,25 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 			state.Transaction.State = model.StatusRejected
 
 			if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
-				s.SendRemote(TransactionRefusedMessage(context, &state.Transaction))
+				s.SendMessage(
+					TransactionRefusedMessage(&state.Transaction),
+					state.ReplyTo,
+					context.Receiver,
+				)
 				log.Warnf("~ %v Commit failed to reject transaction", state.Transaction.IDTransaction)
 				s.UnregisterActor(context.Sender.Name)
 				return
 			}
 
 			for account, task := range state.Negotiation {
-				s.SendRemote(RollbackOrderMessage(context, account, task))
+				s.SendMessage(
+					RollbackOrderMessage(task),
+					system.Coordinates{
+						Region: "VaultUnit/" + account.Tenant,
+						Name: account.Name,
+					},
+					context.Receiver,
+				)
 			}
 
 			state.ResetMarks()
@@ -208,7 +280,11 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		state.Transaction.State = model.StatusCommitted
 
 		if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
-			s.SendRemote(TransactionRefusedMessage(context, &state.Transaction))
+			s.SendMessage(
+				TransactionRefusedMessage(&state.Transaction),
+				state.ReplyTo,
+				context.Receiver,
+			)
 			log.Warnf("~ %v Commit failed to commit transaction", state.Transaction.IDTransaction)
 			s.UnregisterActor(context.Sender.Name)
 			return
@@ -220,7 +296,11 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		}
 
 		s.Metrics.TransactionCommitted(len(state.Transaction.Transfers))
-		s.SendRemote(TransactionProcessedMessage(context, &state.Transaction))
+		s.SendMessage(
+			TransactionProcessedMessage(&state.Transaction),
+			state.ReplyTo,
+			context.Receiver,
+		)
 		log.Infof("~ %v Commit->End", state.Transaction.IDTransaction)
 		s.UnregisterActor(context.Sender.Name)
 		return
@@ -249,7 +329,11 @@ func RollbackingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		}
 
 		if state.FailedResponses > 0 {
-			s.SendRemote(TransactionRefusedMessage(context, &state.Transaction))
+			s.SendMessage(
+				TransactionRefusedMessage(&state.Transaction),
+				state.ReplyTo,
+				context.Receiver,
+			)
 			log.Debugf("~ %v Rollback Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
 			s.UnregisterActor(context.Sender.Name)
 			return
@@ -263,7 +347,11 @@ func RollbackingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		state.Transaction.State = model.StatusRollbacked
 
 		if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
-			s.SendRemote(TransactionRefusedMessage(context, &state.Transaction))
+			s.SendMessage(
+				TransactionRefusedMessage(&state.Transaction),
+				state.ReplyTo,
+				context.Receiver,
+			)
 			log.Warnf("~ %v Rollback failed to rollback transaction", state.Transaction.IDTransaction)
 			s.UnregisterActor(context.Sender.Name)
 			return
@@ -271,7 +359,11 @@ func RollbackingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		s.Metrics.TransactionRollbacked(len(state.Transaction.Transfers))
 
-		s.SendRemote(TransactionRejectedMessage(context, &state.Transaction))
+		s.SendMessage(
+			TransactionRejectedMessage(&state.Transaction),
+			state.ReplyTo,
+			context.Receiver,
+		)
 		log.Infof("~ %v Rollback->End", state.Transaction.IDTransaction)
 		s.UnregisterActor(context.Sender.Name)
 		return
