@@ -21,7 +21,6 @@ import (
 	"github.com/jancajthaml-openbank/ledger-unit/actor"
 	"github.com/jancajthaml-openbank/ledger-unit/config"
 	"github.com/jancajthaml-openbank/ledger-unit/metrics"
-	"github.com/jancajthaml-openbank/ledger-unit/persistence"
 	"github.com/jancajthaml-openbank/ledger-unit/utils"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
@@ -47,7 +46,7 @@ func Initialize() Program {
 
 	metricsDaemon := metrics.NewMetrics(ctx, cfg.MetricsOutput, cfg.Tenant, cfg.MetricsRefreshRate)
 	actorSystemDaemon := actor.NewActorSystem(ctx, cfg.Tenant, cfg.LakeHostname, &metricsDaemon, &storage)
-	transactionFinalizerDaemon := persistence.NewTransactionFinalizer(ctx, cfg.TransactionIntegrityScanInterval, &metricsDaemon, &storage, actor.ProcessLocalMessage(&actorSystemDaemon))
+	transactionFinalizerDaemon := actor.NewTransactionFinalizer(ctx, cfg.TransactionIntegrityScanInterval, &metricsDaemon, &storage, actor.ProcessMessage(&actorSystemDaemon))
 
 	var daemons = make([]utils.Daemon, 0)
 	daemons = append(daemons, metricsDaemon)

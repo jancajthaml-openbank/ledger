@@ -36,16 +36,24 @@ func CreateTransaction(sys *ActorSystem, tenant string, transaction Transaction)
 		ch := make(chan interface{})
 		defer close(ch)
 
-		name := "transaction/" + xid.New().String()
-
-		envelope := system.NewEnvelope(name, nil)
+		envelope := system.NewEnvelope("transaction/" + xid.New().String(), nil)
 		defer sys.UnregisterActor(envelope.Name)
 
 		sys.RegisterActor(envelope, func(state interface{}, context system.Context) {
 			ch <- context.Data
 		})
 
-		sys.SendRemote(CreateTransactionMessage(tenant, envelope.Name, name, transaction))
+		sys.SendMessage(
+			CreateTransactionMessage(transaction),
+			system.Coordinates{
+				Region: "LedgerUnit/" + tenant,
+				Name: envelope.Name,
+			},
+			system.Coordinates{
+				Region: "LedgerRest",
+				Name: envelope.Name,
+			},
+		)
 
 		select {
 

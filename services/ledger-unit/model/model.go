@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"strings"
 
+	system "github.com/jancajthaml-openbank/actor-system"
 	money "gopkg.in/inf.v0"
 )
 
@@ -59,6 +60,7 @@ type TransactionState struct {
 	OkResponses     int
 	FailedResponses int
 	Ready           bool
+	ReplyTo         system.Coordinates
 }
 
 func NewTransactionState() TransactionState {
@@ -141,7 +143,7 @@ func (state TransactionState) IsNegotiationFinished() bool {
 	return len(state.Negotiation) <= (state.OkResponses + state.FailedResponses)
 }
 
-func (state *TransactionState) Prepare(transaction Transaction) {
+func (state *TransactionState) Prepare(transaction Transaction, requestedBy system.Coordinates) {
 	if state == nil {
 		return
 	}
@@ -151,6 +153,7 @@ func (state *TransactionState) Prepare(transaction Transaction) {
 	state.Negotiation = negotiation
 	state.ResetMarks()
 	state.Ready = true
+	state.ReplyTo = requestedBy
 }
 
 type ForwardState struct {

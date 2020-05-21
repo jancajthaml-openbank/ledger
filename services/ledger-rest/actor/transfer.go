@@ -36,16 +36,24 @@ func ForwardTransfer(sys *ActorSystem, tenant string, transaction string, transf
 		ch := make(chan interface{})
 		defer close(ch)
 
-		name := "forward/" + xid.New().String()
-
-		envelope := system.NewEnvelope(name, nil)
+		envelope := system.NewEnvelope("forward/" + xid.New().String(), nil)
 		defer sys.UnregisterActor(envelope.Name)
 
 		sys.RegisterActor(envelope, func(state interface{}, context system.Context) {
 			ch <- context.Data
 		})
 
-		sys.SendRemote(ForwardTransferMessage(tenant, envelope.Name, name, transaction, transfer, forward))
+		sys.SendMessage(
+			ForwardTransferMessage(transaction, transfer, forward),
+			system.Coordinates{
+				Region: "LedgerUnit/" + tenant,
+				Name: envelope.Name,
+			},
+			system.Coordinates{
+				Region: "LedgerRest",
+				Name: envelope.Name,
+			},
+		)
 
 		select {
 

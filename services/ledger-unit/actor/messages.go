@@ -15,7 +15,6 @@
 package actor
 
 import (
-	system "github.com/jancajthaml-openbank/actor-system"
 	"github.com/jancajthaml-openbank/ledger-unit/model"
 )
 
@@ -55,45 +54,45 @@ const (
 )
 
 // FatalErrorMessage is reply message carrying failure
-func FatalErrorMessage(context system.Context) string {
-	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + FatalError
+func FatalErrorMessage() string {
+	return FatalError
 }
 
-func TransactionRaceMessage(context system.Context, id string) string {
-	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespTransactionRace + " " + id
+func TransactionRaceMessage(id string) string {
+	return RespTransactionRace + " " + id
 }
 
-func TransactionMissingMessage(context system.Context, id string) string {
-	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespTransactionMissing + " " + id
+func TransactionMissingMessage(id string) string {
+	return RespTransactionMissing + " " + id
 }
 
 // PromiseOrderMessage is message for negotiation of promise transaction
-func PromiseOrderMessage(context system.Context, account model.Account, msg string) string {
-	return "VaultUnit/" + account.Tenant + " " + context.Receiver.Region + " " + account.Name + " " + context.Receiver.Name + " " + PromiseOrder + " " + msg
+func PromiseOrderMessage(msg string) string {
+	return PromiseOrder + " " + msg
 }
 
 // CommitOrderMessage is message for negotiation of commit transaction
-func CommitOrderMessage(context system.Context, account model.Account, msg string) string {
-	return "VaultUnit/" + account.Tenant + " " + context.Receiver.Region + " " + account.Name + " " + context.Receiver.Name + " " + CommitOrder + " " + msg
+func CommitOrderMessage(msg string) string {
+	return CommitOrder + " " + msg
 }
 
 // RollbackOrderMessage is message for negotiation of rollback transaction
-func RollbackOrderMessage(context system.Context, account model.Account, msg string) string {
-	return "VaultUnit/" + account.Tenant + " " + context.Receiver.Region + " " + account.Name + " " + context.Receiver.Name + " " + RollbackOrder + " " + msg
+func RollbackOrderMessage(msg string) string {
+	return RollbackOrder + " " + msg
 }
 
-func TransactionRejectedMessage(context system.Context, entity *model.Transaction) string {
-	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespTransactionRejected + " " + entity.IDTransaction + " " + entity.State
+func TransactionRejectedMessage(entity *model.Transaction) string {
+	return RespTransactionRejected + " " + entity.IDTransaction + " " + entity.State
 }
 
-func TransactionProcessedMessage(context system.Context, entity *model.Transaction) string {
-	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespCreateTransaction + " " + entity.IDTransaction
+func TransactionProcessedMessage(entity *model.Transaction) string {
+	return RespCreateTransaction + " " + entity.IDTransaction
 }
 
-func TransactionRefusedMessage(context system.Context, entity *model.Transaction) string {
-	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespTransactionRefused + " " + entity.IDTransaction
+func TransactionRefusedMessage(entity *model.Transaction) string {
+	return RespTransactionRefused + " " + entity.IDTransaction
 }
 
-func TransactionDuplicateMessage(context system.Context, entity *model.Transaction) string {
-	return "LedgerRest " + context.Receiver.Region + " " + context.Receiver.Name + " " + context.Receiver.Name + " " + RespTransactionDuplicate + " " + entity.IDTransaction
+func TransactionDuplicateMessage(entity *model.Transaction) string {
+	return RespTransactionDuplicate + " " + entity.IDTransaction
 }
