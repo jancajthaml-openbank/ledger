@@ -44,15 +44,41 @@ func Initialize() Program {
 
 	utils.SetupLogger(cfg.LogLevel)
 
-	systemControlDaemon := system.NewSystemControl(ctx)
-	diskMonitorDaemon := system.NewDiskMonitor(ctx, cfg.MinFreeDiskSpace, cfg.RootStorage)
-	memoryMonitorDaemon := system.NewMemoryMonitor(ctx, cfg.MinFreeMemory)
-
-	storage := localfs.NewPlaintextStorage(cfg.RootStorage)
-
-	metricsDaemon := metrics.NewMetrics(ctx, cfg.MetricsOutput, cfg.MetricsRefreshRate)
-	actorSystemDaemon := actor.NewActorSystem(ctx, cfg.LakeHostname, &metricsDaemon)
-	restDaemon := api.NewServer(ctx, cfg.ServerPort, cfg.SecretsPath, &actorSystemDaemon, &systemControlDaemon, &diskMonitorDaemon, &memoryMonitorDaemon, &storage)
+	storage := localfs.NewPlaintextStorage(
+		cfg.RootStorage,
+	)
+	systemControlDaemon := system.NewSystemControl(
+		ctx,
+	)
+	diskMonitorDaemon := system.NewDiskMonitor(
+		ctx,
+		cfg.MinFreeDiskSpace,
+		cfg.RootStorage,
+	)
+	memoryMonitorDaemon := system.NewMemoryMonitor(
+		ctx,
+		cfg.MinFreeMemory,
+	)
+	metricsDaemon := metrics.NewMetrics(
+		ctx,
+		cfg.MetricsOutput,
+		cfg.MetricsRefreshRate,
+	)
+	actorSystemDaemon := actor.NewActorSystem(
+		ctx,
+		cfg.LakeHostname,
+		&metricsDaemon,
+	)
+	restDaemon := api.NewServer(
+		ctx,
+		cfg.ServerPort,
+		cfg.SecretsPath,
+		&actorSystemDaemon,
+		&systemControlDaemon,
+		&diskMonitorDaemon,
+		&memoryMonitorDaemon,
+		&storage,
+	)
 
 	var daemons = make([]utils.Daemon, 0)
 	daemons = append(daemons, metricsDaemon)
