@@ -184,7 +184,6 @@ func (server Server) Start() {
 		for {
 			select {
 			case <-server.Done():
-				log.Info("Stopping http-server daemon")
 				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 				server.underlying.Shutdown(ctx)
 				cancel()
