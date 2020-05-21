@@ -75,6 +75,6 @@ services:
     build:
       dockerfile: Dockerfile
       context: .
-    image: openbank/lake
+    image: openbank/ledger
 
 # ---------------------------------------------------------------------------- #
