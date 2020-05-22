@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,10 +13,6 @@
 // limitations under the License.
 
 package actor
-
-import (
-	"github.com/jancajthaml-openbank/ledger-unit/model"
-)
 
 const (
 	ReqCreateTransaction     = "NT"
@@ -52,47 +48,3 @@ const (
 	// FatalError vault message response code for "Error"
 	FatalError = "EE"
 )
-
-// FatalErrorMessage is reply message carrying failure
-func FatalErrorMessage() string {
-	return FatalError
-}
-
-func TransactionRaceMessage(id string) string {
-	return RespTransactionRace + " " + id
-}
-
-func TransactionMissingMessage(id string) string {
-	return RespTransactionMissing + " " + id
-}
-
-// PromiseOrderMessage is message for negotiation of promise transaction
-func PromiseOrderMessage(msg string) string {
-	return PromiseOrder + " " + msg
-}
-
-// CommitOrderMessage is message for negotiation of commit transaction
-func CommitOrderMessage(msg string) string {
-	return CommitOrder + " " + msg
-}
-
-// RollbackOrderMessage is message for negotiation of rollback transaction
-func RollbackOrderMessage(msg string) string {
-	return RollbackOrder + " " + msg
-}
-
-func TransactionRejectedMessage(entity *model.Transaction) string {
-	return RespTransactionRejected + " " + entity.IDTransaction + " " + entity.State
-}
-
-func TransactionProcessedMessage(entity *model.Transaction) string {
-	return RespCreateTransaction + " " + entity.IDTransaction
-}
-
-func TransactionRefusedMessage(entity *model.Transaction) string {
-	return RespTransactionRefused + " " + entity.IDTransaction
-}
-
-func TransactionDuplicateMessage(entity *model.Transaction) string {
-	return RespTransactionDuplicate + " " + entity.IDTransaction
-}

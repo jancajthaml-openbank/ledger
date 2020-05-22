@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ func InitialForward(s *ActorSystem) func(interface{}, system.Context) {
 
 			if state.Ready {
 				s.SendMessage(
-					TransactionRaceMessage(msg.IDTransaction),
+					RespTransactionRace + " " + msg.IDTransaction,
 					state.ReplyTo,
 					context.Receiver,
 				)
@@ -56,7 +56,7 @@ func InitialForward(s *ActorSystem) func(interface{}, system.Context) {
 
 			if foundTransfer == nil {
 				s.SendMessage(
-					TransactionMissingMessage(msg.IDTransaction),
+					RespTransactionMissing + " " + msg.IDTransaction,
 					context.Sender,
 					context.Receiver,
 				)
@@ -71,7 +71,7 @@ func InitialForward(s *ActorSystem) func(interface{}, system.Context) {
 			case "credit":
 				if already, err := persistence.IsTransferForwardedCredit(s.Storage, msg.IDTransaction, msg.IDTransfer); already || err != nil {
 					s.SendMessage(
-						TransactionRefusedMessage(current),
+						RespTransactionRefused + " " + current.IDTransaction,
 						context.Sender,
 						context.Receiver,
 					)
@@ -97,7 +97,7 @@ func InitialForward(s *ActorSystem) func(interface{}, system.Context) {
 			case "debit":
 				if already, err := persistence.IsTransferForwardedDebit(s.Storage, msg.IDTransaction, msg.IDTransfer); already || err != nil {
 					s.SendMessage(
-						TransactionRefusedMessage(current),
+						RespTransactionRefused + " " + current.IDTransaction,
 						context.Sender,
 						context.Receiver,
 					)
@@ -122,7 +122,7 @@ func InitialForward(s *ActorSystem) func(interface{}, system.Context) {
 
 			default:
 				s.SendMessage(
-					TransactionRefusedMessage(current),
+					RespTransactionRefused + " " + current.IDTransaction,
 					context.Sender,
 					context.Receiver,
 				)
@@ -131,7 +131,7 @@ func InitialForward(s *ActorSystem) func(interface{}, system.Context) {
 
 			if persistence.PersistTransaction(s.Storage, &transaction) == nil {
 				s.SendMessage(
-					TransactionRaceMessage(state.Forward.IDTransaction),
+					RespTransactionRace + " " + state.Forward.IDTransaction,
 					context.Sender,
 					context.Receiver,
 				)
@@ -148,7 +148,7 @@ func InitialForward(s *ActorSystem) func(interface{}, system.Context) {
 
 			for account, task := range state.Negotiation {
 				s.SendMessage(
-					PromiseOrderMessage(task),
+					PromiseOrder + " " + task,
 					system.Coordinates{
 						Region: "VaultUnit/" + account.Tenant,
 						Name: account.Name,
@@ -161,7 +161,7 @@ func InitialForward(s *ActorSystem) func(interface{}, system.Context) {
 
 		default:
 			s.SendMessage(
-				FatalErrorMessage(),
+				FatalError,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -196,7 +196,7 @@ func PromisingForward(s *ActorSystem) func(interface{}, system.Context) {
 
 		if state.OkResponses == 0 {
 			s.SendMessage(
-				TransactionRefusedMessage(&state.Transaction),
+				RespTransactionRefused + " " + state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -210,7 +210,7 @@ func PromisingForward(s *ActorSystem) func(interface{}, system.Context) {
 
 			if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 				s.SendMessage(
-					TransactionRefusedMessage(&state.Transaction),
+					RespTransactionRefused + " " + state.Transaction.IDTransaction,
 					state.ReplyTo,
 					context.Receiver,
 				)
@@ -225,7 +225,7 @@ func PromisingForward(s *ActorSystem) func(interface{}, system.Context) {
 
 			for account, task := range state.Negotiation {
 				s.SendMessage(
-					RollbackOrderMessage(task),
+					RollbackOrder + " " + task,
 					system.Coordinates{
 						Region: "VaultUnit/" + account.Tenant,
 						Name: account.Name,
@@ -244,7 +244,7 @@ func PromisingForward(s *ActorSystem) func(interface{}, system.Context) {
 		// FIXME possible null here
 		if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 			s.SendMessage(
-				TransactionRefusedMessage(&state.Transaction),
+				RespTransactionRefused + " " + state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -258,7 +258,7 @@ func PromisingForward(s *ActorSystem) func(interface{}, system.Context) {
 
 		for account, task := range state.Negotiation {
 			s.SendMessage(
-				CommitOrderMessage(task),
+				CommitOrder + " " + task,
 				system.Coordinates{
 					Region: "VaultUnit/" + account.Tenant,
 					Name: account.Name,
@@ -300,7 +300,7 @@ func CommitingForward(s *ActorSystem) func(interface{}, system.Context) {
 
 			if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 				s.SendMessage(
-					TransactionRefusedMessage(&state.Transaction),
+					RespTransactionRefused + " " + state.Transaction.IDTransaction,
 					state.ReplyTo,
 					context.Receiver,
 				)
@@ -314,7 +314,7 @@ func CommitingForward(s *ActorSystem) func(interface{}, system.Context) {
 
 			for account, task := range state.Negotiation {
 				s.SendMessage(
-					RollbackOrderMessage(task),
+					RollbackOrder + " " + task,
 					system.Coordinates{
 						Region: "VaultUnit/" + account.Tenant,
 						Name: account.Name,
@@ -333,7 +333,7 @@ func CommitingForward(s *ActorSystem) func(interface{}, system.Context) {
 
 		if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 			s.SendMessage(
-				TransactionRefusedMessage(&state.Transaction),
+				RespTransactionRefused + " " + state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -353,7 +353,7 @@ func CommitingForward(s *ActorSystem) func(interface{}, system.Context) {
 		s.Metrics.TransactionCommitted(1)
 
 		s.SendMessage(
-			TransactionProcessedMessage(&state.Transaction),
+			RespCreateTransaction + " " + state.Transaction.IDTransaction,
 			state.ReplyTo,
 			context.Receiver,
 		)
@@ -387,7 +387,7 @@ func RollbackingForward(s *ActorSystem) func(interface{}, system.Context) {
 
 		if state.FailedResponses > 0 {
 			s.SendMessage(
-				TransactionRefusedMessage(&state.Transaction),
+				RespTransactionRefused + " " + state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -406,7 +406,7 @@ func RollbackingForward(s *ActorSystem) func(interface{}, system.Context) {
 		if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 			log.Warnf("~ %v (FWD) Rollback failed to rollback transaction", state.Transaction.IDTransaction)
 			s.SendMessage(
-				TransactionRefusedMessage(&state.Transaction),
+				RespTransactionRefused + " " + state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -417,7 +417,7 @@ func RollbackingForward(s *ActorSystem) func(interface{}, system.Context) {
 		s.Metrics.TransactionRollbacked(1)
 
 		s.SendMessage(
-			TransactionRejectedMessage(&state.Transaction),
+			RespTransactionRejected + " " + state.Transaction.IDTransaction + " " + state.Transaction.State,
 			state.ReplyTo,
 			context.Receiver,
 		)
@@ -444,7 +444,7 @@ func AcceptingForward(s *ActorSystem) func(interface{}, system.Context) {
 
 		if !ok {
 			s.SendMessage(
-				TransactionRejectedMessage(&state.Transaction),
+				RespTransactionRejected + " " + state.Transaction.IDTransaction + " " + state.Transaction.State,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -456,7 +456,7 @@ func AcceptingForward(s *ActorSystem) func(interface{}, system.Context) {
 		s.Metrics.TransactionForwarded(1)
 
 		s.SendMessage(
-			TransactionProcessedMessage(&state.Transaction),
+			RespCreateTransaction + " " + state.Transaction.IDTransaction,
 			state.ReplyTo,
 			context.Receiver,
 		)
