@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,11 +42,28 @@ func Initialize() Program {
 
 	utils.SetupLogger(cfg.LogLevel)
 
-	storage := localfs.NewPlaintextStorage(cfg.RootStorage)
-
-	metricsDaemon := metrics.NewMetrics(ctx, cfg.MetricsOutput, cfg.Tenant, cfg.MetricsRefreshRate)
-	actorSystemDaemon := actor.NewActorSystem(ctx, cfg.Tenant, cfg.LakeHostname, &metricsDaemon, &storage)
-	transactionFinalizerDaemon := actor.NewTransactionFinalizer(ctx, cfg.TransactionIntegrityScanInterval, &metricsDaemon, &storage, actor.ProcessMessage(&actorSystemDaemon))
+	storage := localfs.NewPlaintextStorage(
+		cfg.RootStorage,
+	)
+	metricsDaemon := metrics.NewMetrics(
+		ctx,
+		cfg.MetricsOutput,
+		cfg.Tenant,
+		cfg.MetricsRefreshRate,
+	)
+	actorSystemDaemon := actor.NewActorSystem(
+		ctx, cfg.Tenant,
+		cfg.LakeHostname,
+		&metricsDaemon,
+		&storage,
+	)
+	transactionFinalizerDaemon := actor.NewTransactionFinalizer(
+		ctx,
+		cfg.TransactionIntegrityScanInterval,
+		&metricsDaemon,
+		&storage,
+		actor.ProcessMessage(&actorSystemDaemon),
+	)
 
 	var daemons = make([]utils.Daemon, 0)
 	daemons = append(daemons, metricsDaemon)

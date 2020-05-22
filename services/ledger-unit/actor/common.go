@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,12 +27,6 @@ import (
 // ProcessRemoteMessage processing of remote message to this wall
 func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 	return func(msg string, to system.Coordinates, from system.Coordinates) {
-
-		defer func() {
-			if r := recover(); r != nil {
-				log.Errorf("procesRemoteMessage recovered in [remote %v -> local %v] : %+v", from, to, r)
-			}
-		}()
 
 		parts := strings.Split(msg, " ")
 
@@ -71,7 +65,7 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 				ref, err = spawnTransactionActor(s, to.Name)
 				if err != nil {
 					log.Warnf("Unable to spray from [remote %v -> local %v] : %+v", from, to, msg)
-					s.SendMessage(FatalErrorMessage(), from, to)
+					s.SendMessage(FatalError, from, to)
 					return
 				}
 			}
@@ -91,7 +85,7 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 				ref, err = spawnForwardActor(s, to.Name)
 				if err != nil {
 					log.Warnf("Unable to spray from [remote %v -> local %v] : %+v", from, to, msg)
-					s.SendMessage(FatalErrorMessage(), from, to)
+					s.SendMessage(FatalError, from, to)
 					return
 				}
 			}

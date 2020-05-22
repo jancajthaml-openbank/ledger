@@ -25,12 +25,6 @@ import (
 func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 	return func(msg string, to system.Coordinates, from system.Coordinates) {
 
-		defer func() {
-			if r := recover(); r != nil {
-				log.Errorf("procesRemoteMessage recovered in [remote %v -> local %v] : %+v", from, to, r)
-			}
-		}()
-
 		ref, err := s.ActorOf(to.Name)
 		if err != nil {
 			// FIXME forward into deadletter receiver and finish whatever has started

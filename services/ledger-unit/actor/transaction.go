@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2019, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		case model.Transaction:
 			if state.Ready {
 				s.SendMessage(
-					TransactionRaceMessage(msg.IDTransaction),
+					RespTransactionRace + " " + msg.IDTransaction,
 					state.ReplyTo,
 					context.Receiver,
 				)
@@ -43,7 +43,7 @@ func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		default:
 			s.SendMessage(
-				FatalErrorMessage(),
+				FatalError,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -55,7 +55,7 @@ func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 			current, err := persistence.LoadTransaction(s.Storage, state.Transaction.IDTransaction)
 			if err != nil {
 				s.SendMessage(
-					FatalErrorMessage(),
+					FatalError,
 					state.ReplyTo,
 					context.Receiver,
 				)
@@ -69,20 +69,20 @@ func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 				if state.Transaction.IsSameAs(current) {
 					if current.State == model.StatusCommitted {
 						s.SendMessage(
-							TransactionProcessedMessage(&state.Transaction),
+							RespCreateTransaction + " " + state.Transaction.IDTransaction,
 							state.ReplyTo,
 							context.Receiver,
 						)
 					} else {
 						s.SendMessage(
-							TransactionRejectedMessage(&state.Transaction),
+							RespTransactionRejected + " " + state.Transaction.IDTransaction + " " + state.Transaction.State,
 							state.ReplyTo,
 							context.Receiver,
 						)
 					}
 				} else {
 					s.SendMessage(
-						TransactionDuplicateMessage(&state.Transaction),
+						RespTransactionDuplicate + " " + state.Transaction.IDTransaction,
 						state.ReplyTo,
 						context.Receiver,
 					)
@@ -90,7 +90,7 @@ func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 			default:
 				s.SendMessage(
-					TransactionRaceMessage(state.Transaction.IDTransaction),
+					RespTransactionRace + " " + state.Transaction.IDTransaction,
 					state.ReplyTo,
 					context.Receiver,
 				)
@@ -104,7 +104,7 @@ func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		for account, task := range state.Negotiation {
 			s.SendMessage(
-				PromiseOrderMessage(task),
+				PromiseOrder + " " + task,
 				system.Coordinates{
 					Region: "VaultUnit/" + account.Tenant,
 					Name: account.Name,
@@ -143,7 +143,7 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		if state.OkResponses == 0 {
 			s.SendMessage(
-				TransactionRefusedMessage(&state.Transaction),
+				RespTransactionRefused + " " + state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -159,7 +159,7 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 			if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 				s.SendMessage(
-					TransactionRefusedMessage(&state.Transaction),
+					RespTransactionRefused + " " + state.Transaction.IDTransaction,
 					state.ReplyTo,
 					context.Receiver,
 				)
@@ -175,7 +175,7 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 			for account, task := range state.Negotiation {
 				s.SendMessage(
-					RollbackOrderMessage(task),
+					RollbackOrder + " " + task,
 					system.Coordinates{
 						Region: "VaultUnit/" + account.Tenant,
 						Name: account.Name,
@@ -194,7 +194,7 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		// FIXME possible null here
 		if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 			s.SendMessage(
-				TransactionRefusedMessage(&state.Transaction),
+				RespTransactionRefused + " " + state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -205,7 +205,7 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		for account, task := range state.Negotiation {
 			s.SendMessage(
-				CommitOrderMessage(task),
+				CommitOrder + " " + task,
 				system.Coordinates{
 					Region: "VaultUnit/" + account.Tenant,
 					Name: account.Name,
@@ -249,7 +249,7 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 			if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 				s.SendMessage(
-					TransactionRefusedMessage(&state.Transaction),
+					RespTransactionRefused + " " + state.Transaction.IDTransaction,
 					state.ReplyTo,
 					context.Receiver,
 				)
@@ -260,7 +260,7 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 			for account, task := range state.Negotiation {
 				s.SendMessage(
-					RollbackOrderMessage(task),
+					RollbackOrder + " " + task,
 					system.Coordinates{
 						Region: "VaultUnit/" + account.Tenant,
 						Name: account.Name,
@@ -281,7 +281,7 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 			s.SendMessage(
-				TransactionRefusedMessage(&state.Transaction),
+				RespTransactionRefused + " " + state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -297,7 +297,7 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		s.Metrics.TransactionCommitted(len(state.Transaction.Transfers))
 		s.SendMessage(
-			TransactionProcessedMessage(&state.Transaction),
+			RespCreateTransaction + " " + state.Transaction.IDTransaction,
 			state.ReplyTo,
 			context.Receiver,
 		)
@@ -330,7 +330,7 @@ func RollbackingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		if state.FailedResponses > 0 {
 			s.SendMessage(
-				TransactionRefusedMessage(&state.Transaction),
+				RespTransactionRefused + " " + state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -348,7 +348,7 @@ func RollbackingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 			s.SendMessage(
-				TransactionRefusedMessage(&state.Transaction),
+				RespTransactionRefused + " " + state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -360,7 +360,7 @@ func RollbackingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		s.Metrics.TransactionRollbacked(len(state.Transaction.Transfers))
 
 		s.SendMessage(
-			TransactionRejectedMessage(&state.Transaction),
+			RespTransactionRejected + " " + state.Transaction.IDTransaction + " " + state.Transaction.State,
 			state.ReplyTo,
 			context.Receiver,
 		)

@@ -8,8 +8,8 @@ github.com/godbus/dbus v0.0.0-20181101234600-2ff6f7ffd60f/go.mod h1:/YcGZj5zSblf
 github.com/google/gofuzz v1.0.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
 github.com/gorilla/mux v1.7.4 h1:VuZ8uybHlWmqV03+zRzdwKL4tUnIp1MAQtp1mIFE1bc=
 github.com/gorilla/mux v1.7.4/go.mod h1:DVbg23sWSpFRCP0SfiEN6jmj59UnW/n46BH5rLB71So=
-github.com/jancajthaml-openbank/actor-system v1.0.4 h1:uaYMxhdiqnogJrscmH6I/ETJYkESHhZyiTlIDQHMYmA=
-github.com/jancajthaml-openbank/actor-system v1.0.4/go.mod h1:+bYAkP28bV8MGjxKjQ1+koaSM6KOeGi+C7p9CwysAAo=
+github.com/jancajthaml-openbank/actor-system v1.0.5 h1:dV7Y428reMkqF5yVSfI62IXqkisNGFyVPJGjfOspeaY=
+github.com/jancajthaml-openbank/actor-system v1.0.5/go.mod h1:+bYAkP28bV8MGjxKjQ1+koaSM6KOeGi+C7p9CwysAAo=
 github.com/jancajthaml-openbank/local-fs v1.1.3 h1:dcR7SxN7nQTNwnlpkre52JsqyA62ooL/x+jRyVlZ1Kg=
 github.com/jancajthaml-openbank/local-fs v1.1.3/go.mod h1:r/u/Cj4ydLudWDVgb8B+0uSXcY6IFDyyI1hgkz0NguA=
 github.com/json-iterator/go v1.1.9 h1:9yzud/Ht36ygwatGx56VwCZtlI/2AD15T1X2sjSuGns=
