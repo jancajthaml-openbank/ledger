@@ -60,7 +60,7 @@ func ForwardTransfer(sys *ActorSystem, tenant string, transaction string, transf
 		case result = <-ch:
 			return
 
-		case <-time.After(3 * time.Second):
+		case <-time.After(30 * time.Second):
 			log.Warnf("Forward transfer %s/%s/%s timeout", tenant, transaction, transfer)
 			result = new(ReplyTimeout)
 			return
