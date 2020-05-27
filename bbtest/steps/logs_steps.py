@@ -10,7 +10,7 @@ def step_impl(context, unit):
   @eventually(5)
   def impl():
     (code, result, error) = execute([
-      "journalctl", "-o", "short-precise", "-u", unit, "--no-pager", "2>&1"
+      "journalctl", "-o", "short-precise", "-t", unit, "--no-pager", "2>&1"
     ])
 
     assert code == 0
