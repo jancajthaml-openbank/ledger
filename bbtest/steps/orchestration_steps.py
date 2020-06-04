@@ -100,7 +100,7 @@ def operation_unit(context, operation, unit):
 @given('tenant {tenant} is offboarded')
 def offboard_unit(context, tenant):
   (code, result, error) = execute([
-    'journalctl', '-o', 'short-precise', '-t', 'ledger-unit@{}'.format(tenant), '--no-pager'
+    'journalctl', '-o', 'short-precise', '-t' 'ledger-unit', '-u', 'ledger-unit@{}.service'.format(tenant), '--no-pager'
   ])
   if code == 0:
     with open('/tmp/reports/blackbox-tests/logs/ledger-unit.{}.log'.format(tenant), 'w') as f:
@@ -111,7 +111,7 @@ def offboard_unit(context, tenant):
   ])
 
   (code, result, error) = execute([
-    'journalctl', '-o', 'short-precise', '-t', 'ledger-unit@{}'.format(tenant), '--no-pager'
+    'journalctl', '-o', 'short-precise', '-t' 'ledger-unit', '-u', 'ledger-unit@{}.service'.format(tenant), '--no-pager'
   ])
   if code == 0:
     with open('/tmp/reports/blackbox-tests/logs/ledger-unit.{}.log'.format(tenant), 'w') as f:

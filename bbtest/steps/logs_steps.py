@@ -9,8 +9,9 @@ def step_impl(context, unit):
 
   @eventually(5)
   def impl():
+    service = unit.split('.service')[0].split('@')[0]
     (code, result, error) = execute([
-      "journalctl", "-o", "short-precise", "-t", unit, "--no-pager", "2>&1"
+      'journalctl', '-o', 'short-precise', '-t', service, '-u', unit, '--no-pager'
     ])
 
     assert code == 0
