@@ -22,6 +22,7 @@ import (
 	"github.com/jancajthaml-openbank/ledger-unit/config"
 	"github.com/jancajthaml-openbank/ledger-unit/metrics"
 	"github.com/jancajthaml-openbank/ledger-unit/utils"
+	"github.com/jancajthaml-openbank/ledger-unit/logging"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
 )
@@ -40,7 +41,7 @@ func Initialize() Program {
 
 	cfg := config.GetConfig()
 
-	utils.SetupLogger(cfg.LogLevel)
+	logging.SetupLogger(cfg.LogLevel)
 
 	storage := localfs.NewPlaintextStorage(
 		cfg.RootStorage,

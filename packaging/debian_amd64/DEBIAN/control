@@ -1,5 +1,5 @@
 Package: ledger
-Version: 1.1.1+improve-bbtests
+Version: 1.1.1+improved-logging
 Section: misc
 Priority: extra
 Architecture: amd64

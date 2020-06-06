@@ -20,7 +20,6 @@ import (
 	"github.com/rs/xid"
 
 	system "github.com/jancajthaml-openbank/actor-system"
-	log "github.com/sirupsen/logrus"
 )
 
 // ForwardTransfer forward existing transfer to different vault

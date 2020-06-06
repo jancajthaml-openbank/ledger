@@ -22,8 +22,6 @@ import (
 	"time"
 
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // MemoryMonitor represents memory monitoring subroutine

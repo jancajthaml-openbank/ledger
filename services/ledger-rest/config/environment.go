@@ -20,8 +20,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	log "github.com/sirupsen/logrus"
 )
 
 func loadConfFromEnv() Configuration {

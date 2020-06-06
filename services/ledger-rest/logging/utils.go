@@ -12,20 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package logging
 
 import (
-	"fmt"
-
-	"github.com/jancajthaml-openbank/ledger-unit/boot"
+  "os"
+  "strings"
+  "github.com/sirupsen/logrus"
 )
 
-func main() {
-	fmt.Println(">>> Start <<<")
-	program := boot.Initialize()
-	defer func() {
-		program.Stop()
-		fmt.Println(">>> Stop <<<")
-	}()
-	program.Start()
+// NewLogger returns logger with preset field
+func NewLogger(name string) logrus.FieldLogger {
+  return logrus.WithField("src", name)
 }
+
+// SetupLogger properly sets up logging
+func SetupLogger(level string) {
+  if logLevel, err := logrus.ParseLevel(level); err == nil {
+    logrus.Infof("Log level set to %v", strings.ToUpper(level))
+    logrus.SetLevel(logLevel)
+  } else {
+    logrus.Warnf("Invalid log level %v, using level WARN", level)
+    logrus.SetLevel(logrus.WarnLevel)
+  }
+  logrus.SetOutput(os.Stdout)
+}
+

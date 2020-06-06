@@ -12,20 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package api
 
 import (
-	"fmt"
-
-	"github.com/jancajthaml-openbank/ledger-unit/boot"
+  "github.com/jancajthaml-openbank/ledger-rest/logging"
 )
 
-func main() {
-	fmt.Println(">>> Start <<<")
-	program := boot.Initialize()
-	defer func() {
-		program.Stop()
-		fmt.Println(">>> Stop <<<")
-	}()
-	program.Start()
-}
+var log = logging.NewLogger("api")

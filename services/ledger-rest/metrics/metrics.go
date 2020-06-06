@@ -21,7 +21,6 @@ import (
 	localfs "github.com/jancajthaml-openbank/local-fs"
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
 	metrics "github.com/rcrowley/go-metrics"
-	log "github.com/sirupsen/logrus"
 )
 
 // Metrics holds metrics counters

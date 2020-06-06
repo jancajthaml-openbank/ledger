@@ -22,7 +22,6 @@ import (
 
 	system "github.com/jancajthaml-openbank/actor-system"
 	"github.com/rs/xid"
-	log "github.com/sirupsen/logrus"
 )
 
 func InitialForward(s *ActorSystem) func(interface{}, system.Context) {

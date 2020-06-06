@@ -21,8 +21,6 @@ import (
 	"time"
 
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // DiskMonitor represents disk monitoring subroutine

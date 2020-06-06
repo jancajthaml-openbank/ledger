@@ -20,7 +20,6 @@ import (
 	"github.com/jancajthaml-openbank/ledger-unit/model"
 
 	system "github.com/jancajthaml-openbank/actor-system"
-	log "github.com/sirupsen/logrus"
 	money "gopkg.in/inf.v0"
 )
 
