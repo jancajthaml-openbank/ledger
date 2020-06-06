@@ -11,7 +11,7 @@ def step_impl(context, unit):
   def impl():
     service = unit.split('.service')[0].split('@')[0]
     (code, result, error) = execute([
-      'journalctl', '-o', 'short-precise', '-t', service, '-u', unit, '--no-pager'
+      'journalctl', '-o', 'cat', '-t', service, '-u', unit, '--no-pager'
     ])
 
     assert code == 0
@@ -21,7 +21,7 @@ def step_impl(context, unit):
     idx = len(actual_lines_merged) - 1
 
     while True:
-      if idx < 0 or ("INFO >>> Start <<<" in actual_lines_merged[idx]):
+      if idx < 0 or (">>> Start <<<" in actual_lines_merged[idx]):
         break
       actual_lines.append(actual_lines_merged[idx])
       idx -= 1

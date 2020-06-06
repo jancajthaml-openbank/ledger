@@ -21,7 +21,6 @@ import (
 	"github.com/jancajthaml-openbank/ledger-unit/persistence"
 
 	system "github.com/jancajthaml-openbank/actor-system"
-	log "github.com/sirupsen/logrus"
 )
 
 func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {

@@ -23,7 +23,6 @@ import (
 
   system "github.com/jancajthaml-openbank/actor-system"
   localfs "github.com/jancajthaml-openbank/local-fs"
-  log "github.com/sirupsen/logrus"
 )
 
 // TransactionFinalizer represents journal saturation update subroutine

@@ -126,9 +126,9 @@ class UnitHelper(object):
     for unit in result:
       service = unit.split('.service')[0].split('@')[0]
       (code, result, error) = execute([
-        'journalctl', '-o', 'short-precise', '-t', service, '-u', unit, '--no-pager'
+        'journalctl', '-o', 'cat', '-t', service, '-u', unit, '--no-pager'
       ])
-      if code != 0:
+      if code != 0 or not result:
         continue
       with open('/tmp/reports/blackbox-tests/logs/{}.log'.format(unit), 'w') as f:
         f.write(result)

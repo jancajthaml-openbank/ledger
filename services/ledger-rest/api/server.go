@@ -29,7 +29,6 @@ import (
 
 	"github.com/gorilla/mux"
 	localfs "github.com/jancajthaml-openbank/local-fs"
-	log "github.com/sirupsen/logrus"
 )
 
 // Server is a fascade for http-server following handler api of Gin and lifecycle

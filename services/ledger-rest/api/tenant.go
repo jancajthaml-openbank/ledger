@@ -20,7 +20,6 @@ import (
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
 
 	"github.com/gorilla/mux"
-	"github.com/labstack/gommon/log"
 )
 
 // TenantPartial returns http handler for single tenant
