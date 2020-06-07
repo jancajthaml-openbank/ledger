@@ -12,10 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package metrics
+package persistence
 
-import (
-	"github.com/jancajthaml-openbank/ledger-rest/logging"
+const (
+	// EventPromise represents promise prefix
+	EventPromise = "0"
+	// EventCommit represents commit prefix
+	EventCommit = "1"
+	// EventRollback represents rollback prefix
+	EventRollback = "2"
+
+	// StatusNew represents NEW transaction
+	StatusNew = "new"
+	// StatusAccepted represents ACCEPTED transaction
+	StatusAccepted = "accepted"
+	// StatusRejected represents REJECTED transaction
+	StatusRejected = "rejected"
+	// StatusCommitted represents COMMITTED transaction
+	StatusCommitted = "committed"
+	// StatusRollbacked represents ROLLBACKED transaction
+	StatusRollbacked = "rollbacked"
 )
-
-var log = logging.NewLogger("metrics")

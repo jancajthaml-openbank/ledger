@@ -14,22 +14,11 @@
 
 package model
 
-const (
-	// EventPromise represents promise prefix
-	EventPromise = "0"
-	// EventCommit represents commit prefix
-	EventCommit = "1"
-	// EventRollback represents rollback prefix
-	EventRollback = "2"
+type Account struct {
+	Tenant string
+	Name   string
+}
 
-	// StatusNew represents NEW transaction
-	StatusNew = "new"
-	// StatusAccepted represents ACCEPTED transaction
-	StatusAccepted = "accepted"
-	// StatusRejected represents REJECTED transaction
-	StatusRejected = "rejected"
-	// StatusCommitted represents COMMITTED transaction
-	StatusCommitted = "committed"
-	// StatusRollbacked represents ROLLBACKED transaction
-	StatusRollbacked = "rollbacked"
-)
+func (s Account) String() string {
+	return s.Tenant + "/" + s.Name
+}

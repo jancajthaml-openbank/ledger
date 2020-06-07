@@ -71,7 +71,7 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 		} else if parts[0] == ReqForwardTransfer {
 			if len(parts) == 5 {
 				targetParts := strings.Split(parts[4], ";")
-				message = model.TransferForward{
+				message = TransferForward{
 					IDTransaction: parts[1],
 					IDTransfer:    parts[2],
 					Side:          parts[3],
@@ -98,7 +98,7 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 			switch parts[0] {
 
 			case FatalError:
-				message = model.FatalErrored{
+				message = FatalErrored{
 					Account: model.Account{
 						Tenant: from.Region[10:],
 						Name:   from.Name,
@@ -106,7 +106,7 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 				}
 
 			case PromiseAccepted:
-				message = model.PromiseWasAccepted{
+				message = PromiseWasAccepted{
 					Account: model.Account{
 						Tenant: from.Region[10:],
 						Name:   from.Name,
@@ -115,7 +115,7 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 
 			case PromiseRejected:
 				if len(parts) == 2 {
-					message = model.PromiseWasRejected{
+					message = PromiseWasRejected{
 						Account: model.Account{
 							Tenant: from.Region[10:],
 							Name:   from.Name,
@@ -125,7 +125,7 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 				}
 
 			case CommitAccepted:
-				message = model.CommitWasAccepted{
+				message = CommitWasAccepted{
 					Account: model.Account{
 						Tenant: from.Region[10:],
 						Name:   from.Name,
@@ -134,7 +134,7 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 
 			case CommitRejected:
 				if len(parts) == 2 {
-					message = model.CommitWasRejected{
+					message = CommitWasRejected{
 						Account: model.Account{
 							Tenant: from.Region[10:],
 							Name:   from.Name,
@@ -144,7 +144,7 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 				}
 
 			case RollbackAccepted:
-				message = model.RollbackWasAccepted{
+				message = RollbackWasAccepted{
 					Account: model.Account{
 						Tenant: from.Region[10:],
 						Name:   from.Name,
@@ -153,7 +153,7 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 
 			case RollbackRejected:
 				if len(parts) == 2 {
-					message = model.RollbackWasRejected{
+					message = RollbackWasRejected{
 						Account: model.Account{
 							Tenant: from.Region[10:],
 							Name:   from.Name,
@@ -176,7 +176,7 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 }
 
 func spawnForwardActor(s *ActorSystem, name string) (*system.Envelope, error) {
-	envelope := system.NewEnvelope(name, model.NewForwardState())
+	envelope := system.NewEnvelope(name, NewForwardState())
 
 	err := s.RegisterActor(envelope, InitialForward(s))
 	if err != nil {
@@ -189,7 +189,7 @@ func spawnForwardActor(s *ActorSystem, name string) (*system.Envelope, error) {
 }
 
 func spawnTransactionActor(s *ActorSystem, name string) (*system.Envelope, error) {
-	envelope := system.NewEnvelope(name, model.NewTransactionState())
+	envelope := system.NewEnvelope(name, NewTransactionState())
 
 	err := s.RegisterActor(envelope, InitialTransaction(s))
 	if err != nil {

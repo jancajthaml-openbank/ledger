@@ -15,71 +15,71 @@
 package actor
 
 import (
-  "context"
-  "time"
+	"context"
+	"time"
 
-  "github.com/jancajthaml-openbank/ledger-unit/metrics"
-  "github.com/jancajthaml-openbank/ledger-unit/utils"
+	"github.com/jancajthaml-openbank/ledger-unit/metrics"
+	"github.com/jancajthaml-openbank/ledger-unit/utils"
 
-  system "github.com/jancajthaml-openbank/actor-system"
-  localfs "github.com/jancajthaml-openbank/local-fs"
+	system "github.com/jancajthaml-openbank/actor-system"
+	localfs "github.com/jancajthaml-openbank/local-fs"
 )
 
 // TransactionFinalizer represents journal saturation update subroutine
 type TransactionFinalizer struct {
-  utils.DaemonSupport
-  callback     func(msg string, to system.Coordinates, from system.Coordinates)
-  metrics      *metrics.Metrics
-  storage      *localfs.PlaintextStorage
-  scanInterval time.Duration
+	utils.DaemonSupport
+	callback     func(msg string, to system.Coordinates, from system.Coordinates)
+	metrics      *metrics.Metrics
+	storage      *localfs.PlaintextStorage
+	scanInterval time.Duration
 }
 
 // NewTransactionFinalizer returns snapshot updater fascade
 func NewTransactionFinalizer(ctx context.Context, scanInterval time.Duration, metrics *metrics.Metrics, storage *localfs.PlaintextStorage, callback func(msg string, to system.Coordinates, from system.Coordinates)) TransactionFinalizer {
-  return TransactionFinalizer{
-    DaemonSupport: utils.NewDaemonSupport(ctx, " transaction-finalizer"),
-    callback:      callback,
-    metrics:       metrics,
-    storage:       storage,
-    scanInterval:  scanInterval,
-  }
+	return TransactionFinalizer{
+		DaemonSupport: utils.NewDaemonSupport(ctx, " transaction-finalizer"),
+		callback:      callback,
+		metrics:       metrics,
+		storage:       storage,
+		scanInterval:  scanInterval,
+	}
 }
 
 func (scan TransactionFinalizer) performIntegrityScan() {
-  log.Warn("Transaction finalization not implemented")
+	log.Warn("Transaction finalization not implemented")
 }
 
 // Start handles everything needed to start transaction finalizer daemon
 func (scan TransactionFinalizer) Start() {
-  ticker := time.NewTicker(scan.scanInterval)
-  defer ticker.Stop()
+	ticker := time.NewTicker(scan.scanInterval)
+	defer ticker.Stop()
 
-  scan.MarkReady()
+	scan.MarkReady()
 
-  select {
-  case <-scan.CanStart:
-    break
-  case <-scan.Done():
-    scan.MarkDone()
-    return
-  }
+	select {
+	case <-scan.CanStart:
+		break
+	case <-scan.Done():
+		scan.MarkDone()
+		return
+	}
 
-  log.Infof("Start transaction-finalizer check daemon, scan each %v", scan.scanInterval)
+	log.Infof("Start transaction-finalizer check daemon, scan each %v", scan.scanInterval)
 
-  go func() {
-    for {
-      select {
-      case <-scan.Done():
-        scan.MarkDone()
-        return
-      case <-ticker.C:
-        //scan.metrics.TimeFinalizeTransactions(func() {
-        scan.performIntegrityScan()
-        //})
-      }
-    }
-  }()
+	go func() {
+		for {
+			select {
+			case <-scan.Done():
+				scan.MarkDone()
+				return
+			case <-ticker.C:
+				//scan.metrics.TimeFinalizeTransactions(func() {
+				scan.performIntegrityScan()
+				//})
+			}
+		}
+	}()
 
-  scan.WaitStop()
-  log.Info("Stop transaction-finalizer daemon")
+	scan.WaitStop()
+	log.Info("Stop transaction-finalizer daemon")
 }

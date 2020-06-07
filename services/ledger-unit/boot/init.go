@@ -20,9 +20,9 @@ import (
 
 	"github.com/jancajthaml-openbank/ledger-unit/actor"
 	"github.com/jancajthaml-openbank/ledger-unit/config"
+	"github.com/jancajthaml-openbank/ledger-unit/logging"
 	"github.com/jancajthaml-openbank/ledger-unit/metrics"
 	"github.com/jancajthaml-openbank/ledger-unit/utils"
-	"github.com/jancajthaml-openbank/ledger-unit/logging"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
 )

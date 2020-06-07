@@ -12,10 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package metrics
+package actor
 
 import (
-	"github.com/jancajthaml-openbank/ledger-rest/logging"
+	"github.com/jancajthaml-openbank/ledger-unit/model"
 )
 
-var log = logging.NewLogger("metrics")
+type FatalErrored struct {
+	Account model.Account
+}
+
+type PromiseWasAccepted struct {
+	Account model.Account
+}
+
+type PromiseWasRejected struct {
+	Account model.Account
+	Reason  string
+}
+
+type CommitWasAccepted struct {
+	Account model.Account
+}
+
+type CommitWasRejected struct {
+	Account model.Account
+	Reason  string
+}
+
+type RollbackWasAccepted struct {
+	Account model.Account
+}
+
+type RollbackWasRejected struct {
+	Account model.Account
+	Reason  string
+}
