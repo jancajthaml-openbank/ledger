@@ -26,14 +26,14 @@ import (
 
 func InitialForward(s *ActorSystem) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
-		state := t_state.(model.ForwardState)
+		state := t_state.(ForwardState)
 
 		switch msg := context.Data.(type) {
-		case model.TransferForward:
+		case TransferForward:
 
 			if state.Ready {
 				s.SendMessage(
-					RespTransactionRace + " " + msg.IDTransaction,
+					RespTransactionRace+" "+msg.IDTransaction,
 					state.ReplyTo,
 					context.Receiver,
 				)
@@ -55,7 +55,7 @@ func InitialForward(s *ActorSystem) func(interface{}, system.Context) {
 
 			if foundTransfer == nil {
 				s.SendMessage(
-					RespTransactionMissing + " " + msg.IDTransaction,
+					RespTransactionMissing+" "+msg.IDTransaction,
 					context.Sender,
 					context.Receiver,
 				)
@@ -70,7 +70,7 @@ func InitialForward(s *ActorSystem) func(interface{}, system.Context) {
 			case "credit":
 				if already, err := persistence.IsTransferForwardedCredit(s.Storage, msg.IDTransaction, msg.IDTransfer); already || err != nil {
 					s.SendMessage(
-						RespTransactionRefused + " " + current.IDTransaction,
+						RespTransactionRefused+" "+current.IDTransaction,
 						context.Sender,
 						context.Receiver,
 					)
@@ -96,7 +96,7 @@ func InitialForward(s *ActorSystem) func(interface{}, system.Context) {
 			case "debit":
 				if already, err := persistence.IsTransferForwardedDebit(s.Storage, msg.IDTransaction, msg.IDTransfer); already || err != nil {
 					s.SendMessage(
-						RespTransactionRefused + " " + current.IDTransaction,
+						RespTransactionRefused+" "+current.IDTransaction,
 						context.Sender,
 						context.Receiver,
 					)
@@ -121,7 +121,7 @@ func InitialForward(s *ActorSystem) func(interface{}, system.Context) {
 
 			default:
 				s.SendMessage(
-					RespTransactionRefused + " " + current.IDTransaction,
+					RespTransactionRefused+" "+current.IDTransaction,
 					context.Sender,
 					context.Receiver,
 				)
@@ -130,13 +130,12 @@ func InitialForward(s *ActorSystem) func(interface{}, system.Context) {
 
 			if persistence.PersistTransaction(s.Storage, &transaction) == nil {
 				s.SendMessage(
-					RespTransactionRace + " " + state.Forward.IDTransaction,
+					RespTransactionRace+" "+state.Forward.IDTransaction,
 					context.Sender,
 					context.Receiver,
 				)
 				return
 			}
-
 
 			state.Forward = msg
 			state.Prepare(transaction, context.Sender)
@@ -147,10 +146,10 @@ func InitialForward(s *ActorSystem) func(interface{}, system.Context) {
 
 			for account, task := range state.Negotiation {
 				s.SendMessage(
-					PromiseOrder + " " + task,
+					PromiseOrder+" "+task,
 					system.Coordinates{
 						Region: "VaultUnit/" + account.Tenant,
-						Name: account.Name,
+						Name:   account.Name,
 					},
 					context.Receiver,
 				)
@@ -173,17 +172,22 @@ func InitialForward(s *ActorSystem) func(interface{}, system.Context) {
 
 func PromisingForward(s *ActorSystem) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
-		state := t_state.(model.ForwardState)
+		state := t_state.(ForwardState)
 
 		switch msg := context.Data.(type) {
-		case model.PromiseWasAccepted:
+
+		case PromiseWasAccepted:
 			log.Debugf("~ %v (FWD) Promise Accepted %s", state.Transaction.IDTransaction, msg.Account)
-		case model.PromiseWasRejected:
+
+		case PromiseWasRejected:
 			log.Debugf("~ %v (FWD) Promise Rejected %s %s", state.Transaction.IDTransaction, msg.Account, msg.Reason)
-		case model.FatalErrored:
+
+		case FatalErrored:
 			log.Debugf("~ %v (FWD) Promise Errored %s", state.Transaction.IDTransaction, msg.Account)
+
 		default:
 			log.Debugf("~ %v (FWD) Promise Invalid Message %+v / %+v", state.Transaction.IDTransaction, reflect.ValueOf(context.Data).Type(), context.Data)
+
 		}
 
 		state.Mark(context.Data)
@@ -195,7 +199,7 @@ func PromisingForward(s *ActorSystem) func(interface{}, system.Context) {
 
 		if state.OkResponses == 0 {
 			s.SendMessage(
-				RespTransactionRefused + " " + state.Transaction.IDTransaction,
+				RespTransactionRefused+" "+state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -205,11 +209,11 @@ func PromisingForward(s *ActorSystem) func(interface{}, system.Context) {
 		} else if state.FailedResponses > 0 {
 			log.Debugf("~ %v (FWD) Promise Rejected Some [total: %d, accepted: %d, rejected : %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
 
-			state.Transaction.State = model.StatusRejected
+			state.Transaction.State = persistence.StatusRejected
 
 			if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 				s.SendMessage(
-					RespTransactionRefused + " " + state.Transaction.IDTransaction,
+					RespTransactionRefused+" "+state.Transaction.IDTransaction,
 					state.ReplyTo,
 					context.Receiver,
 				)
@@ -224,10 +228,10 @@ func PromisingForward(s *ActorSystem) func(interface{}, system.Context) {
 
 			for account, task := range state.Negotiation {
 				s.SendMessage(
-					RollbackOrder + " " + task,
+					RollbackOrder+" "+task,
 					system.Coordinates{
 						Region: "VaultUnit/" + account.Tenant,
-						Name: account.Name,
+						Name:   account.Name,
 					},
 					context.Receiver,
 				)
@@ -238,12 +242,12 @@ func PromisingForward(s *ActorSystem) func(interface{}, system.Context) {
 
 		log.Debugf("~ %v (FWD) Promise Accepted All", state.Transaction.IDTransaction)
 
-		state.Transaction.State = model.StatusAccepted
+		state.Transaction.State = persistence.StatusAccepted
 
 		// FIXME possible null here
 		if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 			s.SendMessage(
-				RespTransactionRefused + " " + state.Transaction.IDTransaction,
+				RespTransactionRefused+" "+state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -257,10 +261,10 @@ func PromisingForward(s *ActorSystem) func(interface{}, system.Context) {
 
 		for account, task := range state.Negotiation {
 			s.SendMessage(
-				CommitOrder + " " + task,
+				CommitOrder+" "+task,
 				system.Coordinates{
 					Region: "VaultUnit/" + account.Tenant,
-					Name: account.Name,
+					Name:   account.Name,
 				},
 				context.Receiver,
 			)
@@ -273,18 +277,24 @@ func PromisingForward(s *ActorSystem) func(interface{}, system.Context) {
 
 func CommitingForward(s *ActorSystem) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
-		state := t_state.(model.ForwardState)
+		state := t_state.(ForwardState)
 
 		switch msg := context.Data.(type) {
-		case model.CommitWasAccepted:
+
+		case CommitWasAccepted:
 			log.Debugf("~ %v (FWD) Commit Accepted %s", state.Transaction.IDTransaction, msg.Account)
-		case model.CommitWasRejected:
+
+		case CommitWasRejected:
 			log.Debugf("~ %v (FWD) Commit Rejected %s %s", state.Transaction.IDTransaction, msg.Account, msg.Reason)
-		case model.FatalErrored:
+
+		case FatalErrored:
 			log.Debugf("~ %v (FWD) Commit Errored %s", state.Transaction.IDTransaction, msg.Account)
+
 		default:
 			log.Debugf("~ %v (FWD) Commit Invalid Message %+v / %+v", state.Transaction.IDTransaction, reflect.ValueOf(context.Data).Type(), context.Data)
+
 		}
+
 		state.Mark(context.Data)
 
 		if !state.IsNegotiationFinished() {
@@ -295,11 +305,11 @@ func CommitingForward(s *ActorSystem) func(interface{}, system.Context) {
 		if state.FailedResponses > 0 {
 			log.Debugf("~ %v (FWD) Commit Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
 
-			state.Transaction.State = model.StatusRejected
+			state.Transaction.State = persistence.StatusRejected
 
 			if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 				s.SendMessage(
-					RespTransactionRefused + " " + state.Transaction.IDTransaction,
+					RespTransactionRefused+" "+state.Transaction.IDTransaction,
 					state.ReplyTo,
 					context.Receiver,
 				)
@@ -313,10 +323,10 @@ func CommitingForward(s *ActorSystem) func(interface{}, system.Context) {
 
 			for account, task := range state.Negotiation {
 				s.SendMessage(
-					RollbackOrder + " " + task,
+					RollbackOrder+" "+task,
 					system.Coordinates{
 						Region: "VaultUnit/" + account.Tenant,
-						Name: account.Name,
+						Name:   account.Name,
 					},
 					context.Receiver,
 				)
@@ -328,11 +338,11 @@ func CommitingForward(s *ActorSystem) func(interface{}, system.Context) {
 
 		log.Debugf("~ %v (FWD) Commit Accepted All", state.Transaction.IDTransaction)
 
-		state.Transaction.State = model.StatusCommitted
+		state.Transaction.State = persistence.StatusCommitted
 
 		if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 			s.SendMessage(
-				RespTransactionRefused + " " + state.Transaction.IDTransaction,
+				RespTransactionRefused+" "+state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -352,7 +362,7 @@ func CommitingForward(s *ActorSystem) func(interface{}, system.Context) {
 		s.Metrics.TransactionCommitted(1)
 
 		s.SendMessage(
-			RespCreateTransaction + " " + state.Transaction.IDTransaction,
+			RespCreateTransaction+" "+state.Transaction.IDTransaction,
 			state.ReplyTo,
 			context.Receiver,
 		)
@@ -365,18 +375,24 @@ func CommitingForward(s *ActorSystem) func(interface{}, system.Context) {
 
 func RollbackingForward(s *ActorSystem) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
-		state := t_state.(model.ForwardState)
+		state := t_state.(ForwardState)
 
 		switch msg := context.Data.(type) {
-		case model.RollbackWasAccepted:
+
+		case RollbackWasAccepted:
 			log.Debugf("~ %v (FWD) Rollback Accepted %s", state.Transaction.IDTransaction, msg.Account)
-		case model.RollbackWasRejected:
+
+		case RollbackWasRejected:
 			log.Debugf("~ %v (FWD) Rollback Rejected %s %s", state.Transaction.IDTransaction, msg.Account, msg.Reason)
-		case model.FatalErrored:
+
+		case FatalErrored:
 			log.Debugf("~ %v (FWD) Rollback Errored %s", state.Transaction.IDTransaction, msg.Account)
+
 		default:
 			log.Debugf("~ %v (FWD) Rollback Invalid Message %+v / %+v", state.Transaction.IDTransaction, reflect.ValueOf(context.Data).Type(), context.Data)
+
 		}
+
 		state.Mark(context.Data)
 
 		if !state.IsNegotiationFinished() {
@@ -386,7 +402,7 @@ func RollbackingForward(s *ActorSystem) func(interface{}, system.Context) {
 
 		if state.FailedResponses > 0 {
 			s.SendMessage(
-				RespTransactionRefused + " " + state.Transaction.IDTransaction,
+				RespTransactionRefused+" "+state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -400,12 +416,12 @@ func RollbackingForward(s *ActorSystem) func(interface{}, system.Context) {
 		// FIXME
 		//rollBackReason := "unknown"
 
-		state.Transaction.State = model.StatusRollbacked
+		state.Transaction.State = persistence.StatusRollbacked
 
 		if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 			log.Warnf("~ %v (FWD) Rollback failed to rollback transaction", state.Transaction.IDTransaction)
 			s.SendMessage(
-				RespTransactionRefused + " " + state.Transaction.IDTransaction,
+				RespTransactionRefused+" "+state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -416,7 +432,7 @@ func RollbackingForward(s *ActorSystem) func(interface{}, system.Context) {
 		s.Metrics.TransactionRollbacked(1)
 
 		s.SendMessage(
-			RespTransactionRejected + " " + state.Transaction.IDTransaction + " " + state.Transaction.State,
+			RespTransactionRejected+" "+state.Transaction.IDTransaction+" "+state.Transaction.State,
 			state.ReplyTo,
 			context.Receiver,
 		)
@@ -428,7 +444,7 @@ func RollbackingForward(s *ActorSystem) func(interface{}, system.Context) {
 
 func AcceptingForward(s *ActorSystem) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
-		state := t_state.(model.ForwardState)
+		state := t_state.(ForwardState)
 
 		var ok bool
 		switch state.Forward.Side {
@@ -443,7 +459,7 @@ func AcceptingForward(s *ActorSystem) func(interface{}, system.Context) {
 
 		if !ok {
 			s.SendMessage(
-				RespTransactionRejected + " " + state.Transaction.IDTransaction + " " + state.Transaction.State,
+				RespTransactionRejected+" "+state.Transaction.IDTransaction+" "+state.Transaction.State,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -455,7 +471,7 @@ func AcceptingForward(s *ActorSystem) func(interface{}, system.Context) {
 		s.Metrics.TransactionForwarded(1)
 
 		s.SendMessage(
-			RespCreateTransaction + " " + state.Transaction.IDTransaction,
+			RespCreateTransaction+" "+state.Transaction.IDTransaction,
 			state.ReplyTo,
 			context.Receiver,
 		)

@@ -67,8 +67,8 @@ func TestHydrate(t *testing.T) {
 		defer os.Remove("/tmp/metrics.json")
 
 		old := Metrics{
-			storage:               localfs.NewPlaintextStorage("/tmp"),
-			tenant:                "1",
+			storage:                localfs.NewPlaintextStorage("/tmp"),
+			tenant:                 "1",
 			promisedTransactions:   metrics.NewCounter(),
 			promisedTransfers:      metrics.NewCounter(),
 			committedTransactions:  metrics.NewCounter(),

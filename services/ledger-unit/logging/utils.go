@@ -15,25 +15,24 @@
 package logging
 
 import (
-  "os"
-  "strings"
-  "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
+	"os"
+	"strings"
 )
 
 // NewLogger returns logger with preset field
 func NewLogger(name string) logrus.FieldLogger {
-  return logrus.WithField("src", name)
+	return logrus.WithField("src", name)
 }
 
 // SetupLogger properly sets up logging
 func SetupLogger(level string) {
-  if logLevel, err := logrus.ParseLevel(level); err == nil {
-    logrus.Infof("Log level set to %v", strings.ToUpper(level))
-    logrus.SetLevel(logLevel)
-  } else {
-    logrus.Warnf("Invalid log level %v, using level WARN", level)
-    logrus.SetLevel(logrus.WarnLevel)
-  }
-  logrus.SetOutput(os.Stdout)
+	if logLevel, err := logrus.ParseLevel(level); err == nil {
+		logrus.Infof("Log level set to %v", strings.ToUpper(level))
+		logrus.SetLevel(logLevel)
+	} else {
+		logrus.Warnf("Invalid log level %v, using level WARN", level)
+		logrus.SetLevel(logrus.WarnLevel)
+	}
+	logrus.SetOutput(os.Stdout)
 }
-

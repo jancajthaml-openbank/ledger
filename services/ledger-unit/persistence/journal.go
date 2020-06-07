@@ -41,7 +41,7 @@ func LoadTransaction(storage *localfs.PlaintextStorage, id string) (*model.Trans
 // CreateTransaction persist transaction entity state to storage
 func CreateTransaction(storage *localfs.PlaintextStorage) *model.Transaction {
 	entity := new(model.Transaction)
-	entity.State = model.StatusNew
+	entity.State = StatusNew
 	return PersistTransaction(storage, entity)
 }
 

@@ -21,10 +21,10 @@ import (
 	"github.com/jancajthaml-openbank/ledger-rest/actor"
 	"github.com/jancajthaml-openbank/ledger-rest/api"
 	"github.com/jancajthaml-openbank/ledger-rest/config"
+	"github.com/jancajthaml-openbank/ledger-rest/logging"
 	"github.com/jancajthaml-openbank/ledger-rest/metrics"
 	"github.com/jancajthaml-openbank/ledger-rest/system"
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
-	"github.com/jancajthaml-openbank/ledger-rest/logging"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
 )

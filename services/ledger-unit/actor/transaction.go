@@ -25,13 +25,13 @@ import (
 
 func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
-		state := t_state.(model.TransactionState)
+		state := t_state.(TransactionState)
 
 		switch msg := context.Data.(type) {
 		case model.Transaction:
 			if state.Ready {
 				s.SendMessage(
-					RespTransactionRace + " " + msg.IDTransaction,
+					RespTransactionRace+" "+msg.IDTransaction,
 					state.ReplyTo,
 					context.Receiver,
 				)
@@ -63,25 +63,25 @@ func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 			switch current.State {
 
-			case model.StatusCommitted, model.StatusRollbacked:
+			case persistence.StatusCommitted, persistence.StatusRollbacked:
 
 				if state.Transaction.IsSameAs(current) {
-					if current.State == model.StatusCommitted {
+					if current.State == persistence.StatusCommitted {
 						s.SendMessage(
-							RespCreateTransaction + " " + state.Transaction.IDTransaction,
+							RespCreateTransaction+" "+state.Transaction.IDTransaction,
 							state.ReplyTo,
 							context.Receiver,
 						)
 					} else {
 						s.SendMessage(
-							RespTransactionRejected + " " + state.Transaction.IDTransaction + " " + state.Transaction.State,
+							RespTransactionRejected+" "+state.Transaction.IDTransaction+" "+state.Transaction.State,
 							state.ReplyTo,
 							context.Receiver,
 						)
 					}
 				} else {
 					s.SendMessage(
-						RespTransactionDuplicate + " " + state.Transaction.IDTransaction,
+						RespTransactionDuplicate+" "+state.Transaction.IDTransaction,
 						state.ReplyTo,
 						context.Receiver,
 					)
@@ -89,7 +89,7 @@ func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 			default:
 				s.SendMessage(
-					RespTransactionRace + " " + state.Transaction.IDTransaction,
+					RespTransactionRace+" "+state.Transaction.IDTransaction,
 					state.ReplyTo,
 					context.Receiver,
 				)
@@ -103,10 +103,10 @@ func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		for account, task := range state.Negotiation {
 			s.SendMessage(
-				PromiseOrder + " " + task,
+				PromiseOrder+" "+task,
 				system.Coordinates{
 					Region: "VaultUnit/" + account.Tenant,
-					Name: account.Name,
+					Name:   account.Name,
 				},
 				context.Receiver,
 			)
@@ -120,17 +120,22 @@ func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
-		state := t_state.(model.TransactionState)
+		state := t_state.(TransactionState)
 
 		switch msg := context.Data.(type) {
-		case model.PromiseWasAccepted:
+
+		case PromiseWasAccepted:
 			log.Debugf("~ %v Promise Accepted %s", state.Transaction.IDTransaction, msg.Account)
-		case model.PromiseWasRejected:
+
+		case PromiseWasRejected:
 			log.Debugf("~ %v Promise Rejected %s %s", state.Transaction.IDTransaction, msg.Account, msg.Reason)
-		case model.FatalErrored:
+
+		case FatalErrored:
 			log.Debugf("~ %v Promise Errored %s", state.Transaction.IDTransaction, msg.Account)
+
 		default:
 			log.Debugf("~ %v Promise Invalid Message %+v / %+v", state.Transaction.IDTransaction, reflect.ValueOf(context.Data).Type(), context.Data)
+
 		}
 
 		state.Mark(context.Data)
@@ -142,7 +147,7 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		if state.OkResponses == 0 {
 			s.SendMessage(
-				RespTransactionRefused + " " + state.Transaction.IDTransaction,
+				RespTransactionRefused+" "+state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -154,11 +159,11 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		if state.FailedResponses > 0 {
 			log.Debugf("~ %v Promise Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
 
-			state.Transaction.State = model.StatusRejected
+			state.Transaction.State = persistence.StatusRejected
 
 			if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 				s.SendMessage(
-					RespTransactionRefused + " " + state.Transaction.IDTransaction,
+					RespTransactionRefused+" "+state.Transaction.IDTransaction,
 					state.ReplyTo,
 					context.Receiver,
 				)
@@ -174,10 +179,10 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 			for account, task := range state.Negotiation {
 				s.SendMessage(
-					RollbackOrder + " " + task,
+					RollbackOrder+" "+task,
 					system.Coordinates{
 						Region: "VaultUnit/" + account.Tenant,
-						Name: account.Name,
+						Name:   account.Name,
 					},
 					context.Receiver,
 				)
@@ -188,12 +193,12 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		log.Debugf("~ %v Promise Accepted All", state.Transaction.IDTransaction)
 
-		state.Transaction.State = model.StatusAccepted
+		state.Transaction.State = persistence.StatusAccepted
 
 		// FIXME possible null here
 		if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 			s.SendMessage(
-				RespTransactionRefused + " " + state.Transaction.IDTransaction,
+				RespTransactionRefused+" "+state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -204,10 +209,10 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		for account, task := range state.Negotiation {
 			s.SendMessage(
-				CommitOrder + " " + task,
+				CommitOrder+" "+task,
 				system.Coordinates{
 					Region: "VaultUnit/" + account.Tenant,
-					Name: account.Name,
+					Name:   account.Name,
 				},
 				context.Receiver,
 			)
@@ -222,18 +227,24 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
-		state := t_state.(model.TransactionState)
+		state := t_state.(TransactionState)
 
 		switch msg := context.Data.(type) {
-		case model.CommitWasAccepted:
+
+		case CommitWasAccepted:
 			log.Debugf("~ %v Commit Accepted %s", state.Transaction.IDTransaction, msg.Account)
-		case model.CommitWasRejected:
+
+		case CommitWasRejected:
 			log.Debugf("~ %v Commit Rejected %s %s", state.Transaction.IDTransaction, msg.Account, msg.Reason)
-		case model.FatalErrored:
+
+		case FatalErrored:
 			log.Debugf("~ %v Commit Errored %s", state.Transaction.IDTransaction, msg.Account)
+
 		default:
 			log.Debugf("~ %v Commit Invalid Message %+v / %+v", state.Transaction.IDTransaction, reflect.ValueOf(context.Data).Type(), context.Data)
+
 		}
+
 		state.Mark(context.Data)
 
 		if !state.IsNegotiationFinished() {
@@ -244,11 +255,11 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		if state.FailedResponses > 0 {
 			log.Debugf("~ %v Commit Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
 
-			state.Transaction.State = model.StatusRejected
+			state.Transaction.State = persistence.StatusRejected
 
 			if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 				s.SendMessage(
-					RespTransactionRefused + " " + state.Transaction.IDTransaction,
+					RespTransactionRefused+" "+state.Transaction.IDTransaction,
 					state.ReplyTo,
 					context.Receiver,
 				)
@@ -259,10 +270,10 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 			for account, task := range state.Negotiation {
 				s.SendMessage(
-					RollbackOrder + " " + task,
+					RollbackOrder+" "+task,
 					system.Coordinates{
 						Region: "VaultUnit/" + account.Tenant,
-						Name: account.Name,
+						Name:   account.Name,
 					},
 					context.Receiver,
 				)
@@ -276,11 +287,11 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		log.Debugf("~ %v Commit Accepted All", state.Transaction.IDTransaction)
 
-		state.Transaction.State = model.StatusCommitted
+		state.Transaction.State = persistence.StatusCommitted
 
 		if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 			s.SendMessage(
-				RespTransactionRefused + " " + state.Transaction.IDTransaction,
+				RespTransactionRefused+" "+state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -296,7 +307,7 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		s.Metrics.TransactionCommitted(len(state.Transaction.Transfers))
 		s.SendMessage(
-			RespCreateTransaction + " " + state.Transaction.IDTransaction,
+			RespCreateTransaction+" "+state.Transaction.IDTransaction,
 			state.ReplyTo,
 			context.Receiver,
 		)
@@ -308,18 +319,24 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 func RollbackingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
-		state := t_state.(model.TransactionState)
+		state := t_state.(TransactionState)
 
 		switch msg := context.Data.(type) {
-		case model.RollbackWasAccepted:
+
+		case RollbackWasAccepted:
 			log.Debugf("~ %v Rollback Accepted %s", state.Transaction.IDTransaction, msg.Account)
-		case model.RollbackWasRejected:
+
+		case RollbackWasRejected:
 			log.Debugf("~ %v Rollback Rejected %s %s", state.Transaction.IDTransaction, msg.Account, msg.Reason)
-		case model.FatalErrored:
+
+		case FatalErrored:
 			log.Debugf("~ %v Rollback Errored %s", state.Transaction.IDTransaction, msg.Account)
+
 		default:
 			log.Debugf("~ %v Rollback Invalid Message %+v / %+v", state.Transaction.IDTransaction, reflect.ValueOf(context.Data).Type(), context.Data)
+
 		}
+
 		state.Mark(context.Data)
 
 		if !state.IsNegotiationFinished() {
@@ -329,7 +346,7 @@ func RollbackingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		if state.FailedResponses > 0 {
 			s.SendMessage(
-				RespTransactionRefused + " " + state.Transaction.IDTransaction,
+				RespTransactionRefused+" "+state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -343,11 +360,11 @@ func RollbackingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		// FIXME
 		//rollBackReason := "unknown"
 
-		state.Transaction.State = model.StatusRollbacked
+		state.Transaction.State = persistence.StatusRollbacked
 
 		if persistence.UpdateTransaction(s.Storage, &state.Transaction) == nil {
 			s.SendMessage(
-				RespTransactionRefused + " " + state.Transaction.IDTransaction,
+				RespTransactionRefused+" "+state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
@@ -359,7 +376,7 @@ func RollbackingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		s.Metrics.TransactionRollbacked(len(state.Transaction.Transfers))
 
 		s.SendMessage(
-			RespTransactionRejected + " " + state.Transaction.IDTransaction + " " + state.Transaction.State,
+			RespTransactionRejected+" "+state.Transaction.IDTransaction+" "+state.Transaction.State,
 			state.ReplyTo,
 			context.Receiver,
 		)

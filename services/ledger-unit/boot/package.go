@@ -15,7 +15,7 @@
 package boot
 
 import (
-  "github.com/jancajthaml-openbank/ledger-unit/logging"
+	"github.com/jancajthaml-openbank/ledger-unit/logging"
 )
 
 var log = logging.NewLogger("boot")
