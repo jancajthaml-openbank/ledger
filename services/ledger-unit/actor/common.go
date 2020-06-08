@@ -61,27 +61,7 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 					transaction.Transfers = append(transaction.Transfers, transfer)
 				}
 				message = transaction
-				ref, err = spawnTransactionActor(s, to.Name)
-				if err != nil {
-					log.Warnf("Unable to spray from [remote %v -> local %v] : %+v", from, to, msg)
-					s.SendMessage(FatalError, from, to)
-					return
-				}
-			}
-		} else if parts[0] == ReqForwardTransfer {
-			if len(parts) == 5 {
-				targetParts := strings.Split(parts[4], ";")
-				message = TransferForward{
-					IDTransaction: parts[1],
-					IDTransfer:    parts[2],
-					Side:          parts[3],
-					Target: model.Account{
-						Tenant: targetParts[0],
-						Name:   targetParts[1],
-					},
-				}
-
-				ref, err = spawnForwardActor(s, to.Name)
+				ref, err = NewTransactionActor(s, to.Name)
 				if err != nil {
 					log.Warnf("Unable to spray from [remote %v -> local %v] : %+v", from, to, msg)
 					s.SendMessage(FatalError, from, to)
@@ -91,7 +71,6 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 		} else {
 			ref, err = s.ActorOf(to.Name)
 			if err != nil {
-				log.Warnf("Deadletter received [remote %v -> local %v] : %+v", from, to, msg)
 				return
 			}
 
@@ -175,28 +154,13 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 	}
 }
 
-func spawnForwardActor(s *ActorSystem, name string) (*system.Envelope, error) {
-	envelope := system.NewEnvelope(name, NewForwardState())
-
-	err := s.RegisterActor(envelope, InitialForward(s))
-	if err != nil {
-		log.Warnf("%s ~ Spawning Forward Actor Error unable to register", name)
-		return nil, err
-	}
-
-	log.Debugf("%s ~ Forward Actor Spawned", name)
-	return envelope, nil
-}
-
-func spawnTransactionActor(s *ActorSystem, name string) (*system.Envelope, error) {
+// NewTransactionActor creates new transaction actor
+func NewTransactionActor(s *ActorSystem, name string) (*system.Envelope, error) {
 	envelope := system.NewEnvelope(name, NewTransactionState())
-
 	err := s.RegisterActor(envelope, InitialTransaction(s))
 	if err != nil {
-		log.Warnf("%s ~ Spawning Transaction Actor Error unable to register", name)
+		log.Warnf("Spawning Transaction Actor %s Error unable to register", name)
 		return nil, err
 	}
-
-	log.Debugf("%s ~ Transaction Actor Spawned", name)
 	return envelope, nil
 }

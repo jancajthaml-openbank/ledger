@@ -16,26 +16,28 @@ package actor
 
 import (
 	"context"
+	"syscall"
 	"time"
 
 	"github.com/jancajthaml-openbank/ledger-unit/metrics"
+	"github.com/jancajthaml-openbank/ledger-unit/model"
+	"github.com/jancajthaml-openbank/ledger-unit/persistence"
 	"github.com/jancajthaml-openbank/ledger-unit/utils"
 
-	system "github.com/jancajthaml-openbank/actor-system"
 	localfs "github.com/jancajthaml-openbank/local-fs"
 )
 
 // TransactionFinalizer represents journal saturation update subroutine
 type TransactionFinalizer struct {
 	utils.DaemonSupport
-	callback     func(msg string, to system.Coordinates, from system.Coordinates)
+	callback     func(transaction model.Transaction)
 	metrics      *metrics.Metrics
 	storage      *localfs.PlaintextStorage
 	scanInterval time.Duration
 }
 
 // NewTransactionFinalizer returns snapshot updater fascade
-func NewTransactionFinalizer(ctx context.Context, scanInterval time.Duration, metrics *metrics.Metrics, storage *localfs.PlaintextStorage, callback func(msg string, to system.Coordinates, from system.Coordinates)) TransactionFinalizer {
+func NewTransactionFinalizer(ctx context.Context, scanInterval time.Duration, metrics *metrics.Metrics, storage *localfs.PlaintextStorage, callback func(transaction model.Transaction)) TransactionFinalizer {
 	return TransactionFinalizer{
 		DaemonSupport: utils.NewDaemonSupport(ctx, " transaction-finalizer"),
 		callback:      callback,
@@ -45,8 +47,49 @@ func NewTransactionFinalizer(ctx context.Context, scanInterval time.Duration, me
 	}
 }
 
-func (scan TransactionFinalizer) performIntegrityScan() {
-	log.Warn("Transaction finalization not implemented")
+func (scan TransactionFinalizer) getTransactions() []string {
+	result, err := scan.storage.ListDirectory(utils.RootPath(), true)
+	if err != nil {
+		return nil
+	}
+	return result
+}
+
+func (scan TransactionFinalizer) finalizeStaleTransactions() {
+	log.Info("Performing stale transactions scan")
+	transactions := scan.getTransactions()
+	for _, transaction := range transactions {
+		instance := scan.getTransaction(transaction)
+		if instance == nil {
+			continue
+		}
+		log.WithField("transaction", transaction).Infof("Transaction in state %s needs completion", instance.State)
+		scan.callback(*instance)
+	}
+}
+
+func (scan TransactionFinalizer) getTransaction(id string) *model.Transaction {
+	file := scan.storage.Root + "/" + utils.TransactionPath(id)
+	var st = new(syscall.Stat_t)
+	if syscall.Stat(file, st) != nil {
+		return nil
+	}
+	modTime := time.Unix(int64(st.Mtim.Sec), int64(st.Mtim.Nsec))
+	if time.Now().Sub(modTime).Seconds() < 60 {
+		return nil
+	}
+	state, err := persistence.LoadTransactionState(scan.storage, id)
+	if err != nil {
+		return nil
+	}
+	if state == persistence.StatusCommitted || state == persistence.StatusRollbacked {
+		return nil
+	}
+	transaction, err := persistence.LoadTransaction(scan.storage, id)
+	if err != nil {
+		return nil
+	}
+	return transaction
 }
 
 // Start handles everything needed to start transaction finalizer daemon
@@ -73,9 +116,9 @@ func (scan TransactionFinalizer) Start() {
 				scan.MarkDone()
 				return
 			case <-ticker.C:
-				//scan.metrics.TimeFinalizeTransactions(func() {
-				scan.performIntegrityScan()
-				//})
+				scan.metrics.TimeFinalizeTransactions(func() {
+					scan.finalizeStaleTransactions()
+				})
 			}
 		}
 	}()

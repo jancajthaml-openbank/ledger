@@ -14,12 +14,12 @@
 
 package utils
 
+// RootPath returns filepath for accounts
+func RootPath() string {
+	return "transaction"
+}
+
 // TransactionPath returns path for transaction file
 func TransactionPath(id string) string {
 	return "transaction/" + id
-}
-
-// TransactionForwardPath returns path for transaction forward file
-func TransactionForwardPath(id string) string {
-	return "transaction_forward/" + id
 }

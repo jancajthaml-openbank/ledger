@@ -16,7 +16,6 @@ package actor
 
 const (
 	ReqCreateTransaction     = "NT"
-	ReqForwardTransfer       = "FT"
 	RespCreateTransaction    = "T0"
 	RespTransactionRace      = "T1"
 	RespTransactionRefused   = "T2"

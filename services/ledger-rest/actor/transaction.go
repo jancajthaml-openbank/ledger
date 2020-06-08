@@ -19,11 +19,13 @@ import (
 
 	"github.com/rs/xid"
 
+	"github.com/jancajthaml-openbank/ledger-rest/model"
+
 	system "github.com/jancajthaml-openbank/actor-system"
 )
 
 // CreateTransaction creates new transaction
-func CreateTransaction(sys *ActorSystem, tenant string, transaction Transaction) (result interface{}) {
+func CreateTransaction(sys *ActorSystem, tenant string, transaction model.Transaction) (result interface{}) {
 	sys.Metrics.TimeCreateTransaction(func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -59,7 +61,7 @@ func CreateTransaction(sys *ActorSystem, tenant string, transaction Transaction)
 		case result = <-ch:
 			return
 
-		case <-time.After(30 * time.Second):
+		case <-time.After(10 * time.Second):
 			log.Warnf("Create transaction %s/%s timeout", tenant, transaction.IDTransaction)
 			result = new(ReplyTimeout)
 			return

@@ -19,6 +19,7 @@ import (
 	"net/http"
 
 	"github.com/jancajthaml-openbank/ledger-rest/actor"
+	"github.com/jancajthaml-openbank/ledger-rest/model"
 	"github.com/jancajthaml-openbank/ledger-rest/persistence"
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
 
@@ -102,7 +103,7 @@ func CreateTransaction(server *Server, tenant string, w http.ResponseWriter, r *
 		return
 	}
 
-	var req = new(actor.Transaction)
+	var req = new(model.Transaction)
 	err = utils.JSON.Unmarshal(data, req)
 	if err != nil {
 		w.Header().Set("Content-Type", "application/json")

@@ -14,6 +14,18 @@ func TestMetrics(t *testing.T) {
 	defer cancel()
 
 	entity := NewMetrics(ctx, "/tmp", "1", time.Hour)
+	delay := 1e8
+	delta := 1e8
+
+	t.Log("TimeFinalizeTransactions properly times run of UpdateSaturatedSnapshots function")
+	{
+		require.Equal(t, int64(0), entity.transactionFinalizerCronLatency.Count())
+		entity.TimeFinalizeTransactions(func() {
+			time.Sleep(time.Duration(delay))
+		})
+		assert.Equal(t, int64(1), entity.transactionFinalizerCronLatency.Count())
+		assert.InDelta(t, entity.transactionFinalizerCronLatency.Percentile(0.95), delay, delta)
+	}
 
 	t.Log("TransactionPromised properly increments number of promised transactions and transfers")
 	{
@@ -40,14 +52,5 @@ func TestMetrics(t *testing.T) {
 		entity.TransactionRollbacked(2)
 		assert.Equal(t, int64(1), entity.rollbackedTransactions.Count())
 		assert.Equal(t, int64(2), entity.rollbackedTransfers.Count())
-	}
-
-	t.Log("TransactionForwarded properly increments number of forwarded transactions and transfers")
-	{
-		require.Equal(t, int64(0), entity.forwardedTransactions.Count())
-		require.Equal(t, int64(0), entity.forwardedTransfers.Count())
-		entity.TransactionForwarded(2)
-		assert.Equal(t, int64(1), entity.forwardedTransactions.Count())
-		assert.Equal(t, int64(2), entity.forwardedTransfers.Count())
 	}
 }

@@ -26,35 +26,38 @@ import (
 // Metrics holds metrics counters
 type Metrics struct {
 	utils.DaemonSupport
-	storage                localfs.PlaintextStorage
-	tenant                 string
-	refreshRate            time.Duration
-	promisedTransactions   metrics.Counter
-	promisedTransfers      metrics.Counter
-	committedTransactions  metrics.Counter
-	committedTransfers     metrics.Counter
-	rollbackedTransactions metrics.Counter
-	rollbackedTransfers    metrics.Counter
-	forwardedTransactions  metrics.Counter
-	forwardedTransfers     metrics.Counter
+	storage                         localfs.PlaintextStorage
+	tenant                          string
+	refreshRate                     time.Duration
+	promisedTransactions            metrics.Counter
+	promisedTransfers               metrics.Counter
+	committedTransactions           metrics.Counter
+	committedTransfers              metrics.Counter
+	rollbackedTransactions          metrics.Counter
+	rollbackedTransfers             metrics.Counter
+	transactionFinalizerCronLatency metrics.Timer
 }
 
 // NewMetrics returns blank metrics holder
 func NewMetrics(ctx context.Context, output string, tenant string, refreshRate time.Duration) Metrics {
 	return Metrics{
-		DaemonSupport:          utils.NewDaemonSupport(ctx, "metrics"),
-		storage:                localfs.NewPlaintextStorage(output),
-		tenant:                 tenant,
-		refreshRate:            refreshRate,
-		promisedTransactions:   metrics.NewCounter(),
-		promisedTransfers:      metrics.NewCounter(),
-		committedTransactions:  metrics.NewCounter(),
-		committedTransfers:     metrics.NewCounter(),
-		rollbackedTransactions: metrics.NewCounter(),
-		rollbackedTransfers:    metrics.NewCounter(),
-		forwardedTransactions:  metrics.NewCounter(),
-		forwardedTransfers:     metrics.NewCounter(),
+		DaemonSupport:                   utils.NewDaemonSupport(ctx, "metrics"),
+		storage:                         localfs.NewPlaintextStorage(output),
+		tenant:                          tenant,
+		refreshRate:                     refreshRate,
+		promisedTransactions:            metrics.NewCounter(),
+		promisedTransfers:               metrics.NewCounter(),
+		committedTransactions:           metrics.NewCounter(),
+		committedTransfers:              metrics.NewCounter(),
+		rollbackedTransactions:          metrics.NewCounter(),
+		rollbackedTransfers:             metrics.NewCounter(),
+		transactionFinalizerCronLatency: metrics.NewTimer(),
 	}
+}
+
+// TimeFinalizeTransactions measures time of finalizeStaleTransactions function run
+func (metrics *Metrics) TimeFinalizeTransactions(f func()) {
+	metrics.transactionFinalizerCronLatency.Time(f)
 }
 
 // TransactionPromised increments transactions promised by one
@@ -73,12 +76,6 @@ func (metrics *Metrics) TransactionCommitted(transfers int) {
 func (metrics *Metrics) TransactionRollbacked(transfers int) {
 	metrics.rollbackedTransactions.Inc(1)
 	metrics.rollbackedTransfers.Inc(int64(transfers))
-}
-
-// TransactionForwarded increments transactions forwarded by one
-func (metrics *Metrics) TransactionForwarded(transfers int) {
-	metrics.forwardedTransactions.Inc(1)
-	metrics.forwardedTransfers.Inc(int64(transfers))
 }
 
 // Start handles everything needed to start metrics daemon

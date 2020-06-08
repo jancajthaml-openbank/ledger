@@ -51,38 +51,6 @@ def create_custom_transfer(context, tenant):
   create_transfer(context, tenant)
 
 
-@when('{transaction} {transfer} {side} side is forwarded from tenant {tenantFrom} to {tenantTo}/{accountTo}')
-def forward_transfer(context, transaction, transfer, side, tenantFrom, tenantTo, accountTo):
-  uri = "https://127.0.0.1/transaction/{}/{}/{}".format(tenantFrom, transaction, transfer)
-
-  payload = json.dumps({
-    'side': side,
-    'target': {
-      'tenant': tenantTo,
-      'name': accountTo
-    }
-  })
-
-  ctx = ssl.create_default_context()
-  ctx.check_hostname = False
-  ctx.verify_mode = ssl.CERT_NONE
-
-  request = urllib.request.Request(method='PATCH', url=uri)
-  request.add_header('Accept', 'application/json')
-  request.add_header('Content-Type', 'application/json')
-  request.data = payload.encode('utf-8')
-
-  try:
-    response = urllib.request.urlopen(request, timeout=10, context=ctx)
-    assert response.code == 200
-    response = response.read().decode('utf-8')
-    response = json.loads(response)
-    context.last_transaction_id = response.get('id', None)
-  except urllib.error.HTTPError as err:
-    assert err.code == 417
-    context.last_transaction_id = None
-
-
 @when('{amount} {currency} is transferred from {tenantFrom}/{accountFrom} to {tenantTo}/{accountTo}')
 def create_simple_transfer(context, amount, currency, tenantFrom, accountFrom, tenantTo, accountTo):
   create_simple_transfer_with_id(context, amount, currency, tenantFrom, accountFrom, tenantTo, accountTo, None)

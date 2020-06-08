@@ -30,7 +30,7 @@ func (metrics *Metrics) MarshalJSON() ([]byte, error) {
 		return nil, fmt.Errorf("cannot marshall nil")
 	}
 
-	if metrics.createTransactionLatency == nil || metrics.forwardTransferLatency == nil {
+	if metrics.createTransactionLatency == nil {
 		return nil, fmt.Errorf("cannot marshall nil references")
 	}
 
@@ -41,8 +41,6 @@ func (metrics *Metrics) MarshalJSON() ([]byte, error) {
 
 	buffer.WriteString("{\"createTransactionLatency\":")
 	buffer.WriteString(strconv.FormatFloat(metrics.createTransactionLatency.Percentile(0.95), 'f', -1, 64))
-	buffer.WriteString(",\"forwardTransferLatency\":")
-	buffer.WriteString(strconv.FormatFloat(metrics.forwardTransferLatency.Percentile(0.95), 'f', -1, 64))
 	buffer.WriteString(",\"memoryAllocated\":")
 	buffer.WriteString(strconv.FormatUint(stats.Sys, 10))
 	buffer.WriteString("}")
@@ -56,7 +54,7 @@ func (metrics *Metrics) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("cannot unmarshall to nil")
 	}
 
-	if metrics.createTransactionLatency == nil || metrics.forwardTransferLatency == nil {
+	if metrics.createTransactionLatency == nil {
 		return fmt.Errorf("cannot unmarshall to nil references")
 	}
 
@@ -64,7 +62,6 @@ func (metrics *Metrics) UnmarshalJSON(data []byte) error {
 		GetTransactionLatency    float64 `json:"getTransactionLatency"`
 		GetTransactionsLatency   float64 `json:"getTransactionsLatency"`
 		CreateTransactionLatency float64 `json:"createTransactionLatency"`
-		ForwardTransferLatency   float64 `json:"forwardTransferLatency"`
 	}{}
 
 	if err := utils.JSON.Unmarshal(data, &aux); err != nil {
@@ -72,7 +69,6 @@ func (metrics *Metrics) UnmarshalJSON(data []byte) error {
 	}
 
 	metrics.createTransactionLatency.Update(time.Duration(aux.CreateTransactionLatency))
-	metrics.forwardTransferLatency.Update(time.Duration(aux.ForwardTransferLatency))
 
 	return nil
 }

@@ -127,7 +127,6 @@ func NewServer(ctx context.Context, port int, secretsPath string, actorSystem *a
 	result.HandleFunc("/tenant/{tenant}", TenantPartial, "POST", "DELETE")
 	result.HandleFunc("/tenant", TenantsPartial, "GET")
 	result.HandleFunc("/transaction/{tenant}/{transaction}", TransactionPartial, "GET")
-	result.HandleFunc("/transaction/{tenant}/{transaction}/{transfer}", TransferPartial, "PATCH")
 	result.HandleFunc("/transaction/{tenant}", TransactionsPartial, "POST", "GET")
 
 	return result
