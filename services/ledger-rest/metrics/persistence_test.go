@@ -33,11 +33,9 @@ func TestMarshalJSON(t *testing.T) {
 	{
 		entity := Metrics{
 			createTransactionLatency: metrics.NewTimer(),
-			forwardTransferLatency:   metrics.NewTimer(),
 		}
 
 		entity.createTransactionLatency.Update(time.Duration(3))
-		entity.forwardTransferLatency.Update(time.Duration(4))
 
 		actual, err := entity.MarshalJSON()
 
@@ -45,13 +43,11 @@ func TestMarshalJSON(t *testing.T) {
 
 		aux := &struct {
 			CreateTransactionLatency float64 `json:"createTransactionLatency"`
-			ForwardTransferLatency   float64 `json:"forwardTransferLatency"`
 		}{}
 
 		require.Nil(t, json.Unmarshal(actual, &aux))
 
 		assert.Equal(t, float64(3), aux.CreateTransactionLatency)
-		assert.Equal(t, float64(4), aux.ForwardTransferLatency)
 	}
 }
 
@@ -75,7 +71,6 @@ func TestUnmarshalJSON(t *testing.T) {
 	{
 		entity := Metrics{
 			createTransactionLatency: metrics.NewTimer(),
-			forwardTransferLatency:   metrics.NewTimer(),
 		}
 
 		data := []byte("{")
@@ -86,15 +81,12 @@ func TestUnmarshalJSON(t *testing.T) {
 	{
 		entity := Metrics{
 			createTransactionLatency: metrics.NewTimer(),
-			forwardTransferLatency:   metrics.NewTimer(),
 		}
 
-		data := []byte("{\"createTransactionLatency\":3,\"forwardTransferLatency\":4}")
+		data := []byte("{\"createTransactionLatency\":3}")
 		require.Nil(t, entity.UnmarshalJSON(data))
 
 		assert.Equal(t, float64(3), entity.createTransactionLatency.Percentile(0.95))
-		assert.Equal(t, float64(4), entity.forwardTransferLatency.Percentile(0.95))
-
 	}
 }
 
@@ -119,7 +111,6 @@ func TestPersist(t *testing.T) {
 		entity := Metrics{
 			storage:                  localfs.NewPlaintextStorage("/tmp"),
 			createTransactionLatency: metrics.NewTimer(),
-			forwardTransferLatency:   metrics.NewTimer(),
 		}
 
 		require.Nil(t, entity.Persist())
@@ -148,11 +139,9 @@ func TestHydrate(t *testing.T) {
 
 		old := Metrics{
 			createTransactionLatency: metrics.NewTimer(),
-			forwardTransferLatency:   metrics.NewTimer(),
 		}
 
 		old.createTransactionLatency.Update(time.Duration(3))
-		old.forwardTransferLatency.Update(time.Duration(4))
 
 		data, err := old.MarshalJSON()
 		require.Nil(t, err)
@@ -162,12 +151,10 @@ func TestHydrate(t *testing.T) {
 		entity := Metrics{
 			storage:                  localfs.NewPlaintextStorage("/tmp"),
 			createTransactionLatency: metrics.NewTimer(),
-			forwardTransferLatency:   metrics.NewTimer(),
 		}
 
 		require.Nil(t, entity.Hydrate())
 
 		assert.Equal(t, float64(3), entity.createTransactionLatency.Percentile(0.95))
-		assert.Equal(t, float64(4), entity.forwardTransferLatency.Percentile(0.95))
 	}
 }

@@ -16,6 +16,7 @@ package metrics
 
 import (
 	"bytes"
+	"time"
 	"fmt"
 	"github.com/jancajthaml-openbank/ledger-unit/utils"
 	"os"
@@ -31,13 +32,15 @@ func (metrics *Metrics) MarshalJSON() ([]byte, error) {
 	if metrics.promisedTransactions == nil || metrics.promisedTransfers == nil ||
 		metrics.committedTransactions == nil || metrics.committedTransfers == nil ||
 		metrics.rollbackedTransactions == nil || metrics.rollbackedTransfers == nil ||
-		metrics.forwardedTransactions == nil || metrics.forwardedTransfers == nil {
+		metrics.transactionFinalizerCronLatency == nil {
 		return nil, fmt.Errorf("cannot marshall nil references")
 	}
 
 	var buffer bytes.Buffer
 
-	buffer.WriteString("{\"promisedTransactions\":")
+	buffer.WriteString("{\"transactionFinalizerCronLatency\":")
+	buffer.WriteString(strconv.FormatFloat(metrics.transactionFinalizerCronLatency.Percentile(0.95), 'f', -1, 64))
+	buffer.WriteString(",\"promisedTransactions\":")
 	buffer.WriteString(strconv.FormatInt(metrics.promisedTransactions.Count(), 10))
 	buffer.WriteString(",\"promisedTransfers\":")
 	buffer.WriteString(strconv.FormatInt(metrics.promisedTransfers.Count(), 10))
@@ -49,10 +52,6 @@ func (metrics *Metrics) MarshalJSON() ([]byte, error) {
 	buffer.WriteString(strconv.FormatInt(metrics.rollbackedTransactions.Count(), 10))
 	buffer.WriteString(",\"rollbackedTransfers\":")
 	buffer.WriteString(strconv.FormatInt(metrics.rollbackedTransfers.Count(), 10))
-	buffer.WriteString(",\"forwardedTransactions\":")
-	buffer.WriteString(strconv.FormatInt(metrics.forwardedTransactions.Count(), 10))
-	buffer.WriteString(",\"forwardedTransfers\":")
-	buffer.WriteString(strconv.FormatInt(metrics.forwardedTransfers.Count(), 10))
 	buffer.WriteString("}")
 
 	return buffer.Bytes(), nil
@@ -67,19 +66,18 @@ func (metrics *Metrics) UnmarshalJSON(data []byte) error {
 	if metrics.promisedTransactions == nil || metrics.promisedTransfers == nil ||
 		metrics.committedTransactions == nil || metrics.committedTransfers == nil ||
 		metrics.rollbackedTransactions == nil || metrics.rollbackedTransfers == nil ||
-		metrics.forwardedTransactions == nil || metrics.forwardedTransfers == nil {
+		metrics.transactionFinalizerCronLatency == nil {
 		return fmt.Errorf("cannot unmarshall to nil references")
 	}
 
 	aux := &struct {
-		PromisedTransactions   int64 `json:"promisedTransactions"`
-		PromisedTransfers      int64 `json:"promisedTransfers"`
-		CommittedTransactions  int64 `json:"committedTransactions"`
-		CommittedTransfers     int64 `json:"committedTransfers"`
-		RollbackedTransactions int64 `json:"rollbackedTransactions"`
-		RollbackedTransfers    int64 `json:"rollbackedTransfers"`
-		ForwardedTransactions  int64 `json:"forwardedTransactions"`
-		ForwardedTransfers     int64 `json:"forwardedTransfers"`
+		TransactionFinalizerCronLatency float64 `json:"transactionFinalizerCronLatency"`
+		PromisedTransactions            int64   `json:"promisedTransactions"`
+		PromisedTransfers               int64   `json:"promisedTransfers"`
+		CommittedTransactions           int64   `json:"committedTransactions"`
+		CommittedTransfers              int64   `json:"committedTransfers"`
+		RollbackedTransactions          int64   `json:"rollbackedTransactions"`
+		RollbackedTransfers             int64   `json:"rollbackedTransfers"`
 	}{}
 
 	if err := utils.JSON.Unmarshal(data, &aux); err != nil {
@@ -98,10 +96,7 @@ func (metrics *Metrics) UnmarshalJSON(data []byte) error {
 	metrics.rollbackedTransactions.Inc(aux.RollbackedTransactions)
 	metrics.rollbackedTransfers.Clear()
 	metrics.rollbackedTransfers.Inc(aux.RollbackedTransfers)
-	metrics.forwardedTransactions.Clear()
-	metrics.forwardedTransactions.Inc(aux.ForwardedTransactions)
-	metrics.forwardedTransfers.Clear()
-	metrics.forwardedTransfers.Inc(aux.ForwardedTransfers)
+	metrics.transactionFinalizerCronLatency.Update(time.Duration(aux.TransactionFinalizerCronLatency))
 
 	return nil
 }

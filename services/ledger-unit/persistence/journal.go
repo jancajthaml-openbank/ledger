@@ -15,8 +15,6 @@
 package persistence
 
 import (
-	"strings"
-
 	"github.com/jancajthaml-openbank/ledger-unit/model"
 	"github.com/jancajthaml-openbank/ledger-unit/utils"
 
@@ -26,111 +24,39 @@ import (
 // LoadTransaction loads transaction from journal
 func LoadTransaction(storage *localfs.PlaintextStorage, id string) (*model.Transaction, error) {
 	transactionPath := utils.TransactionPath(id)
-
 	data, err := storage.ReadFileFully(transactionPath)
 	if err != nil {
 		return nil, err
 	}
-
 	result := new(model.Transaction)
 	result.IDTransaction = id
 	result.Deserialise(data)
 	return result, nil
 }
 
-// CreateTransaction persist transaction entity state to storage
-func CreateTransaction(storage *localfs.PlaintextStorage) *model.Transaction {
-	entity := new(model.Transaction)
-	entity.State = StatusNew
-	return PersistTransaction(storage, entity)
+// LoadTransactionState loads transaction status journal
+func LoadTransactionState(storage *localfs.PlaintextStorage, id string) (string, error) {
+	transactionPath := utils.TransactionPath(id)
+	data, err := storage.ReadFileFully(transactionPath)
+	if err != nil {
+		return "", err
+	}
+	result := new(model.Transaction)
+	result.IDTransaction = id
+	result.DeserialiseState(data)
+	return result.State, nil
 }
 
-// PersistTransaction persist transaction to disk
-func PersistTransaction(storage *localfs.PlaintextStorage, entity *model.Transaction) *model.Transaction {
-	//created := now()
-	// FIXME do not store transaction like this :/ or do so for integrity?
-
+// CreateTransaction persist transaction entity state to storage
+func CreateTransaction(storage *localfs.PlaintextStorage, entity *model.Transaction) error {
 	transactionPath := utils.TransactionPath(entity.IDTransaction)
-
 	data := entity.Serialise()
-	if storage.WriteFileExclusive(transactionPath, data) != nil {
-		return nil
-	}
-
-	return entity
+	return storage.WriteFileExclusive(transactionPath, data)
 }
 
 // UpdateTransaction persist update of transaction to disk
-func UpdateTransaction(storage *localfs.PlaintextStorage, entity *model.Transaction) *model.Transaction {
-	//created := now()
-	// FIXME do not store transaction like this :/ or do so for integrity?
-
+func UpdateTransaction(storage *localfs.PlaintextStorage, entity *model.Transaction) error {
 	transactionPath := utils.TransactionPath(entity.IDTransaction)
-
 	data := entity.Serialise()
-	if storage.WriteFile(transactionPath, data) != nil {
-		return nil
-	}
-
-	return entity
-}
-
-// IsTransferForwardedCredit returns true if transaction's credit side was forwarded
-func IsTransferForwardedCredit(storage *localfs.PlaintextStorage, idTransaction, idTransfer string) (bool, error) {
-	fullPath := utils.TransactionForwardPath(idTransaction)
-	ok, err := storage.Exists(fullPath)
-	if err != nil {
-		return false, err
-	}
-	if !ok {
-		return false, nil
-	}
-	data, err := storage.ReadFileFully(fullPath)
-	if err != nil {
-		return false, err
-	}
-	for _, line := range strings.Split(string(data), "\n") {
-		parts := strings.Split(line, " ")
-
-		if idTransfer == parts[0] && parts[1] == "credit" {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-// IsTransferForwardedDebit returns true if transaction's debit side was forwarded
-func IsTransferForwardedDebit(storage *localfs.PlaintextStorage, idTransaction, idTransfer string) (bool, error) {
-	fullPath := utils.TransactionForwardPath(idTransaction)
-	ok, err := storage.Exists(fullPath)
-	if err != nil {
-		return false, err
-	}
-	if !ok {
-		return false, nil
-	}
-	data, err := storage.ReadFileFully(fullPath)
-	if err != nil {
-		return false, err
-	}
-	for _, line := range strings.Split(string(data), "\n") {
-		parts := strings.Split(line, " ")
-
-		if idTransfer == parts[0] && parts[1] == "debit" {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-// AcceptForwardCredit accepts transaction credit forward request
-func AcceptForwardCredit(storage *localfs.PlaintextStorage, targetTenant, targetTransaction, targetTransfer, originTransaction, originTransfer string) error {
-	fullPath := utils.TransactionForwardPath(originTransaction)
-	return storage.AppendFile(fullPath, []byte(originTransfer+" credit "+targetTenant+" "+targetTransaction+" "+targetTransfer))
-}
-
-// AcceptForwardDebit accepts transaction debit forward request
-func AcceptForwardDebit(storage *localfs.PlaintextStorage, targetTenant, targetTransaction, targetTransfer, originTransaction, originTransfer string) error {
-	fullPath := utils.TransactionForwardPath(originTransaction)
-	return storage.AppendFile(fullPath, []byte(originTransfer+" debit "+targetTenant+" "+targetTransaction+" "+targetTransfer))
+	return storage.WriteFile(transactionPath, data)
 }

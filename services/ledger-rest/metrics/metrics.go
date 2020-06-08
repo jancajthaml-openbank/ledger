@@ -29,7 +29,6 @@ type Metrics struct {
 	storage                  localfs.PlaintextStorage
 	refreshRate              time.Duration
 	createTransactionLatency metrics.Timer
-	forwardTransferLatency   metrics.Timer
 }
 
 // NewMetrics returns blank metrics holder
@@ -39,13 +38,7 @@ func NewMetrics(ctx context.Context, output string, refreshRate time.Duration) M
 		storage:                  localfs.NewPlaintextStorage(output),
 		refreshRate:              refreshRate,
 		createTransactionLatency: metrics.NewTimer(),
-		forwardTransferLatency:   metrics.NewTimer(),
 	}
-}
-
-// TimeForwardTransfer measure execution of ForwardTransfer
-func (metrics *Metrics) TimeForwardTransfer(f func()) {
-	metrics.forwardTransferLatency.Time(f)
 }
 
 // TimeCreateTransaction measure execution of CreateTransaction

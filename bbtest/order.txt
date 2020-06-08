@@ -6,5 +6,4 @@ features/journal.feature
 features/messaging.feature
 features/api.feature
 features/transaction.feature
-features/transfer.feature
 features/uninstall.feature

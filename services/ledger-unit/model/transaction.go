@@ -118,3 +118,13 @@ parse:
 	i = j + 1
 	goto scan
 }
+
+// DeserialiseState deserializes transaction state from binary data
+func (entity *Transaction) DeserialiseState(data []byte) {
+	if entity == nil {
+		return
+	}
+	var j = bytes.IndexByte(data, '\n')
+	entity.State = string(data[0:j])
+	return
+}

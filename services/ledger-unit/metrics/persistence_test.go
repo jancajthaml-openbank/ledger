@@ -3,6 +3,7 @@ package metrics
 import (
 	"io/ioutil"
 	"os"
+	"time"
 	"testing"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
@@ -30,16 +31,15 @@ func TestPersist(t *testing.T) {
 		defer os.Remove("/tmp/metrics.json")
 
 		entity := Metrics{
-			storage:                localfs.NewPlaintextStorage("/tmp"),
-			tenant:                 "1",
-			promisedTransactions:   metrics.NewCounter(),
-			promisedTransfers:      metrics.NewCounter(),
-			committedTransactions:  metrics.NewCounter(),
-			committedTransfers:     metrics.NewCounter(),
-			rollbackedTransactions: metrics.NewCounter(),
-			rollbackedTransfers:    metrics.NewCounter(),
-			forwardedTransactions:  metrics.NewCounter(),
-			forwardedTransfers:     metrics.NewCounter(),
+			storage:                         localfs.NewPlaintextStorage("/tmp"),
+			tenant:                          "1",
+			promisedTransactions:            metrics.NewCounter(),
+			promisedTransfers:               metrics.NewCounter(),
+			committedTransactions:           metrics.NewCounter(),
+			committedTransfers:              metrics.NewCounter(),
+			rollbackedTransactions:          metrics.NewCounter(),
+			rollbackedTransfers:             metrics.NewCounter(),
+			transactionFinalizerCronLatency: metrics.NewTimer(),
 		}
 
 		require.Nil(t, entity.Persist())
@@ -67,16 +67,15 @@ func TestHydrate(t *testing.T) {
 		defer os.Remove("/tmp/metrics.json")
 
 		old := Metrics{
-			storage:                localfs.NewPlaintextStorage("/tmp"),
-			tenant:                 "1",
-			promisedTransactions:   metrics.NewCounter(),
-			promisedTransfers:      metrics.NewCounter(),
-			committedTransactions:  metrics.NewCounter(),
-			committedTransfers:     metrics.NewCounter(),
-			rollbackedTransactions: metrics.NewCounter(),
-			rollbackedTransfers:    metrics.NewCounter(),
-			forwardedTransactions:  metrics.NewCounter(),
-			forwardedTransfers:     metrics.NewCounter(),
+			storage:                         localfs.NewPlaintextStorage("/tmp"),
+			tenant:                          "1",
+			promisedTransactions:            metrics.NewCounter(),
+			promisedTransfers:               metrics.NewCounter(),
+			committedTransactions:           metrics.NewCounter(),
+			committedTransfers:              metrics.NewCounter(),
+			rollbackedTransactions:          metrics.NewCounter(),
+			rollbackedTransfers:             metrics.NewCounter(),
+			transactionFinalizerCronLatency: metrics.NewTimer(),
 		}
 
 		old.promisedTransactions.Inc(1)
@@ -85,8 +84,7 @@ func TestHydrate(t *testing.T) {
 		old.committedTransfers.Inc(4)
 		old.rollbackedTransactions.Inc(5)
 		old.rollbackedTransfers.Inc(6)
-		old.forwardedTransactions.Inc(7)
-		old.forwardedTransfers.Inc(8)
+		old.transactionFinalizerCronLatency.Update(time.Duration(7))
 
 		data, err := old.MarshalJSON()
 		require.Nil(t, err)
@@ -94,16 +92,15 @@ func TestHydrate(t *testing.T) {
 		require.Nil(t, ioutil.WriteFile("/tmp/metrics.1.json", data, 0444))
 
 		entity := Metrics{
-			storage:                localfs.NewPlaintextStorage("/tmp"),
-			tenant:                 "1",
-			promisedTransactions:   metrics.NewCounter(),
-			promisedTransfers:      metrics.NewCounter(),
-			committedTransactions:  metrics.NewCounter(),
-			committedTransfers:     metrics.NewCounter(),
-			rollbackedTransactions: metrics.NewCounter(),
-			rollbackedTransfers:    metrics.NewCounter(),
-			forwardedTransactions:  metrics.NewCounter(),
-			forwardedTransfers:     metrics.NewCounter(),
+			storage:                         localfs.NewPlaintextStorage("/tmp"),
+			tenant:                          "1",
+			promisedTransactions:            metrics.NewCounter(),
+			promisedTransfers:               metrics.NewCounter(),
+			committedTransactions:           metrics.NewCounter(),
+			committedTransfers:              metrics.NewCounter(),
+			rollbackedTransactions:          metrics.NewCounter(),
+			rollbackedTransfers:             metrics.NewCounter(),
+			transactionFinalizerCronLatency: metrics.NewTimer(),
 		}
 
 		require.Nil(t, entity.Hydrate())
@@ -114,7 +111,6 @@ func TestHydrate(t *testing.T) {
 		assert.Equal(t, int64(4), entity.committedTransfers.Count())
 		assert.Equal(t, int64(5), entity.rollbackedTransactions.Count())
 		assert.Equal(t, int64(6), entity.rollbackedTransfers.Count())
-		assert.Equal(t, int64(7), entity.forwardedTransactions.Count())
-		assert.Equal(t, int64(8), entity.forwardedTransfers.Count())
+		assert.Equal(t, float64(7), entity.transactionFinalizerCronLatency.Percentile(0.95))
 	}
 }

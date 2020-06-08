@@ -18,12 +18,16 @@ import (
 	"context"
 	"os"
 
+	"github.com/rs/xid"
+
 	"github.com/jancajthaml-openbank/ledger-unit/actor"
 	"github.com/jancajthaml-openbank/ledger-unit/config"
 	"github.com/jancajthaml-openbank/ledger-unit/logging"
 	"github.com/jancajthaml-openbank/ledger-unit/metrics"
+	"github.com/jancajthaml-openbank/ledger-unit/model"
 	"github.com/jancajthaml-openbank/ledger-unit/utils"
 
+	system "github.com/jancajthaml-openbank/actor-system"
 	localfs "github.com/jancajthaml-openbank/local-fs"
 )
 
@@ -63,7 +67,24 @@ func Initialize() Program {
 		cfg.TransactionIntegrityScanInterval,
 		&metricsDaemon,
 		&storage,
-		actor.ProcessMessage(&actorSystemDaemon),
+		func(transaction model.Transaction) {
+			name := "transaction/" + xid.New().String()
+			ref, err := actor.NewTransactionActor(&actorSystemDaemon, name)
+			if err != nil {
+				return
+			}
+			ref.Tell(
+				transaction,
+				system.Coordinates{
+					Region: actorSystemDaemon.Name,
+					Name:   name,
+				},
+				system.Coordinates{
+					Region: actorSystemDaemon.Name,
+					Name:   "transaction_finalizer_cron",
+				},
+			)
+		},
 	)
 
 	var daemons = make([]utils.Daemon, 0)

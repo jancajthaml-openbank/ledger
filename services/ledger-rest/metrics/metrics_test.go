@@ -26,14 +26,4 @@ func TestMetrics(t *testing.T) {
 		assert.Equal(t, int64(1), entity.createTransactionLatency.Count())
 		assert.InDelta(t, entity.createTransactionLatency.Percentile(0.95), delay, delta)
 	}
-
-	t.Log("TimeForwardTransfer properly times run of CreateAccount function")
-	{
-		require.Equal(t, int64(0), entity.forwardTransferLatency.Count())
-		entity.TimeForwardTransfer(func() {
-			time.Sleep(time.Duration(delay))
-		})
-		assert.Equal(t, int64(1), entity.forwardTransferLatency.Count())
-		assert.InDelta(t, entity.forwardTransferLatency.Percentile(0.95), delay, delta)
-	}
 }

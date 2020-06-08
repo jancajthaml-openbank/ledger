@@ -20,24 +20,6 @@ import (
 	system "github.com/jancajthaml-openbank/actor-system"
 )
 
-type ForwardState struct {
-	Forward TransferForward
-	TransactionState
-}
-
-func NewForwardState() ForwardState {
-	return ForwardState{
-		TransactionState: NewTransactionState(),
-	}
-}
-
-type TransferForward struct {
-	IDTransaction string
-	IDTransfer    string
-	Side          string
-	Target        model.Account
-}
-
 type TransactionState struct {
 	Transaction     model.Transaction
 	Negotiation     map[model.Account]string
@@ -112,13 +94,10 @@ func (state *TransactionState) ResetMarks() {
 	if state == nil {
 		return
 	}
-
 	state.WaitFor = make(map[model.Account]interface{})
-
 	for account := range state.Negotiation {
 		state.WaitFor[account] = nil
 	}
-
 	state.OkResponses = 0
 	state.FailedResponses = 0
 }
@@ -131,7 +110,6 @@ func (state *TransactionState) Prepare(transaction model.Transaction, requestedB
 	if state == nil {
 		return
 	}
-
 	negotiation := transaction.PrepareRemoteNegotiation()
 	state.Transaction = transaction
 	state.Negotiation = negotiation

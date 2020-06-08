@@ -1,5 +1,5 @@
 Package: ledger
-Version: 1.1.1+improve-model
+Version: 1.1.1+transaction-finalizer
 Section: misc
 Priority: extra
 Architecture: amd64

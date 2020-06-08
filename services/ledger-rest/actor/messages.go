@@ -15,13 +15,14 @@
 package actor
 
 import (
+	"github.com/jancajthaml-openbank/ledger-rest/model"
+
 	"strings"
 	"time"
 )
 
 const (
 	ReqCreateTransaction     = "NT"
-	ReqForwardTransfer       = "FT"
 	RespCreateTransaction    = "T0"
 	RespTransactionRace      = "T1"
 	RespTransactionRefused   = "T2"
@@ -31,7 +32,7 @@ const (
 	FatalError               = "EE"
 )
 
-func CreateTransactionMessage(transaction Transaction) string {
+func CreateTransactionMessage(transaction model.Transaction) string {
 	var buffer strings.Builder
 
 	numOfTransfers := len(transaction.Transfers)
@@ -58,8 +59,4 @@ func CreateTransactionMessage(transaction Transaction) string {
 	}
 
 	return ReqCreateTransaction + " " + transaction.IDTransaction + " " + buffer.String()
-}
-
-func ForwardTransferMessage(transaction string, transfer string, forward TransferForward) string {
-	return ReqForwardTransfer + " " + transaction + " " + transfer + " " + forward.Side + " " + forward.TargetAccount.Tenant + ";" + forward.TargetAccount.Name
 }
