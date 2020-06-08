@@ -3,6 +3,7 @@ package metrics
 import (
 	"io/ioutil"
 	"os"
+	"time"
 	"testing"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
