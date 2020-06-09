@@ -107,7 +107,7 @@ func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		state.ResetMarks()
 		context.Self.Become(state, PromisingTransaction(s))
 
-		log.WithField("transaction", state.Transaction.IDTransaction).Info("Start->Promise")
+		log.WithField("transaction", state.Transaction.IDTransaction).Debug("Start->Promise")
 	}
 }
 
@@ -148,7 +148,7 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 				return
 			}
 
-			log.WithField("transaction", state.Transaction.IDTransaction).Info("Promise->Rollback")
+			log.WithField("transaction", state.Transaction.IDTransaction).Debug("Promise->Rollback")
 
 			state.ResetMarks()
 			context.Self.Become(state, RollbackingTransaction(s))
@@ -200,7 +200,7 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		state.ResetMarks()
 		context.Self.Become(state, CommitingTransaction(s))
-		log.WithField("transaction", state.Transaction.IDTransaction).Info("Promise->Commit")
+		log.WithField("transaction", state.Transaction.IDTransaction).Debug("Promise->Commit")
 		return
 	}
 }
@@ -245,7 +245,7 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 			state.ResetMarks()
 			context.Self.Become(state, RollbackingTransaction(s))
 
-			log.WithField("transaction", state.Transaction.IDTransaction).Info("Commit->Rollback")
+			log.WithField("transaction", state.Transaction.IDTransaction).Debug("Commit->Rollback")
 
 			return
 		}
@@ -281,7 +281,8 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 			context.Receiver,
 		)
 
-		log.WithField("transaction", state.Transaction.IDTransaction).Info("Commit->End")
+		log.WithField("transaction", state.Transaction.IDTransaction).Info("New Transaction")
+		log.WithField("transaction", state.Transaction.IDTransaction).Debug("Commit->End")
 
 		s.UnregisterActor(context.Sender.Name)
 		return
@@ -340,7 +341,8 @@ func RollbackingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 			context.Receiver,
 		)
 
-		log.WithField("transaction", state.Transaction.IDTransaction).Info("Rollback->End")
+		log.WithField("transaction", state.Transaction.IDTransaction).Info("New Transaction")
+		log.WithField("transaction", state.Transaction.IDTransaction).Debug("Rollback->End")
 
 		s.UnregisterActor(context.Sender.Name)
 		return

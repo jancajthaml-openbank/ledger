@@ -21,7 +21,7 @@ class UnitHelper(object):
       "HTTP_PORT": 443,
       "SECRETS": "/opt/ledger/secrets",
       "LAKE_HOSTNAME": "localhost",
-      "TRANSACTION_INTEGRITY_SCANINTERVAL": "120s",
+      "TRANSACTION_INTEGRITY_SCANINTERVAL": "24h",
       "MEMORY_THRESHOLD": 0,
       "STORAGE_THRESHOLD": 0,
       "METRICS_REFRESHRATE": "1s",
