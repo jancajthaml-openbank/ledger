@@ -26,7 +26,7 @@ func loadConfFromEnv() Configuration {
 	storage := getEnvString("LEDGER_STORAGE", "/data")
 	tenant := getEnvString("LEDGER_TENANT", "")
 	lakeHostname := getEnvString("LEDGER_LAKE_HOSTNAME", "")
-	transactionIntegrityScanInterval := getEnvDuration("LEDGER_TRANSACTION_INTEGRITY_SCANINTERVAL", time.Minute)
+	transactionIntegrityScanInterval := getEnvDuration("LEDGER_TRANSACTION_INTEGRITY_SCANINTERVAL", 5 * time.Minute)
 	metricsOutput := getEnvFilename("LEDGER_METRICS_OUTPUT", "/tmp")
 	metricsRefreshRate := getEnvDuration("LEDGER_METRICS_REFRESHRATE", time.Second)
 

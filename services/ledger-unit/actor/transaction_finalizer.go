@@ -16,7 +16,6 @@ package actor
 
 import (
 	"context"
-	"syscall"
 	"time"
 
 	"github.com/jancajthaml-openbank/ledger-unit/metrics"
@@ -69,13 +68,11 @@ func (scan TransactionFinalizer) finalizeStaleTransactions() {
 }
 
 func (scan TransactionFinalizer) getTransaction(id string) *model.Transaction {
-	file := scan.storage.Root + "/" + utils.TransactionPath(id)
-	var st = new(syscall.Stat_t)
-	if syscall.Stat(file, st) != nil {
+	modTime, err := scan.storage.LastModification(utils.TransactionPath(id))
+	if err != nil {
 		return nil
 	}
-	modTime := time.Unix(int64(st.Mtim.Sec), int64(st.Mtim.Nsec))
-	if time.Now().Sub(modTime).Seconds() < 60 {
+	if time.Now().Sub(modTime).Seconds() < 120 {
 		return nil
 	}
 	state, err := persistence.LoadTransactionState(scan.storage, id)

@@ -61,7 +61,7 @@ func CreateTransaction(sys *ActorSystem, tenant string, transaction model.Transa
 		case result = <-ch:
 			return
 
-		case <-time.After(10 * time.Second):
+		case <-time.After(25 * time.Second):
 			log.Warnf("Create transaction %s/%s timeout", tenant, transaction.IDTransaction)
 			result = new(ReplyTimeout)
 			return

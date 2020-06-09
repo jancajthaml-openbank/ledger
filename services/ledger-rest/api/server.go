@@ -103,8 +103,8 @@ func NewServer(ctx context.Context, port int, secretsPath string, actorSystem *a
 		MemoryMonitor: memoryMonitor,
 		underlying: &http.Server{
 			Addr:         fmt.Sprintf("127.0.0.1:%d", port),
-			ReadTimeout:  5 * time.Second,
-			WriteTimeout: 5 * time.Second,
+			ReadTimeout:  30 * time.Second,
+			WriteTimeout: 30 * time.Second,
 			Handler:      router,
 			TLSConfig: &tls.Config{
 				MinVersion:               tls.VersionTLS12,
