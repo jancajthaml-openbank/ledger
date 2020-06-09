@@ -281,7 +281,7 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 			context.Receiver,
 		)
 
-		log.WithField("transaction", state.Transaction.IDTransaction).Info("New Transaction")
+		log.WithField("transaction", state.Transaction.IDTransaction).Info("New Transaction Committed")
 		log.WithField("transaction", state.Transaction.IDTransaction).Debug("Commit->End")
 
 		s.UnregisterActor(context.Sender.Name)
@@ -341,7 +341,7 @@ func RollbackingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 			context.Receiver,
 		)
 
-		log.WithField("transaction", state.Transaction.IDTransaction).Info("New Transaction")
+		log.WithField("transaction", state.Transaction.IDTransaction).Info("New Transaction Rollbacked")
 		log.WithField("transaction", state.Transaction.IDTransaction).Debug("Rollback->End")
 
 		s.UnregisterActor(context.Sender.Name)
