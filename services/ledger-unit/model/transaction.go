@@ -58,7 +58,7 @@ func (entity *Transaction) Serialise() []byte {
 		buffer.WriteString(" ")
 		buffer.WriteString(transfer.ValueDate)
 		buffer.WriteString(" ")
-		buffer.WriteString(strings.TrimRight(strings.TrimRight(transfer.Amount.String(), "0"), "."))
+    buffer.WriteString(transfer.Amount.String())
 		buffer.WriteString(" ")
 		buffer.WriteString(transfer.Currency)
 		buffer.WriteString("\n")
