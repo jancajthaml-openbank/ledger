@@ -16,6 +16,7 @@ package actor
 
 import (
 	"github.com/jancajthaml-openbank/ledger-unit/model"
+	"github.com/jancajthaml-openbank/ledger-unit/persistence"
 
 	system "github.com/jancajthaml-openbank/actor-system"
 )
@@ -106,12 +107,13 @@ func (state TransactionState) IsNegotiationFinished() bool {
 	return len(state.Negotiation) <= (state.OkResponses + state.FailedResponses)
 }
 
-func (state *TransactionState) Prepare(transaction model.Transaction, requestedBy system.Coordinates) {
+func (state *TransactionState) PrepareNewForTransaction(transaction model.Transaction, requestedBy system.Coordinates) {
 	if state == nil {
 		return
 	}
 	negotiation := transaction.PrepareRemoteNegotiation()
 	state.Transaction = transaction
+	state.Transaction.State = persistence.StatusNew
 	state.Negotiation = negotiation
 	state.ResetMarks()
 	state.Ready = true
