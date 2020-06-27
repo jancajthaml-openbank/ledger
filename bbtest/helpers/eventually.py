@@ -29,3 +29,5 @@ class eventually():
         time.sleep(0.5)
       except Exception as ex:
         raise ex
+    if self.__last_exception:
+      raise self.__last_exception

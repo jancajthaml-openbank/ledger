@@ -20,8 +20,8 @@ class ZMQHelper(threading.Thread):
   def start(self):
     ctx = zmq.Context.instance()
 
-    self.__pull_url = 'tcp://*:5562'
-    self.__pub_url = 'tcp://*:5561'
+    self.__pull_url = 'tcp://127.0.0.1:5562'
+    self.__pub_url = 'tcp://127.0.0.1:5561'
 
     self.__pub = ctx.socket(zmq.PUB)
     self.__pub.bind(self.__pub_url)
@@ -36,9 +36,8 @@ class ZMQHelper(threading.Thread):
     while not self.__cancel.is_set():
       try:
         data = self.__pull.recv(zmq.NOBLOCK)
-        if self.__process_next_message(data):
-          continue
         self.__pub.send(data)
+        self.__process_next_message(data)
         if data[-1] != 93:
           self.__mutex.acquire()
           self.backlog.append(data)
@@ -50,17 +49,16 @@ class ZMQHelper(threading.Thread):
   def __process_next_message(self, data):
     message = data.decode('utf-8')
     if not message.startswith('VaultUnit/'):
-      return False
+      return
 
     m = self.vault_unit_message.match(message)
     if not m:
-      return False
+      return
 
     tenant, sender, account, req_id, kind, transaction, amount, currency = m.groups()
     reply_event = self.context.vault.process_account_event(tenant, account, kind, transaction, amount, currency)
     self.__pub.send('LedgerUnit/{} VaultUnit/{} {} {} {}'.format(sender, tenant, req_id, account, reply_event).encode())
 
-    return True
 
   def send(self, data):
     self.__pub.send(data.encode())

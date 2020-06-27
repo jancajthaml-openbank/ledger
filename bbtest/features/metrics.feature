@@ -41,9 +41,9 @@ Feature: Metrics test
       | rollbackedTransfers             |     0 |
       | transactionFinalizerCronLatency |     0 |
 
-    When  pasive account M1/A with currency EUR exist
-    And   pasive account M1/B with currency EUR exist
-    And   1 EUR is transferred from M1/A to M1/B
+    When  pasive account M2/A with currency EUR exist
+    And   pasive account M2/B with currency EUR exist
+    And   1 EUR is transferred from M2/A to M2/B
 
     Then metrics file /tmp/reports/blackbox-tests/metrics/metrics.M2.json reports:
       | key                             | value |

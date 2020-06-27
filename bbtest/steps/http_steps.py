@@ -3,7 +3,7 @@ import ssl
 import urllib.request
 import json
 import time
-from decimal import Decimal
+import decimal
 import os
 
 
@@ -35,14 +35,14 @@ def create_transfer(context, tenant):
 def transaction_should_not_exist(context, tenant):
   if context.last_transaction_id:
     path = '/data/t_{}/transaction/{}'.format(tenant, context.last_transaction_id)
-    assert os.path.isfile(path) is False
+    assert os.path.isfile(path) is False, "{} exists but should not".format(path)
 
 
 @then('transaction of tenant {tenant} should exist')
 def transaction_should_exist(context, tenant):
   assert context.last_transaction_id
   path = '/data/t_{}/transaction/{}'.format(tenant, context.last_transaction_id)
-  assert os.path.isfile(path) is True
+  assert os.path.isfile(path) is True, "{} does not exists but should".format(path)
 
 
 @when('following transaction is created from tenant {tenant}')
@@ -85,9 +85,9 @@ def create_simple_transfer_with_id(context, amount, currency, tenantFrom, accoun
 def account_balance_should_be(context, tenant, account, amount, currency):
   snapshot = context.vault.get_account(tenant, account)
 
-  assert snapshot
-  assert snapshot['currency'] == currency
-  assert snapshot['balance'] == Decimal(amount)
+  assert snapshot, 'missing snapshot for {}/{}'.format(tenant, account)
+  assert snapshot['currency'] == currency, 'currency mismatch expected {} actual {}'.format(currency, snapshot['currency'])
+  assert snapshot['balance'] == decimal.Decimal(amount), 'balance mismatch expected {} actual {}'.format(decimal.Decimal(amount), snapshot['balance'])
 
 
 @given('vault is empty')

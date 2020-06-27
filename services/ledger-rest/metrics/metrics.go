@@ -51,10 +51,7 @@ func (metrics Metrics) Start() {
 	ticker := time.NewTicker(metrics.refreshRate)
 	defer ticker.Stop()
 
-	if err := metrics.Hydrate(); err != nil {
-		log.Warn(err.Error())
-	}
-
+	metrics.Hydrate()
 	metrics.Persist()
 	metrics.MarkReady()
 

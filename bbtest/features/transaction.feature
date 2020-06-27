@@ -46,7 +46,7 @@ Feature: High level Transaction workflow
     And   T2/B balance should be 0 EUR
 
     When  0.00000000001 EUR is transferred from T1/A to T2/B
-    Then   transaction of tenant T1 should exist
+    Then  transaction of tenant T1 should exist
     And   transaction of tenant T2 should not exist
     And   T1/A balance should be -0.00000000001 EUR
     And   T2/B balance should be 0.00000000001 EUR

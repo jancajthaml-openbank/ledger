@@ -37,8 +37,7 @@ func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 				log.WithField("transaction", state.Transaction.IDTransaction).Warn("Already in progress")
 				return
 			}
-			state.Transaction.State = persistence.StatusNew
-			state.Prepare(msg, context.Sender)
+			state.PrepareNewForTransaction(msg, context.Sender)
 
 		default:
 			s.SendMessage(FatalError, state.ReplyTo, context.Receiver)
@@ -120,22 +119,8 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 			return
 		}
 
-		if state.OkResponses == 0 {
-			s.SendMessage(
-				RespTransactionRefused+" "+state.Transaction.IDTransaction,
-				state.ReplyTo,
-				context.Receiver,
-			)
-			log.WithField("transaction", state.Transaction.IDTransaction).Debug("Promise Rejected All")
-			s.UnregisterActor(context.Sender.Name)
-			return
-		}
-
 		if state.FailedResponses > 0 {
-			log.WithField("transaction", state.Transaction.IDTransaction).Debugf("Promise Rejected Some [total: %d, accepted: %d, rejected: %d]", len(state.Negotiation), state.FailedResponses, state.OkResponses)
-
 			state.Transaction.State = persistence.StatusRejected
-
 			err := persistence.UpdateTransaction(s.Storage, &state.Transaction)
 			if err != nil {
 				log.WithField("transaction", state.Transaction.IDTransaction).Errorf("Promise failed to update transaction %+v", err)
@@ -147,7 +132,20 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 				s.UnregisterActor(context.Sender.Name)
 				return
 			}
+		}
 
+		if state.OkResponses == 0 {
+			s.SendMessage(
+				RespTransactionRefused+" "+state.Transaction.IDTransaction,
+				state.ReplyTo,
+				context.Receiver,
+			)
+			log.WithField("transaction", state.Transaction.IDTransaction).Debug("Promise Rejected All")
+			return
+		}
+
+		if state.FailedResponses > 0 {
+			log.WithField("transaction", state.Transaction.IDTransaction).Debugf("Promise Rejected Some [total: %d, accepted: %d, rejected: %d]", len(state.Negotiation), state.FailedResponses, state.OkResponses)
 			log.WithField("transaction", state.Transaction.IDTransaction).Debug("Promise->Rollback")
 
 			state.ResetMarks()
@@ -171,9 +169,7 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		state.Transaction.State = persistence.StatusAccepted
 
-		// FIXME possible null here
 		err := persistence.UpdateTransaction(s.Storage, &state.Transaction)
-		// FIXME log error
 		if err != nil {
 			s.SendMessage(
 				RespTransactionRefused+" "+state.Transaction.IDTransaction,
