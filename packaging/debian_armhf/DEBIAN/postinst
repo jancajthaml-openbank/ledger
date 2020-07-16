@@ -2,12 +2,6 @@
 
 set -e
 
-if [ "$(ps -o comm -p 1 --no-headers | tr -d ' ')" = "systemd" ] ; then
-  SYSTEMD_AVAIL=true
-else
-  SYSTEMD_AVAIL=false
-fi
-
 enable() {
   wanted_by=$(cat /lib/systemd/system/${1} | sed -n -e 's/^.*WantedBy=//p')
   mkdir -p /etc/systemd/system/${wanted_by}.wants
@@ -24,12 +18,10 @@ case "$1" in
       enable ledger.service
       enable ledger-rest.service
 
-      if [ ${SYSTEMD_AVAIL} ] ; then
-        (systemctl daemon-reload || :)
-        (systemctl start ledger.service || :)
-        (systemctl start ledger.path || :)
-      fi
-
+      (systemctl daemon-reload >/dev/null 2>&1 || :)
+      (systemctl start ledger.service >/dev/null 2>&1 || :)
+      (systemctl start ledger-rest.service >/dev/null 2>&1 || :)
+      (systemctl start ledger.path >/dev/null 2>&1 || :)
     else
       (>&2 echo "/etc/init/ledger.conf file not found")
       exit 1

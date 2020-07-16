@@ -11,7 +11,7 @@ from datetime import datetime
 def check_transaction_state(context, tenant, transaction):
 
   path = '/data/t_{}/transaction/{}'.format(tenant, transaction)
-  assert os.path.isfile(path) is True
+  assert os.path.isfile(path) is True, 'file {} does not exists'.format(path)
 
   actual = dict()
   with open(path, 'r') as fd:
