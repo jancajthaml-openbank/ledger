@@ -20,4 +20,4 @@ TimeoutSec=infinity
 KillMode=process
 
 [Install]
-WantedBy=ledger.service
+WantedBy=multi-user.target

@@ -39,7 +39,7 @@ def step_impl(context):
   result = [item.split(' ')[0].strip() for item in result.split('\n')]
   result = [item for item in result if item in items]
 
-  assert len(result) > 0
+  assert len(result) > 0, 'units not found'
 
 
 @given('systemctl does not contain following active units')
@@ -57,7 +57,7 @@ def step_impl(context):
   result = [item.split(' ')[0].strip() for item in result.split('\n')]
   result = [item for item in result if item in items]
 
-  assert len(result) == 0, result
+  assert len(result) == 0, 'units found'
 
 
 @given('unit "{unit}" is running')

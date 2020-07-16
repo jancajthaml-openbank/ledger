@@ -12,7 +12,6 @@ def before_all(context):
   context.unit = UnitHelper(context)
   context.zmq = ZMQHelper(context)
   context.vault = VaultHelper(context)
-  os.system('mkdir -p /tmp/reports /tmp/reports/blackbox-tests /tmp/reports/blackbox-tests/logs /tmp/reports/blackbox-tests/metrics /tmp/reports/blackbox-tests/data')
   os.system('rm -rf /tmp/reports/blackbox-tests/logs/*.log /tmp/reports/blackbox-tests/metrics/*.json /tmp/reports/blackbox-tests/data/*')
   context.zmq.start()
   context.unit.download()

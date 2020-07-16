@@ -10,7 +10,7 @@ from helpers.eventually import eventually
 def file_should_exist(context, path):
   @eventually(2)
   def impl():
-    assert os.path.isfile(path) is True
+    assert os.path.isfile(path) is True, 'file {} does not exists'.format(path)
   impl()
 
 

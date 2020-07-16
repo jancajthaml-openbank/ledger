@@ -2,12 +2,6 @@
 
 set -e
 
-if [ "$(ps -o comm -p 1 --no-headers | tr -d ' ')" = "systemd" ] ; then
-  SYSTEMD_AVAIL=true
-else
-  SYSTEMD_AVAIL=false
-fi
-
 delete() {
   if [ -f "${1}" ] ; then
     rm "${1}"
@@ -37,29 +31,18 @@ case "$1" in
   purge)
     delete_service_files
     delete_displace_files
-
-    if [ ${SYSTEMD_AVAIL} ] ; then
-      (systemctl daemon-reload || :)
-      (systemctl reset-failed || :)
-    fi
+    (systemctl daemon-reload >/dev/null 2>&1 || :)
+    (systemctl reset-failed >/dev/null 2>&1 || :)
   ;;
 
   remove)
-    if [ ${SYSTEMD_AVAIL} ] ; then
-      (systemctl -a -t service --no-legend  | awk '$1 ~ /ledger/ { print $1 }' | xargs -I {} systemctl stop {} 2> /dev/null || :)
-    fi
-
+    (systemctl -a -t service --no-legend  | awk '$1 ~ /ledger/ { print $1 }' | xargs -I {} systemctl stop {} 2> /dev/null || :)
     delete_displace_files
-
-    if [ ${SYSTEMD_AVAIL} ] ; then
-      (systemctl daemon-reload || :)
-    fi
+    (systemctl daemon-reload >/dev/null 2>&1 || :)
   ;;
 
   upgrade|deconfigure)
-    if [ ${SYSTEMD_AVAIL} ] ; then
-      (systemctl stop ledger 2> /dev/null || :)
-    fi
+    (systemctl stop ledger >/dev/null 2>&1 || :)
   ;;
 
   remove|failed-upgrade|abort-install|abort-upgrade|disappear)
