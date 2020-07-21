@@ -15,8 +15,7 @@ all: bootstrap sync test package bbtest
 
 .PHONY: package
 package:
-	@$(MAKE) bundle-binaries-amd64
-	@$(MAKE) bundle-debian-amd64
+	@$(MAKE) package-amd64
 	@$(MAKE) bundle-docker
 
 .PHONY: package-%
@@ -73,7 +72,7 @@ bbtest:
 			--cpuset-cpus=1 \
 			--name=ledger_bbtest_amd64 \
 			-e IMAGE_VERSION="$(VERSION)-$(META)" \
-			-e UNIT_VERSION="$(VERSION)+$(META)" \
+			-e UNIT_VERSION="$(VERSION)" \
 			-e UNIT_ARCH=amd64 \
 			-v /var/run/docker.sock:/var/run/docker.sock:rw \
 			-v /var/lib/docker/containers:/var/lib/docker/containers:rw \

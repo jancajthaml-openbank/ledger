@@ -1,0 +1,7 @@
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: Vault
+Upstream-Contact: Jan Cajthaml <jan.cajthaml@gmail.com>
+Source: https://github.com/jancajthaml-openbank/ledger
+
+Copyright: 2020 Jan Cajthaml <jan.cajthaml@gmail.com>
+License: Apache

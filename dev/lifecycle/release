@@ -3,32 +3,20 @@
 set -eu
 trap exit INT TERM
 
+################################################################################
+
 VERSION=""
 ACCESS_TOKEN=""
-
 while [ $# -gt 0 ] ; do
 key="$1"
-
 case $key in
-
-  -v|--version)
-    VERSION="$2"
-    shift
-    shift
-  ;;
-
-  -t|--token)
-    ACCESS_TOKEN="$2"
-    shift
-    shift
-  ;;
-
-  *)
-    shift
-  ;;
-
+  -v|--version) VERSION="$2";       shift; shift; ;;
+  -t|--token)   ACCESS_TOKEN="$2";  shift; shift; ;;
+  *)                                shift;        ;;
 esac
 done
+
+################################################################################
 
 if [ ! "${VERSION}" ] ; then
   (>&2 echo "[error] version not provided")
@@ -40,6 +28,8 @@ if [ ! "${ACCESS_TOKEN}" ] ; then
   exit 1
 fi
 
+################################################################################
+
 REPO=$(git ls-remote --get-url)
 REPO=${REPO%.git}
 REPO=${REPO#*:}
@@ -49,6 +39,8 @@ REPO=${REPO#/}
 REPO=${REPO#github.com}
 REPO=${REPO#/}
 REPO=${REPO}
+
+################################################################################
 
 echo "[info] start release of ${REPO}:${VERSION}"
 

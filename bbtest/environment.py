@@ -1,3 +1,4 @@
+
 import os
 from helpers.unit import UnitHelper
 from helpers.zmq import ZMQHelper
@@ -21,4 +22,5 @@ def before_all(context):
 def after_all(context):
   context.unit.teardown()
   context.zmq.stop()
-  os.system('cp -r /data/* /tmp/reports/blackbox-tests/data/')
+  if os.path.isdir('/data'):
+    os.system('cp -r /data/* /tmp/reports/blackbox-tests/data/')

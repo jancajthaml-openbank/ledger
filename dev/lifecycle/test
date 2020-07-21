@@ -3,32 +3,20 @@
 set -e
 trap exit INT TERM
 
+################################################################################
+
 TARGET_PACKAGE=""
 OUTPUT=""
-
 while [ $# -gt 0 ] ; do
 key="$1"
-
 case $key in
-
-  --pkg)
-    TARGET_PACKAGE="$2"
-    shift
-    shift
-  ;;
-
-  --output)
-    OUTPUT="$2"
-    shift
-    shift
-  ;;
-
-  *)
-    shift
-  ;;
-
+  --pkg)    TARGET_PACKAGE="$2";  shift; shift; ;;
+  --output) OUTPUT="$2";          shift; shift; ;;
+  *)                              shift;        ;;
 esac
 done
+
+################################################################################
 
 if [ -z "${TARGET_PACKAGE}" ] ; then
   (>&2 echo "[error] target package not provided")
@@ -40,39 +28,57 @@ if [ -z "${OUTPUT}" ] ; then
   exit 1
 fi
 
-coverage_out=$(tempfile)
-test_out=$(tempfile)
+################################################################################
 
-mkdir -p ${OUTPUT} ${OUTPUT}/unit-tests
-cd ${GOPATH}/src/github.com/jancajthaml-openbank/${TARGET_PACKAGE}
+lifecycle::go::test() {
+  local dir="$1"
+  if [ -z ${dir} -o ! -d ${dir} ] ; then
+    return
+  fi
+  local output="$2"
+  local target=$(basename $dir)
 
-# run unit tests and collect coverage
+  coverage_out=$(tempfile)
+  test_out=$(tempfile)
 
-2>&1 GOMAXPROCS=1 \
-  grc go test \
-  -v ./... \
-  -coverprofile=${coverage_out} \
-  -coverpkg=./... \
-  -timeout=20s | tee ${test_out}
+  mkdir -p ${output}
 
-# remove anscii colors from file
-sed -i 's/\x1b\[[0-9;]*m//g' ${test_out}
+  # run unit tests and collect coverage
+  cd ${dir} && \
+  \
+  2>&1 GOMAXPROCS=1 \
+    grc go test \
+    -v ./... \
+    -coverprofile=${coverage_out} \
+    -coverpkg=./... \
+    -timeout=10s | tee ${test_out}
 
-go2xunit \
-  -fail \
-  -input ${test_out} \
-  -output ${OUTPUT}/unit-tests/${TARGET_PACKAGE}-results.xml
+  # remove anscii colors from file
+  sed -i 's/\x1b\[[0-9;]*m//g' ${test_out}
 
-go tool cover \
-  --html=${coverage_out} \
-  -o ${OUTPUT}/unit-tests/${TARGET_PACKAGE}-coverage.html
+  go2xunit \
+    -fail \
+    -input ${test_out} \
+    -output ${output}/${target}-results.xml
 
-# run only benchmarks
+  go tool cover \
+    --html=${coverage_out} \
+    -o ${output}/${target}-coverage.html
 
-GOMAXPROCS=1 \
-  grc go test \
-  -v ./... \
-  -run=^$ \
-  -bench=. \
-  -benchmem \
-  -timeout=1m
+  # run only benchmarks
+  cd ${dir} && \
+  \
+  GOMAXPROCS=1 \
+    grc go test \
+    -v ./... \
+    -run=^$ \
+    -bench=. \
+    -benchmem \
+    -timeout=1m
+}
+
+################################################################################
+
+lifecycle::go::test \
+  ${GOPATH}/src/github.com/jancajthaml-openbank/${TARGET_PACKAGE} \
+  ${OUTPUT}/unit-tests

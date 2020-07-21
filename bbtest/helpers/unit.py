@@ -112,8 +112,8 @@ class UnitHelper(object):
     if params:
       options.update(params)
 
-    os.makedirs("/etc/init", exist_ok=True)
-    with open('/etc/init/ledger.conf', 'w') as fd:
+    os.makedirs("/etc/ledger/conf.d", exist_ok=True)
+    with open('/etc/ledger/conf.d/init.conf', 'w') as fd:
       for k, v in sorted(options.items()):
         fd.write('LEDGER_{}={}\n'.format(k, v))
 
