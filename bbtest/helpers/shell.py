@@ -53,8 +53,8 @@ def execute(command, timeout=20) -> None:
     (result, error) = p.communicate()
     deadline.cancel()
 
-    result = result.decode('utf-8').strip() if result else None
-    error = error.decode('utf-8').strip() if error else None
+    result = result.decode('utf-8').strip() if result else ''
+    error = error.decode('utf-8').strip() if error else ''
     code = p.returncode
 
     del p

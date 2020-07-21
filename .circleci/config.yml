@@ -379,6 +379,7 @@ jobs:
             VERSION=$(cat /home/circleci/project/TAG_VERSION)
             /home/circleci/project/dev/lifecycle/debian \
               --arch amd64 \
+              --pkg ledger \
               --version ${VERSION} \
               --source /home/circleci/project/packaging
           no_output_timeout: 5m
@@ -408,6 +409,7 @@ jobs:
             VERSION=$(cat /home/circleci/project/TAG_VERSION)
             /home/circleci/project/dev/lifecycle/debian \
               --arch armhf \
+              --pkg ledger \
               --version ${VERSION} \
               --source /home/circleci/project/packaging
           no_output_timeout: 5m
@@ -437,6 +439,7 @@ jobs:
             VERSION=$(cat /home/circleci/project/TAG_VERSION)
             /home/circleci/project/dev/lifecycle/debian \
               --arch arm64 \
+              --pkg ledger \
               --version ${VERSION} \
               --source /home/circleci/project/packaging
           no_output_timeout: 5m

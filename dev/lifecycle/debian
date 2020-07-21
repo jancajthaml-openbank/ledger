@@ -8,11 +8,13 @@ trap exit INT TERM
 VERSION=""
 SOURCE=""
 TARGET_ARCHITECTURE=""
+TARGET_PACKAGE=""
 while [ $# -gt 0 ] ; do
 key="$1"
 case $key in
   --source)   SOURCE="$2";              shift; shift; ;;
   --arch)     TARGET_ARCHITECTURE="$2"; shift; shift; ;;
+  --pkg)      TARGET_PACKAGE="$2";      shift; shift; ;;
   --version)  VERSION="$2";             shift; shift; ;;
   *)                                    shift;        ;;
 esac
@@ -30,6 +32,11 @@ if [ -z "${SOURCE}" ] ; then
   exit 1
 fi
 
+if [ -z "${TARGET_PACKAGE}" ] ; then
+  (>&2 echo "[error] target package not provided")
+  exit 1
+fi
+
 if [ -z "${TARGET_ARCHITECTURE}" ] ; then
   (>&2 echo "target architecture not provided (use e.g. --arch amd64)")
   exit 1
@@ -38,6 +45,8 @@ fi
 ################################################################################
 
 lifecycle::debian::generate_changelog() {
+  echo "[info] (${TARGET_PACKAGE}_${TARGET_ARCHITECTURE}) generating changelog"
+
   target="${SOURCE}/debian/changelog"
 
   if [ -f ${target} ] ; then
@@ -61,7 +70,7 @@ lifecycle::debian::generate_changelog() {
     DATE=$(git log -1 --format=%cD ${tag_to})
     commits=$(echo "$(git log --no-merges --pretty=oneline --pretty=format:%s ^${tag_from} ${tag_to})" | sed '/^[[:space:]]*$/d' | uniq)
     if [[ -n "${commits// }" ]] ; then
-      echo "ledger (${tag_to#v}) stable; urgency=medium" >> ${target}
+      echo "${TARGET_PACKAGE} (${tag_to#v}) stable; urgency=medium" >> ${target}
       echo "" >> ${target}
       echo "${commits}" | \
       while read note ; do
@@ -74,10 +83,13 @@ lifecycle::debian::generate_changelog() {
     fi
   done
 
+  echo "[info] (${TARGET_PACKAGE}_${TARGET_ARCHITECTURE}) checking misspell"
+
   /go/bin/misspell -q -locale US -source=text -w ${target}
 }
 
 lifecycle::debian::package() {
+  echo "[info] (${TARGET_PACKAGE}_${TARGET_ARCHITECTURE}) running dpkg-buildpackage"
   local CC=gcc
   case ${TARGET_ARCHITECTURE} in
     armhf) CC=arm-linux-gnueabihf-gcc ;;
@@ -92,11 +104,12 @@ lifecycle::debian::package() {
     --host-arch=${TARGET_ARCHITECTURE} \
     -tc -uc -b -rfakeroot
 
-  find ".." -name "ledger_*_${TARGET_ARCHITECTURE}.*" -exec mv {} bin/ \;
+  find ".." -name "${TARGET_PACKAGE}_*_${TARGET_ARCHITECTURE}.*" -exec mv {} bin/ \;
 }
 
 lifecycle::lintian() {
-  find bin -name "ledger_*_${TARGET_ARCHITECTURE}.deb" -exec fakeroot lintian --pedantic {} \;
+  echo "[info] (${TARGET_PACKAGE}_${TARGET_ARCHITECTURE}) running lintian"
+  find bin -name "${TARGET_PACKAGE}_*_${TARGET_ARCHITECTURE}.deb" -exec fakeroot lintian --pedantic {} \;
 }
 
 ################################################################################
