@@ -25,10 +25,9 @@ class eventually():
     while deadline > time.monotonic():
       try:
         return self.__block(*args, **kwargs)
-      except AssertionError as ex:
+      except (Exception, AssertionError) as ex:
         self.__last_exception = ex
         time.sleep(0.5)
-      except Exception as ex:
-        raise ex
+
     if self.__last_exception:
       raise self.__last_exception
