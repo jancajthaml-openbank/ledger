@@ -1,4 +1,5 @@
 .git
 .circleci
 .dependabot
-packaging/debian_*/openbank
+packaging/debian/target
+services/*/vendor

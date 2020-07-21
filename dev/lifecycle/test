@@ -46,7 +46,7 @@ lifecycle::go::test() {
   # run unit tests and collect coverage
   cd ${dir} && \
   \
-  2>&1 GOMAXPROCS=1 \
+  GOMAXPROCS=1 \
     grc go test \
     -v ./... \
     -coverprofile=${coverage_out} \

@@ -35,6 +35,7 @@ if __name__ == "__main__":
     '/tmp/reports/blackbox-tests/cucumber'
   ]:
     os.system('mkdir -p {}'.format(path))
+    os.system('rm -rf {}/*'.format(path))
 
   from behave import __main__ as behave_executable
   exit_code = behave_executable.main(args=' '.join(args))

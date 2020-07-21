@@ -1,3 +1,5 @@
 vendor
 reports
-*.pyc
+*.deb
+*.buildinfo
+*.changes
