@@ -1,0 +1,52 @@
+#!/usr/bin/make -f
+
+ifeq (${DEB_HOST_ARCH},amd64)
+  OBJ_STRIP = objcopy
+else ifeq (${DEB_HOST_ARCH},arm64)
+  OBJ_STRIP = aarch64-linux-gnu-objcopy
+else ifeq (${DEB_HOST_ARCH},armhf)
+	OBJ_STRIP = arm-linux-gnueabihf-objcopy
+else
+	OBJ_STRIP = objcopy
+endif
+
+export DH_VERBOSE = 1
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+SUBSTVARS = -Vshlibs:Depends="libc6"
+
+%:
+	dh $@ -P debian/target/${DEB_HOST_ARCH} --with=systemd
+
+override_dh_systemd_enable:
+	dh_systemd_enable -pledger --name=ledger ledger.path
+	dh_systemd_enable -pledger --name=ledger ledger.service
+	dh_systemd_enable -pledger --name=ledger-rest ledger-rest.service
+	dh_systemd_enable -pledger --name=ledger-unit@ ledger-unit@.service
+
+override_dh_systemd_start:
+	dh_systemd_start -pledger --name=ledger ledger.path
+	dh_systemd_start -pledger --name=ledger ledger.service
+	dh_systemd_start -pledger --name=ledger-rest ledger-rest.service
+
+override_dh_installinit:
+	dh_installinit -pledger --noscripts
+	@mv \
+		debian/target/${DEB_HOST_ARCH}/usr/bin/ledger-rest-* \
+		debian/target/${DEB_HOST_ARCH}/usr/bin/ledger-rest
+	@mv \
+		debian/target/${DEB_HOST_ARCH}/usr/bin/ledger-unit-* \
+		debian/target/${DEB_HOST_ARCH}/usr/bin/ledger-unit
+
+override_dh_strip:
+	$(OBJ_STRIP) --strip-unneeded debian/target/${DEB_HOST_ARCH}/usr/bin/ledger-rest
+	$(OBJ_STRIP) --strip-unneeded debian/target/${DEB_HOST_ARCH}/usr/bin/ledger-unit
+
+override_dh_gencontrol:
+	dh_gencontrol -- $(SUBSTVARS)
+
+clean:
+	rm -f debian/debhelper-build-stamp || :
+	rm -f debian/files || :
+	rm -rf debian/*.debhelper* || :
+	rm -rf debian/*.substvars || :

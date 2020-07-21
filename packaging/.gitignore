@@ -1,4 +1,2 @@
 bin
-debian_*/usr/bin
-debian_*/usr/share/doc/*/*.gz
-debian_*/usr/share/man/man8/*.8.gz
+debian/target

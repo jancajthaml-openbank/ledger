@@ -3,11 +3,36 @@
 set -eu
 trap exit INT TERM
 
+################################################################################
+
 TARGET_ARCHITECTURE="linux/amd64"
 TARGET_PACKAGE=""
 OUTPUT=""
+while [ $# -gt 0 ] ; do
+key="$1"
+case $key in
+  --arch)   TARGET_ARCHITECTURE="$2"; shift; shift; ;;
+  --pkg)    TARGET_PACKAGE="$2";      shift; shift; ;;
+  --output) OUTPUT="$2";              shift; shift; ;;
+  *)                                  shift;        ;;
+esac
+done
 
-package_service() {
+################################################################################
+
+if [ -z "${TARGET_PACKAGE}" ] ; then
+  (>&2 echo "[error] target package not provided")
+  exit 1
+fi
+
+if [ -z "${OUTPUT}" ] ; then
+  (>&2 echo "[error] output not provided")
+  exit 1
+fi
+
+################################################################################
+
+lifecycle::go::build() {
   local working_dir=${GOPATH}/src/github.com/jancajthaml-openbank/${TARGET_PACKAGE}
   local arch=${TARGET_ARCHITECTURE#*/}
   local platform=${TARGET_ARCHITECTURE%%/*}
@@ -31,42 +56,39 @@ package_service() {
       GOARM=7 \
       GOARCH=arm \
       CGO_ENABLED=1 \
+      GOFLAGS=-buildmode=pie \
       CC=arm-linux-gnueabihf-gcc \
       \
       go build -a -o ${output} || {
         (>&2 echo "[error] (${platform}/${arch}) unable to build")
         exit 1
       }
-
-      arm-linux-gnueabihf-objcopy --strip-unneeded ${output} ${output}
     ;;
 
     arm64)
       GOOS=${platform} \
       GOARCH=arm64 \
       CGO_ENABLED=1 \
+      GOFLAGS=-buildmode=pie \
       CC=aarch64-linux-gnu-gcc \
       \
       go build -a -o ${output} || {
         (>&2 echo "[error] (${platform}/${arch}) unable to build")
         exit 1
       }
-
-      aarch64-linux-gnu-objcopy --strip-unneeded ${output} ${output}
     ;;
 
     amd64)
       GOOS=${platform} \
       GOARCH=amd64 \
       CGO_ENABLED=1 \
+      GOFLAGS=-buildmode=pie \
       CC=gcc \
       \
       go build -a -o ${output} || {
         (>&2 echo "[error] (${platform}/${arch}) unable to build")
         exit 1
       }
-
-      objcopy --strip-unneeded ${output} ${output}
     ;;
 
     *)
@@ -77,54 +99,11 @@ package_service() {
   esac
 
   chmod +x ${output}
-
-  echo "[info] (${platform}/${arch}) check"
-
-  objdump -p ${output}
-  file ${output}
   du -hs ${output}
 
   echo "[info] (${platform}/${arch}) done"
 }
 
-while [ $# -gt 0 ] ; do
-key="$1"
+################################################################################
 
-case $key in
-
-  --arch)
-    TARGET_ARCHITECTURE="$2"
-    shift
-    shift
-  ;;
-
-  --pkg)
-    TARGET_PACKAGE="$2"
-    shift
-    shift
-  ;;
-
-  --output)
-    OUTPUT="$2"
-    shift
-    shift
-  ;;
-
-  *)
-    shift
-  ;;
-
-esac
-done
-
-if [ -z "${TARGET_PACKAGE}" ] ; then
-  (>&2 echo "[error] target package not provided")
-  exit 1
-fi
-
-if [ -z "${OUTPUT}" ] ; then
-  (>&2 echo "[error] output not provided")
-  exit 1
-fi
-
-package_service
+lifecycle::go::build

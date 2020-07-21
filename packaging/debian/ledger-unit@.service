@@ -1,0 +1,24 @@
+[Unit]
+Description=openbank transaction ledger tenant %i
+PartOf=ledger.service
+After=ledger.service
+ConditionPathExists=/etc/ledger/conf.d/init.conf
+
+[Service]
+Type=notify
+Environment=LEDGER_TENANT=%i
+EnvironmentFile=/etc/ledger/conf.d/init.conf
+StartLimitBurst=0
+ExecStart=/usr/bin/ledger-unit %i
+StandardInput=null
+LimitNOFILE=1048576
+LimitNPROC=infinity
+LimitCORE=infinity
+Restart=always
+RestartSec=0
+TimeoutStartSec=0
+TimeoutSec=infinity
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,3 @@
+bin/ledger-rest-linux-arm64 usr/bin
+bin/ledger-unit-linux-arm64 usr/bin
+init.conf etc/ledger/conf.d

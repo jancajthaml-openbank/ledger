@@ -1,0 +1,26 @@
+#!/bin/sh
+set -e
+
+#DEBHELPER#
+if [ "$1" = install -o "$1" = upgrade ] && [ -f /etc/ledger/conf.d/init.conf ] ; then
+  secrets=$(sed -n -e 's/^.*LEDGER_SECRETS=//p' /etc/ledger/conf.d/init.conf 2>/dev/null | awk '{gsub(/^ +| +$/,"")} {print $0}')
+
+  if [ -z "${secrets}" ] ; then
+    (>&2 echo "LEDGER_SECRETS are not defined at /etc/ledger/conf.d/init.conf")
+    exit 1
+  fi
+
+  if [ ! -f "${secrets}/domain.local.crt" ] || [ ! -f "${secrets}/domain.local.key" ] ; then
+    mkdir -p "${secrets}"
+
+    openssl req \
+      -x509 \
+      -nodes \
+      -newkey rsa:2048 \
+      -keyout "${secrets}/domain.local.key" \
+      -out "${secrets}/domain.local.crt" \
+      -days 1 \
+      -subj "/C=CZ/ST=Czechia/L=Prague/O=OpenBanking/OU=IT/CN=localhost/emailAddress=jan.cajthaml@gmail.com"
+    echo "generated temporary certificates at ${secrets} valid for 24 hours"
+  fi
+fi

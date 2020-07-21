@@ -202,7 +202,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Update DOCKER_VERSION + DEBIAN_VERSION
+          name: Update DOCKER_VERSION + TAG_VERSION
           command: |
             if [ -z ${CIRCLE_TAG} ] ; then
               tags=$(git tag --sort=-v:refname | head -1)
@@ -213,22 +213,18 @@ jobs:
               fi
               META=$(echo -e ${CIRCLE_BRANCH} | sed 's:.*/::')
               echo -e "${VERSION#v}" > /home/circleci/project/TAG_VERSION
-              echo -e "${VERSION}+${META}" > /home/circleci/project/DEBIAN_VERSION
               echo -e "${VERSION}-${META}" > /home/circleci/project/DOCKER_VERSION
             else
               echo -e "${CIRCLE_TAG#v}" > /home/circleci/project/TAG_VERSION
-              echo -e "${CIRCLE_TAG}" > /home/circleci/project/DEBIAN_VERSION
               echo -e "${CIRCLE_TAG}" > /home/circleci/project/DOCKER_VERSION
             fi
 
             cat /home/circleci/project/TAG_VERSION
-            cat /home/circleci/project/DEBIAN_VERSION
             cat /home/circleci/project/DOCKER_VERSION
       - save_cache:
           key: versions-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - /home/circleci/project/TAG_VERSION
-            - /home/circleci/project/DEBIAN_VERSION
             - /home/circleci/project/DOCKER_VERSION
 
   # -------------------------------------------------------------------------- #
@@ -380,7 +376,7 @@ jobs:
       - run:
           name: Package for debian
           command: |
-            VERSION=$(cat /home/circleci/project/DEBIAN_VERSION)
+            VERSION=$(cat /home/circleci/project/TAG_VERSION)
             /home/circleci/project/dev/lifecycle/debian \
               --arch amd64 \
               --version ${VERSION} \
@@ -409,7 +405,7 @@ jobs:
       - run:
           name: Package for debian
           command: |
-            VERSION=$(cat /home/circleci/project/DEBIAN_VERSION)
+            VERSION=$(cat /home/circleci/project/TAG_VERSION)
             /home/circleci/project/dev/lifecycle/debian \
               --arch armhf \
               --version ${VERSION} \
@@ -438,7 +434,7 @@ jobs:
       - run:
           name: Package for debian
           command: |
-            VERSION=$(cat /home/circleci/project/DEBIAN_VERSION)
+            VERSION=$(cat /home/circleci/project/TAG_VERSION)
             /home/circleci/project/dev/lifecycle/debian \
               --arch arm64 \
               --version ${VERSION} \
@@ -537,7 +533,7 @@ jobs:
           name: Run blackbox tests
           command: |
             IMAGE_VERSION=$(cat /home/circleci/project/DOCKER_VERSION)
-            UNIT_VERSION=$(cat /home/circleci/project/DEBIAN_VERSION)
+            UNIT_VERSION=$(cat /home/circleci/project/TAG_VERSION)
 
             docker exec -it $(\
               docker run -d -t \
@@ -545,7 +541,7 @@ jobs:
                 -e IMAGE_VERSION="${IMAGE_VERSION}" \
                 -e UNIT_VERSION="${UNIT_VERSION}" \
                 -e UNIT_ARCH=amd64 \
-                -e NO_TTY=1 \
+                -e CI=1 \
                 -v /tmp/reports:/reports/bbtest \
                 -v /sys/fs/cgroup:/sys/fs/cgroup:ro \
                 -v /var/run/docker.sock:/var/run/docker.sock \

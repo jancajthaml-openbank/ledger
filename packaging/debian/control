@@ -1,0 +1,13 @@
+Source: ledger
+Maintainer: Jan Cajthaml <jan.cajthaml@gmail.com>
+Section: misc
+Priority: optional
+Build-Depends: debhelper (>= 10)
+Standards-Version: 4.1.4
+
+Package: ledger
+Architecture: any
+Description: transaction ledger for openbank
+ Service holding transaction journal for OpenBank services.
+Depends: libzmq5 (>= 4.2.1~), openssl (>= 1.1~), ${shlibs:Depends}
+

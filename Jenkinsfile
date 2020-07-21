@@ -20,7 +20,7 @@ def bbtestOptions() {
     options += "-e IMAGE_VERSION=${env.GIT_COMMIT} "
     options += "-e UNIT_VERSION=${env.VERSION_MAIN}+${env.VERSION_META} "
     options += "-e UNIT_ARCH=amd64 "
-    options += "-e NO_TTY=1 "
+    options += "-e CI=1 "
     options += "-v ${HOME}@tmp:/tmp "
     options += "-v ${HOME}/reports:/tmp/reports "
     options += "-v ${HOME}:${HOME} "

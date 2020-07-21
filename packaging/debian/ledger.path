@@ -1,0 +1,12 @@
+[Unit]
+Description=openbank transaction ledger services namespace
+PartOf=ledger.service
+ConditionPathExists=/etc/ledger/conf.d/init.conf
+
+[Path]
+PathChanged=/etc/ledger/conf.d/init.conf
+PathModified=/etc/ledger/conf.d/init.conf
+Unit=ledger.service
+
+[Install]
+WantedBy=ledger.service
