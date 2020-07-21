@@ -1,1 +1,3 @@
 junit.xml
+*.pyc
+__pycache__
