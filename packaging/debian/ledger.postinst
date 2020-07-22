@@ -1,7 +1,6 @@
 #!/bin/sh
 set -e
 
-#DEBHELPER#
 if [ "$1" = install -o "$1" = upgrade ] && [ -f /etc/ledger/conf.d/init.conf ] ; then
   secrets=$(sed -n -e 's/^.*LEDGER_SECRETS=//p' /etc/ledger/conf.d/init.conf 2>/dev/null | awk '{gsub(/^ +| +$/,"")} {print $0}')
 
@@ -24,3 +23,5 @@ if [ "$1" = install -o "$1" = upgrade ] && [ -f /etc/ledger/conf.d/init.conf ] ;
     echo "generated temporary certificates at ${secrets} valid for 24 hours"
   fi
 fi
+
+#DEBHELPER#
