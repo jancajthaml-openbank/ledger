@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import os
@@ -30,6 +30,7 @@ if __name__ == "__main__":
   for path in [
     '/tmp/reports/blackbox-tests/metrics',
     '/tmp/reports/blackbox-tests/logs',
+    '/tmp/reports/blackbox-tests/meta',
     '/tmp/reports/blackbox-tests/data',
     '/tmp/reports/blackbox-tests/behave',
     '/tmp/reports/blackbox-tests/cucumber'

@@ -8,7 +8,6 @@ services:
 
   go:
     image: jancajthaml/go
-    tty: true
     volumes:
       - .:/project
       - ./services/ledger-unit:/go/src/github.com/jancajthaml-openbank/ledger-unit
@@ -20,6 +19,7 @@ services:
       - GOPATH=/go
       - COMPOSE_PROJECT_NAME
     entrypoint: ["go"]
+    tty: true
 
   # -------------------------------------------------------------------------- #
 
@@ -71,10 +71,18 @@ services:
 
   # -------------------------------------------------------------------------- #
 
-  artifacts:
-    build:
-      dockerfile: Dockerfile
-      context: .
-    image: openbank/ledger
+  bbtest:
+    image: jancajthaml/bbtest:amd64
+    environment:
+      IMAGE_VERSION: ${VERSION:-latest}-${META:-master}
+      UNIT_VERSION: ${VERSION:-latest}
+      UNIT_ARCH: amd64
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:rw
+      - /var/lib/docker/containers:/var/lib/docker/containers:rw
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - ./bbtest:/opt/app
+      - ./reports:/tmp/reports
+    working_dir: /opt/app
 
 # ---------------------------------------------------------------------------- #
