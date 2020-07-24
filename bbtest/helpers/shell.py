@@ -28,7 +28,7 @@ class Deadline(threading.Thread):
     self.join()
 
 
-def execute(command, timeout=20) -> None:
+def execute(command, timeout=60) -> None:
   try:
     p = subprocess.Popen(
       command,

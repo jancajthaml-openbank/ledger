@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import os
@@ -16,12 +16,10 @@ def before_all(context):
   context.zmq = ZMQHelper(context)
   context.vault = VaultHelper(context)
   context.zmq.start()
-  context.unit.download()
   context.unit.configure()
+  context.unit.download()
 
 
 def after_all(context):
   context.unit.teardown()
   context.zmq.stop()
-  if os.path.isdir('/data'):
-    os.system('cp -r /data/* /tmp/reports/blackbox-tests/data/')

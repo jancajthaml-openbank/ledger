@@ -48,5 +48,6 @@ override_dh_gencontrol:
 clean:
 	rm -f debian/debhelper-build-stamp || :
 	rm -f debian/files || :
+	rm -rf debian/target/${DEB_HOST_ARCH} || :
 	rm -rf debian/*.debhelper* || :
 	rm -rf debian/*.substvars || :

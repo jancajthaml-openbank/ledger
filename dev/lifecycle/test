@@ -51,10 +51,8 @@ lifecycle::go::test() {
     -v ./... \
     -coverprofile=${coverage_out} \
     -coverpkg=./... \
-    -timeout=10s | tee ${test_out}
-
-  # remove anscii colors from file
-  sed -i 's/\x1b\[[0-9;]*m//g' ${test_out}
+    -timeout=10s \
+  | tee ${test_out}
 
   go2xunit \
     -fail \

@@ -66,20 +66,6 @@ release:
 
 .PHONY: bbtest
 bbtest:
-	@(docker rm -f $$(docker ps -a --filter="name=ledger_bbtest_amd64" -q) &> /dev/null || :)
-	@docker exec -t $$(\
-		docker run -d \
-			--cpuset-cpus=1 \
-			--name=ledger_bbtest_amd64 \
-			-e IMAGE_VERSION="$(VERSION)-$(META)" \
-			-e UNIT_VERSION="$(VERSION)" \
-			-e UNIT_ARCH=amd64 \
-			-v /var/run/docker.sock:/var/run/docker.sock:rw \
-			-v /var/lib/docker/containers:/var/lib/docker/containers:rw \
-			-v /sys/fs/cgroup:/sys/fs/cgroup:ro \
-			-v $$(pwd)/bbtest:/opt/app \
-			-v $$(pwd)/reports:/tmp/reports \
-			-w /opt/app \
-		jancajthaml/bbtest:amd64 \
-	) python3 /opt/app/main.py
-	@(docker rm -f $$(docker ps -a --filter="name=ledger_bbtest_amd64" -q) &> /dev/null || :)
+	@META=$(META) VERSION=$(VERSION) docker-compose up -d bbtest
+	@docker exec -t $$(docker-compose ps -q bbtest) python3 /opt/app/main.py
+	@docker-compose down -v
