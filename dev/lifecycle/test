@@ -47,12 +47,12 @@ lifecycle::go::test() {
   cd ${dir} && \
   \
   GOMAXPROCS=1 \
-    grc go test \
+  go test \
     -v ./... \
     -coverprofile=${coverage_out} \
     -coverpkg=./... \
     -timeout=10s \
-  | tee ${test_out}
+  | grc tee ${test_out}
 
   go2xunit \
     -fail \
