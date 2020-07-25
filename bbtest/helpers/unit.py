@@ -16,10 +16,10 @@ class UnitHelper(object):
   @staticmethod
   def default_config():
     return {
-      "STORAGE": "/data",
+      "STORAGE": "/tmp/reports/blackbox-tests/data",
       "LOG_LEVEL": "DEBUG",
       "HTTP_PORT": 443,
-      "SECRETS": "/opt/ledger/secrets",
+      "SECRETS": "/etc/ledger/secrets",
       "LAKE_HOSTNAME": "localhost",
       "TRANSACTION_INTEGRITY_SCANINTERVAL": "24h",
       "MEMORY_THRESHOLD": 0,
@@ -42,8 +42,7 @@ class UnitHelper(object):
     self.store = dict()
     self.image_version = None
     self.debian_version = None
-    self.units = dict()
-    self.services = list()
+    self.units = list()
     self.docker = docker.APIClient(base_url='unix://var/run/docker.sock')
     self.context = context
 
@@ -103,6 +102,11 @@ class UnitHelper(object):
         with open('/tmp/reports/blackbox-tests/meta/debian.ledger.txt', 'w') as fd:
           fd.write(result)
 
+        result = [item for item in result.split(os.linesep)]
+        result = [item.rsplit('/', 1)[-1].strip() for item in result if "/lib/systemd/system/cnb-rates" in item]
+
+        self.units = result
+
       self.docker.remove_container(scratch['Id'])
     finally:
       temp.close()
@@ -118,8 +122,8 @@ class UnitHelper(object):
     with open('/etc/ledger/conf.d/init.conf', 'w') as fd:
       fd.write(str(os.linesep).join("LEDGER_{!s}={!s}".format(k, v) for (k, v) in options.items()))
 
-  def cleanup(self):
-    for unit in self.__get_systemd_units():
+  def collect_logs(self):
+    for unit in set(self.__get_systemd_units() + self.units):
       (code, result, error) = execute(['journalctl', '-o', 'cat', '-u', unit, '--no-pager'])
       if code != 0 or not result:
         continue
@@ -127,9 +131,10 @@ class UnitHelper(object):
         fd.write(result)
 
   def teardown(self):
+    self.collect_logs()
     for unit in self.__get_systemd_units():
       execute(['systemctl', 'stop', unit])
-    self.cleanup()
+    self.collect_logs()
 
   def __get_systemd_units(self):
     (code, result, error) = execute(['systemctl', 'list-units', '--no-legend'])

@@ -13,7 +13,7 @@ from datetime import datetime
 @then('transaction {transaction} of tenant {tenant} should be')
 def check_transaction_state(context, tenant, transaction):
 
-  path = '/data/t_{}/transaction/{}'.format(tenant, transaction)
+  path = '/tmp/reports/blackbox-tests/data/t_{}/transaction/{}'.format(tenant, transaction)
   assert os.path.isfile(path) is True, 'file {} does not exists'.format(path)
 
   actual = dict()
