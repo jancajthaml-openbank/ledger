@@ -28,7 +28,7 @@ lifecycle::go::sec() {
   if [ -z ${dir} -o ! -d ${dir} ] ; then
     return
   fi
-  gosec -exclude=G104,G302 "${dir}/..."
+  cd ${dir} && gosec -exclude=G104,G302 ./...
 }
 
 ################################################################################
