@@ -6,7 +6,7 @@ services:
 
   # -------------------------------------------------------------------------- #
 
-  go:
+  go: &go
     image: jancajthaml/go
     volumes:
       - .:/project
@@ -23,50 +23,59 @@ services:
 
   # -------------------------------------------------------------------------- #
 
+  debian: &debian
+    image: jancajthaml/debian-packager
+    volumes:
+      - .:/project
+    working_dir: /project
+    tty: true
+
+  # -------------------------------------------------------------------------- #
+
   sync:
-    extends: go
+    <<: *go
     entrypoint: ["/project/dev/lifecycle/sync"]
 
   # -------------------------------------------------------------------------- #
 
   update:
-    extends: go
+    <<: *go
     entrypoint: ["/project/dev/lifecycle/update"]
 
   # -------------------------------------------------------------------------- #
 
   lint:
-    extends: go
+    <<: *go
     entrypoint: ["/project/dev/lifecycle/lint"]
 
   # -------------------------------------------------------------------------- #
 
   sec:
-    extends: go
+    <<: *go
     entrypoint: ["/project/dev/lifecycle/sec"]
 
   # -------------------------------------------------------------------------- #
 
   package:
-    extends: go
+    <<: *go
     entrypoint: ["/project/dev/lifecycle/package"]
 
   # -------------------------------------------------------------------------- #
 
   release:
-    extends: go
+    <<: *go
     entrypoint: ["/project/dev/lifecycle/release"]
 
   # -------------------------------------------------------------------------- #
 
-  debian:
-    extends: go
+  debian-package:
+    <<: *debian
     entrypoint: ["/project/dev/lifecycle/debian"]
 
   # -------------------------------------------------------------------------- #
 
   test:
-    extends: go
+    <<: *go
     entrypoint: ["/project/dev/lifecycle/test"]
 
   # -------------------------------------------------------------------------- #

@@ -82,10 +82,6 @@ lifecycle::debian::generate_changelog() {
       echo "" >> ${target}
     fi
   done
-
-  echo "[info] (${TARGET_PACKAGE}_${TARGET_ARCHITECTURE}) checking misspell"
-
-  /go/bin/misspell -q -locale US -source=text -w ${target}
 }
 
 lifecycle::debian::package() {
@@ -109,7 +105,7 @@ lifecycle::debian::package() {
 
 lifecycle::lintian() {
   echo "[info] (${TARGET_PACKAGE}_${TARGET_ARCHITECTURE}) running lintian"
-  find bin -name "${TARGET_PACKAGE}_*_${TARGET_ARCHITECTURE}.deb" -exec fakeroot lintian --pedantic {} \;
+  fakeroot find bin -name "${TARGET_PACKAGE}_*_${TARGET_ARCHITECTURE}.deb" -exec lintian --pedantic {} \;
 }
 
 ################################################################################

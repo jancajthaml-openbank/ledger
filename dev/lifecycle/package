@@ -99,11 +99,44 @@ lifecycle::go::build() {
   esac
 
   chmod +x ${output}
-  du -hs ${output}
 
   echo "[info] (${platform}/${arch}) done"
+
+  du -hs ${output}
+}
+
+lifecycle::go::strip() {
+  local arch=${TARGET_ARCHITECTURE#*/}
+  local platform=${TARGET_ARCHITECTURE%%/*}
+  local file=${OUTPUT}/${TARGET_PACKAGE}-${platform}-${arch}
+
+  case ${arch} in
+
+    armhf)
+      arm-linux-gnueabihf-objcopy --strip-unneeded ${file}
+    ;;
+
+    arm64)
+      aarch64-linux-gnu-objcopy --strip-unneeded ${file}
+    ;;
+
+    amd64)
+      objcopy --strip-unneeded ${file}
+    ;;
+
+    *)
+      (>&2 echo "[error] (${platform}/${arch}) unsupported target")
+      exit 1
+    ;;
+
+  esac
+
+  echo "[info] (${platform}/${arch}) stripped"
+
+  du -hs ${file}
 }
 
 ################################################################################
 
 lifecycle::go::build
+lifecycle::go::strip
