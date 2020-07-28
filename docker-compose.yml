@@ -63,7 +63,7 @@ services:
   # -------------------------------------------------------------------------- #
 
   release:
-    <<: *go
+    <<: *debian
     entrypoint: ["/project/dev/lifecycle/release"]
 
   # -------------------------------------------------------------------------- #
@@ -83,15 +83,15 @@ services:
   bbtest:
     image: jancajthaml/bbtest:amd64
     environment:
-      IMAGE_VERSION: ${VERSION:-latest}-${META:-master}
-      UNIT_VERSION: ${VERSION:-latest}
+      IMAGE_VERSION: ${IMAGE_VERSION}
+      UNIT_VERSION: ${UNIT_VERSION}
       UNIT_ARCH: amd64
+      CI: ${CI:-false}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:rw
       - /var/lib/docker/containers:/var/lib/docker/containers:rw
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
-      - ./bbtest:/opt/app
-      - ./reports:/tmp/reports
+      - .:/opt/app
     working_dir: /opt/app
 
 # ---------------------------------------------------------------------------- #

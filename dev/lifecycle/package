@@ -5,23 +5,24 @@ trap exit INT TERM
 
 ################################################################################
 
-TARGET_ARCHITECTURE="linux/amd64"
-TARGET_PACKAGE=""
+ARCH="amd64"
+PLATFORM="linux"
+SOURCE=""
 OUTPUT=""
 while [ $# -gt 0 ] ; do
 key="$1"
 case $key in
-  --arch)   TARGET_ARCHITECTURE="$2"; shift; shift; ;;
-  --pkg)    TARGET_PACKAGE="$2";      shift; shift; ;;
-  --output) OUTPUT="$2";              shift; shift; ;;
-  *)                                  shift;        ;;
+  --arch)   ARCH=${2#*/}; PLATFORM=${2%%/*}; shift; shift; ;;
+  --source) SOURCE="$2";                     shift; shift; ;;
+  --output) OUTPUT="$2";                     shift; shift; ;;
+  *)                                         shift;        ;;
 esac
 done
 
 ################################################################################
 
-if [ -z "${TARGET_PACKAGE}" ] ; then
-  (>&2 echo "[error] target package not provided")
+if [ -z "${SOURCE}" ] ; then
+  (>&2 echo "[error] source package not provided")
   exit 1
 fi
 
@@ -30,29 +31,36 @@ if [ -z "${OUTPUT}" ] ; then
   exit 1
 fi
 
+
+OUTPUT_FILE=${OUTPUT}/$(basename ${SOURCE})-${PLATFORM}-${ARCH}
+
 ################################################################################
 
 lifecycle::go::build() {
-  local working_dir=${GOPATH}/src/github.com/jancajthaml-openbank/${TARGET_PACKAGE}
-  local arch=${TARGET_ARCHITECTURE#*/}
-  local platform=${TARGET_ARCHITECTURE%%/*}
-  local output=${OUTPUT}/${TARGET_PACKAGE}-${platform}-${arch}
+  local dir="$1"
+  if [ -z ${dir} -o ! -d ${dir} ] ; then
+    return
+  fi
+
+  local output="$2"
+  if [ -z ${output} ] ; then
+    return
+  fi
 
   if [ -f ${output} ] ; then
     rm -f ${output}
   fi
 
-  cd ${working_dir}
+  cd ${dir}
 
-  echo "[info] (${platform}/${arch}) cleaning"
   go clean
 
-  echo "[info] (${platform}/${arch}) packaging ${TARGET_PACKAGE}"
+  echo "[info] ${output} cleaned"
 
-  case ${arch} in
+  case ${ARCH} in
 
     armhf)
-      GOOS=${platform} \
+      GOOS=${PLATFORM} \
       GOARM=7 \
       GOARCH=arm \
       CGO_ENABLED=1 \
@@ -60,39 +68,39 @@ lifecycle::go::build() {
       CC=arm-linux-gnueabihf-gcc \
       \
       go build -a -o ${output} || {
-        (>&2 echo "[error] (${platform}/${arch}) unable to build")
+        (>&2 echo "[error] ${output} unable to build")
         exit 1
       }
     ;;
 
     arm64)
-      GOOS=${platform} \
+      GOOS=${PLATFORM} \
       GOARCH=arm64 \
       CGO_ENABLED=1 \
       GOFLAGS=-buildmode=pie \
       CC=aarch64-linux-gnu-gcc \
       \
       go build -a -o ${output} || {
-        (>&2 echo "[error] (${platform}/${arch}) unable to build")
+        (>&2 echo "[error] ${output} unable to build")
         exit 1
       }
     ;;
 
     amd64)
-      GOOS=${platform} \
+      GOOS=${PLATFORM} \
       GOARCH=amd64 \
       CGO_ENABLED=1 \
       GOFLAGS=-buildmode=pie \
       CC=gcc \
       \
       go build -a -o ${output} || {
-        (>&2 echo "[error] (${platform}/${arch}) unable to build")
+        (>&2 echo "[error] ${output} unable to build")
         exit 1
       }
     ;;
 
     *)
-      (>&2 echo "[error] (${platform}/${arch}) unsupported target")
+      (>&2 echo "[error] ${output} unsupported target")
       exit 1
     ;;
 
@@ -100,43 +108,46 @@ lifecycle::go::build() {
 
   chmod +x ${output}
 
-  echo "[info] (${platform}/${arch}) done"
+  echo "[info] ${output} compiled"
 
   du -hs ${output}
 }
 
 lifecycle::go::strip() {
-  local arch=${TARGET_ARCHITECTURE#*/}
-  local platform=${TARGET_ARCHITECTURE%%/*}
-  local file=${OUTPUT}/${TARGET_PACKAGE}-${platform}-${arch}
+  local output="$1"
+  if [ -z ${output} -o ! -f ${output} ] ; then
+    return
+  fi
 
-  case ${arch} in
+  case ${ARCH} in
 
     armhf)
-      arm-linux-gnueabihf-objcopy --strip-unneeded ${file}
+      arm-linux-gnueabihf-objcopy --strip-unneeded ${output}
     ;;
 
     arm64)
-      aarch64-linux-gnu-objcopy --strip-unneeded ${file}
+      aarch64-linux-gnu-objcopy --strip-unneeded ${output}
     ;;
 
     amd64)
-      objcopy --strip-unneeded ${file}
+      objcopy --strip-unneeded ${output}
     ;;
 
     *)
-      (>&2 echo "[error] (${platform}/${arch}) unsupported target")
-      exit 1
     ;;
 
   esac
 
-  echo "[info] (${platform}/${arch}) stripped"
+  echo "[info] ${output} stripped"
 
-  du -hs ${file}
+  du -hs ${output}
 }
 
 ################################################################################
 
-lifecycle::go::build
-lifecycle::go::strip
+lifecycle::go::build \
+  ${SOURCE} \
+  ${OUTPUT_FILE}
+
+lifecycle::go::strip \
+  ${OUTPUT_FILE}

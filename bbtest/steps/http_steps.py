@@ -37,14 +37,14 @@ def create_transfer(context, tenant):
 @then('transaction of tenant {tenant} should not exist')
 def transaction_should_not_exist(context, tenant):
   if context.last_transaction_id:
-    path = '/tmp/reports/blackbox-tests/data/t_{}/transaction/{}'.format(tenant, context.last_transaction_id)
+    path = 'reports/blackbox-tests/data/t_{}/transaction/{}'.format(tenant, context.last_transaction_id)
     assert os.path.isfile(path) is False, "{} exists but should not".format(path)
 
 
 @then('transaction of tenant {tenant} should exist')
 def transaction_should_exist(context, tenant):
   assert context.last_transaction_id
-  path = '/tmp/reports/blackbox-tests/data/t_{}/transaction/{}'.format(tenant, context.last_transaction_id)
+  path = 'reports/blackbox-tests/data/t_{}/transaction/{}'.format(tenant, context.last_transaction_id)
   assert os.path.isfile(path) is True, "{} does not exists but should".format(path)
 
 

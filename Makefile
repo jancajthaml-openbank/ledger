@@ -1,9 +1,10 @@
-ifndef GITHUB_RELEASE_TOKEN
-$(warning GITHUB_RELEASE_TOKEN is not set)
-endif
 
 META := $(shell git rev-parse --abbrev-ref HEAD 2> /dev/null | sed 's:.*/::')
 VERSION := $(shell git fetch --tags --force 2> /dev/null; tags=($$(git tag --sort=-v:refname)) && ([ $${\#tags[@]} -eq 0 ] && echo v0.0.0 || echo $${tags[0]}))
+
+export COMPOSE_DOCKER_CLI_BUILD = 1
+export DOCKER_BUILDKIT = 1
+export COMPOSE_PROJECT_NAME = ledger
 
 .ONESHELL:
 .PHONY: arm64
@@ -25,12 +26,28 @@ package-%: %
 
 .PHONY: bundle-binaries-%
 bundle-binaries-%: %
-	@docker-compose run --rm package --arch linux/$^ --pkg ledger-rest --output /project/packaging/bin
-	@docker-compose run --rm package --arch linux/$^ --pkg ledger-unit --output /project/packaging/bin
+	@docker-compose \
+		run \
+		--rm package \
+		--arch linux/$^ \
+		--source /go/src/github.com/jancajthaml-openbank/ledger-rest \
+		--output /project/packaging/bin
+	@docker-compose \
+		run \
+		--rm package \
+		--arch linux/$^ \
+		--source /go/src/github.com/jancajthaml-openbank/ledger-unit \
+		--output /project/packaging/bin
 
 .PHONY: bundle-debian-%
 bundle-debian-%: %
-	@docker-compose run --rm debian-package --version $(VERSION)+$(META) --arch $^ --pkg ledger --source /project/packaging
+	@docker-compose \
+		run \
+		--rm debian-package \
+		--version $(VERSION)+$(META) \
+		--arch $^ \
+		--pkg ledger \
+		--source /project/packaging
 
 .PHONY: bundle-docker
 bundle-docker:
@@ -42,30 +59,67 @@ bootstrap:
 
 .PHONY: lint
 lint:
-	@docker-compose run --rm lint --pkg ledger-rest || :
-	@docker-compose run --rm lint --pkg ledger-unit || :
+	@docker-compose \
+		run \
+		--rm lint \
+		--source /go/src/github.com/jancajthaml-openbank/ledger-rest \
+	|| :
+	@docker-compose \
+		run \
+		--rm lint \
+		--source /go/src/github.com/jancajthaml-openbank/ledger-unit \
+	|| :
 
 .PHONY: sec
 sec:
-	@docker-compose run --rm sec --pkg ledger-rest || :
-	@docker-compose run --rm sec --pkg ledger-unit || :
+	@docker-compose \
+		run \
+		--rm sec \
+		--source /go/src/github.com/jancajthaml-openbank/ledger-rest \
+	|| :
+	@docker-compose \
+		run \
+		--rm sec \
+		--source /go/src/github.com/jancajthaml-openbank/ledger-unit \
+	|| :
 
 .PHONY: sync
 sync:
-	@docker-compose run --rm sync --pkg ledger-rest
-	@docker-compose run --rm sync --pkg ledger-unit
+	@docker-compose \
+		run \
+		--rm sync \
+		--source /go/src/github.com/jancajthaml-openbank/ledger-rest
+	@docker-compose \
+		run \
+		--rm sync \
+		--source /go/src/github.com/jancajthaml-openbank/ledger-unit
 
 .PHONY: test
 test:
-	@docker-compose run --rm test --pkg ledger-rest --output /project/reports
-	@docker-compose run --rm test --pkg ledger-unit --output /project/reports
+	@docker-compose \
+		run \
+		--rm test \
+		--source /go/src/github.com/jancajthaml-openbank/ledger-rest \
+		--output /project/reports/unit-tests
+	@docker-compose \
+		run \
+		--rm test \
+		--source /go/src/github.com/jancajthaml-openbank/ledger-unit \
+		--output /project/reports/unit-tests
 
 .PHONY: release
 release:
-	@docker-compose run --rm release -v $(VERSION)+$(META) -t ${GITHUB_RELEASE_TOKEN}
+	@docker-compose \
+		run \
+		--rm release \
+		--version $(VERSION)+$(META) \
+		--token ${GITHUB_RELEASE_TOKEN}
 
 .PHONY: bbtest
 bbtest:
-	@META=$(META) VERSION=$(VERSION) docker-compose up -d bbtest
-	@docker exec -t $$(docker-compose ps -q bbtest) python3 /opt/app/main.py
+	@\
+		IMAGE_VERSION=$(VERSION)-$(META) \
+		UNIT_VERSION=$(VERSION) \
+		docker-compose up -d bbtest
+	@docker exec -t $$(docker-compose ps -q bbtest) python3 /opt/app/bbtest/main.py
 	@docker-compose down -v
