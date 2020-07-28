@@ -7,7 +7,7 @@ Feature: Metrics test
       | property            | value |
       | METRICS_REFRESHRATE |    1s |
 
-    Then metrics file /tmp/reports/blackbox-tests/metrics/metrics.M1.json should have following keys:
+    Then metrics file reports/blackbox-tests/metrics/metrics.M1.json should have following keys:
       | key                             |
       | promisedTransactions            |
       | promisedTransfers               |
@@ -16,13 +16,13 @@ Feature: Metrics test
       | rollbackedTransactions          |
       | rollbackedTransfers             |
       | transactionFinalizerCronLatency |
-    And metrics file /tmp/reports/blackbox-tests/metrics/metrics.M1.json has permissions -rw-r--r--
+    And metrics file reports/blackbox-tests/metrics/metrics.M1.json has permissions -rw-r--r--
 
-    And metrics file /tmp/reports/blackbox-tests/metrics/metrics.json should have following keys:
+    And metrics file reports/blackbox-tests/metrics/metrics.json should have following keys:
       | key                      |
       | createTransactionLatency |
       | memoryAllocated          |
-    And metrics file /tmp/reports/blackbox-tests/metrics/metrics.json has permissions -rw-r--r--
+    And metrics file reports/blackbox-tests/metrics/metrics.json has permissions -rw-r--r--
 
   Scenario: metrics can remembers previous values after reboot
     Given vault is empty
@@ -31,7 +31,7 @@ Feature: Metrics test
       | property            | value |
       | METRICS_REFRESHRATE |    1s |
 
-    Then metrics file /tmp/reports/blackbox-tests/metrics/metrics.M2.json reports:
+    Then metrics file reports/blackbox-tests/metrics/metrics.M2.json reports:
       | key                             | value |
       | promisedTransactions            |     0 |
       | promisedTransfers               |     0 |
@@ -45,7 +45,7 @@ Feature: Metrics test
     And   pasive account M2/B with currency EUR exist
     And   1 EUR is transferred from M2/A to M2/B
 
-    Then metrics file /tmp/reports/blackbox-tests/metrics/metrics.M2.json reports:
+    Then metrics file reports/blackbox-tests/metrics/metrics.M2.json reports:
       | key                             | value |
       | promisedTransactions            |     1 |
       | promisedTransfers               |     1 |
@@ -56,7 +56,7 @@ Feature: Metrics test
       | transactionFinalizerCronLatency |     0 |
 
     When restart unit "ledger-unit@M2.service"
-    Then metrics file /tmp/reports/blackbox-tests/metrics/metrics.M2.json reports:
+    Then metrics file reports/blackbox-tests/metrics/metrics.M2.json reports:
       | key                             | value |
       | promisedTransactions            |     1 |
       | promisedTransfers               |     1 |

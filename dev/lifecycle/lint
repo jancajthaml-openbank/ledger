@@ -5,19 +5,19 @@ trap exit INT TERM
 
 ################################################################################
 
-TARGET_PACKAGE=""
+SOURCE=""
 while [ $# -gt 0 ] ; do
 key="$1"
 case $key in
-  --pkg)  TARGET_PACKAGE="$2";  shift; shift; ;;
-  *)                            shift;        ;;
+  --source)  SOURCE="$2";  shift; shift; ;;
+  *)                       shift;        ;;
 esac
 done
 
 ################################################################################
 
-if [ -z "${TARGET_PACKAGE}" ] ; then
-  (>&2 echo "[error] target package not provided")
+if [ -z "${SOURCE}" ] ; then
+  (>&2 echo "[error] source package not provided")
   exit 1
 fi
 
@@ -48,4 +48,5 @@ lifecycle::go::lint() {
 
 ################################################################################
 
-lifecycle::go::lint ${GOPATH}/src/github.com/jancajthaml-openbank/${TARGET_PACKAGE}
+lifecycle::go::lint \
+  ${SOURCE}
