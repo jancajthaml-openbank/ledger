@@ -83,8 +83,8 @@ services:
   bbtest:
     image: jancajthaml/bbtest:amd64
     environment:
-      IMAGE_VERSION: ${IMAGE_VERSION}
-      UNIT_VERSION: ${UNIT_VERSION}
+      IMAGE_VERSION: ${IMAGE_VERSION:-}
+      UNIT_VERSION: ${UNIT_VERSION:-}
       UNIT_ARCH: amd64
       CI: ${CI:-false}
     volumes:
