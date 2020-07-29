@@ -37,9 +37,9 @@ lifecycle::go::sync() {
     rm -f ${dir}/go.sum
   fi
 
-  cd ${dir} && GO111MODULE=on go mod verify
-  cd ${dir} && GO111MODULE=on go mod tidy
-  cd ${dir} && GO111MODULE=on go mod vendor
+  cd ${dir} && go mod verify
+  cd ${dir} && go mod tidy
+  cd ${dir} && go mod vendor
 }
 
 ################################################################################
