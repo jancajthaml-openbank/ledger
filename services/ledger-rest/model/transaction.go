@@ -156,8 +156,8 @@ func (entity Transfer) MarshalJSON() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-// Deserialise transaction from binary data
-func (entity *Transaction) Deserialise(data []byte) {
+// Deserialize transaction from binary data
+func (entity *Transaction) Deserialize(data []byte) {
 	lines := strings.Split(string(data), "\n")
 	entity.Status = lines[0]
 	entity.Transfers = make([]Transfer, len(lines)-2)

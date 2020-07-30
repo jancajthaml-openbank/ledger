@@ -48,6 +48,6 @@ func LoadTransaction(storage *localfs.PlaintextStorage, tenant string, id string
 	}
 	result := new(model.Transaction)
 	result.IDTransaction = id
-	result.Deserialise(data)
+	result.Deserialize(data)
 	return result, nil
 }

@@ -67,8 +67,8 @@ func (entity *Transaction) Serialize() []byte {
 	return buffer.Bytes()
 }
 
-// Deserialise transaction from binary data
-func (entity *Transaction) Deserialise(data []byte) {
+// Deserialize transaction from binary data
+func (entity *Transaction) Deserialize(data []byte) {
 	if entity == nil {
 		return
 	}
@@ -119,8 +119,8 @@ parse:
 	goto scan
 }
 
-// DeserialiseState deserializes transaction state from binary data
-func (entity *Transaction) DeserialiseState(data []byte) {
+// DeserializeState deserializes transaction state from binary data
+func (entity *Transaction) DeserializeState(data []byte) {
 	if entity == nil {
 		return
 	}
