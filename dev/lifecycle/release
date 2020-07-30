@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -eu
 trap exit INT TERM
@@ -18,12 +18,12 @@ done
 
 ################################################################################
 
-if [ ! "${VERSION}" ] ; then
+if [ -z "${VERSION}" ] ; then
   (>&2 echo "[error] version not provided")
   exit 1
 fi
 
-if [ ! "${ACCESS_TOKEN}" ] ; then
+if [ -z "${ACCESS_TOKEN}" ] ; then
   (>&2 echo "[error] github access token not provided")
   exit 1
 fi
@@ -42,25 +42,57 @@ REPO=${REPO}
 
 ################################################################################
 
-echo "[info] start release of ${REPO}:${VERSION}"
+lifecycle::release::info() {
+  wget \
+    -O - \
+    -o /dev/null \
+    --header "Authorization: token ${ACCESS_TOKEN}" \
+    "https://api.github.com/repos/${REPO}/releases/tags/${VERSION}" \
+  || echo '{ "id": null, "upload_url": "" }'
+}
 
-RELEASE_INFO="https://api.github.com/repos/${REPO}/releases/tags/${VERSION}"
-response=$(
-  curl \
-    --silent \
-    -H "Authorization: token ${ACCESS_TOKEN}" \
-    ${RELEASE_INFO} \
-)
+lifecycle::release::upload_uri() {
+  UPLOAD_URL=$(lifecycle::release::info | jq -r .upload_url | sed -e "s/{?name,label}//")
+  if [ -z "${UPLOAD_URL}" ] ; then
+    (>&2 echo "[error] failed to obtain upload_url")
+    exit 1
+  fi
+  echo "${UPLOAD_URL}"
+}
 
-RELEASE_ID=$(echo "${response}" | jq -r .id)
-RELEASE_URI="https://api.github.com/repos/${REPO}/releases"
+lifecycle::release::upload_asset() {
+  local uri="$1"
+  if [ -z ${uri} ] ; then
+    return
+  fi
+  local file="$2"
+  if [ -z ${file} -o ! -f ${file} ] ; then
+    return
+  fi
+  if [ ${file: -4} != ".deb" -a ! -x ${file} ] ; then
+    return
+  fi
 
-if [ "${RELEASE_ID}" != "null" ] ; then
-  (>&2 echo "[error] release ${VERSION} already exists")
-  exit 1
-else
-  echo "[info] creating new release ${VERSION}"
-fi
+  echo "[info] uploading $(basename ${file}) to Github release ${VERSION}"
+
+  wget \
+    -O /dev/null \
+    -o /dev/null \
+    --method POST \
+    --body-file "${file}" \
+    --header "Authorization: token ${ACCESS_TOKEN}" \
+    --header "Content-Type: application/binary" \
+    "${uri}?name=$(basename ${file})"
+}
+
+lifecycle::release::assert_release() {
+  RELEASE_ID=$(lifecycle::release::info | jq -r .id)
+
+  if [ "${RELEASE_ID}" != "null" ] ; then
+    return
+  fi
+
+  echo "[info] creating new release ${VERSION} at Github"
 
 PAYLOAD=$(cat <<-END
 {
@@ -74,30 +106,22 @@ PAYLOAD=$(cat <<-END
 END
 )
 
-response=$(
-  curl \
-    -X POST \
-    -H "Authorization: token ${ACCESS_TOKEN}" \
-    --fail \
-    --silent \
-    --data "$(echo ${PAYLOAD})" \
-    ${RELEASE_URI}
-)
+  wget \
+    -O /dev/null \
+    -o /dev/null \
+    --method POST \
+    --header "Authorization: token ${ACCESS_TOKEN}" \
+    --header="Content-Type: application/json" \
+    --body-data="$(echo ${PAYLOAD})" \
+    "https://api.github.com/repos/${REPO}/releases"
+}
 
-UPLOAD_URL=$(echo ${response} | jq -r .upload_url | sed -e "s/{?name,label}//")
+################################################################################
+
+lifecycle::release::assert_release
+
+upload_uri=$(lifecycle::release::upload_uri)
 
 for asset in $(ls -d -1 $(pwd)/packaging/bin/*) ; do
-  echo "[info] uploading ${asset}"
-
-  curl \
-    --fail \
-    -X POST \
-    -# \
-    --output /dev/null \
-    --data-binary "@${asset}" \
-    -H "Authorization: token $ACCESS_TOKEN" \
-    -H "Content-Type: application/binary" \
-    "${UPLOAD_URL}?name=$(basename ${asset})"
+  lifecycle::release::upload_asset ${upload_uri} ${asset}
 done
-
-echo "[info] released ${VERSION}"
