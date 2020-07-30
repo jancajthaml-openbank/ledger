@@ -82,6 +82,16 @@ lifecycle::debian::generate_changelog() {
       echo "" >> ${target}
     fi
   done
+	
+	if [ ! -s ${target} ] ; then
+    DATE=$(git log -1 --format=%cD HEAD)
+    echo "${TARGET_PACKAGE} (${VERSION#v}) unstable; urgency=medium" >> ${target}
+    echo "" >> ${target}
+    echo "  * contains unrelease commits" >> ${target}
+    echo "" >> ${target}
+    echo " -- Jan Cajthaml <jan.cajthaml@gmail.com>  ${DATE}" >> ${target}
+    echo "" >> ${target}
+  fi
 }
 
 lifecycle::debian::package() {
