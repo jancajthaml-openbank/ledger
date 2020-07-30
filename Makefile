@@ -44,7 +44,7 @@ bundle-debian-%: %
 	@docker-compose \
 		run \
 		--rm debian-package \
-		--version $(VERSION)+$(META) \
+		--version $(VERSION) \
 		--arch $^ \
 		--pkg ledger \
 		--source /project/packaging
