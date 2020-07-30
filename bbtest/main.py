@@ -22,8 +22,10 @@ if __name__ == "__main__":
 
   if sys.stdout.isatty() and (str(os.environ.get('CI', 'false')) == 'false'):
     args.append('-f pretty')
+    args.append('--tags=~@wip')
   else:
     args.append('-f progress3')
+    args.append('--tags=~@wip')
     args.append('--quiet')
 
   args.append('@{}/order.txt'.format(cwd))
