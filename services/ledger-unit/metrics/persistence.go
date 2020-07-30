@@ -16,14 +16,14 @@ package metrics
 
 import (
 	"bytes"
-	"time"
 	"fmt"
 	"github.com/jancajthaml-openbank/ledger-unit/utils"
 	"os"
 	"strconv"
+	"time"
 )
 
-// MarshalJSON serialises Metrics as json bytes
+// MarshalJSON serializes Metrics as json bytes
 func (metrics *Metrics) MarshalJSON() ([]byte, error) {
 	if metrics == nil {
 		return nil, fmt.Errorf("cannot marshall nil")

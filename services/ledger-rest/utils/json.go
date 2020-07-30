@@ -18,5 +18,5 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-// JSON fascade for abstraction of json marshalling and unmarhalling
+// JSON fascade for abstraction of json marshaling and unmarhalling
 var JSON = jsoniter.ConfigCompatibleWithStandardLibrary

@@ -98,7 +98,7 @@ func TestPersist(t *testing.T) {
 		assert.EqualError(t, entity.Persist(), "cannot persist nil reference")
 	}
 
-	t.Log("error when marshalling fails")
+	t.Log("error when marshaling fails")
 	{
 		entity := Metrics{}
 		assert.EqualError(t, entity.Persist(), "cannot marshall nil references")

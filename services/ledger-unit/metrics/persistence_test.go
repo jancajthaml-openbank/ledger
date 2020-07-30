@@ -3,8 +3,8 @@ package metrics
 import (
 	"io/ioutil"
 	"os"
-	"time"
 	"testing"
+	"time"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
 	metrics "github.com/rcrowley/go-metrics"
@@ -20,7 +20,7 @@ func TestPersist(t *testing.T) {
 		assert.EqualError(t, entity.Persist(), "cannot persist nil reference")
 	}
 
-	t.Log("error when marshalling fails")
+	t.Log("error when marshaling fails")
 	{
 		entity := Metrics{}
 		assert.EqualError(t, entity.Persist(), "cannot marshall nil references")
