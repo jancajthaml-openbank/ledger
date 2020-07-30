@@ -38,8 +38,8 @@ type Transaction struct {
 	Transfers     []Transfer
 }
 
-// Serialise transaction to binary data
-func (entity *Transaction) Serialise() []byte {
+// Serialize transaction to binary data
+func (entity *Transaction) Serialize() []byte {
 	var buffer bytes.Buffer
 
 	buffer.WriteString(entity.State)
@@ -58,7 +58,7 @@ func (entity *Transaction) Serialise() []byte {
 		buffer.WriteString(" ")
 		buffer.WriteString(transfer.ValueDate)
 		buffer.WriteString(" ")
-    buffer.WriteString(transfer.Amount.String())
+		buffer.WriteString(transfer.Amount.String())
 		buffer.WriteString(" ")
 		buffer.WriteString(transfer.Currency)
 		buffer.WriteString("\n")
@@ -67,8 +67,8 @@ func (entity *Transaction) Serialise() []byte {
 	return buffer.Bytes()
 }
 
-// Deserialise transaction from binary data
-func (entity *Transaction) Deserialise(data []byte) {
+// Deserialize transaction from binary data
+func (entity *Transaction) Deserialize(data []byte) {
 	if entity == nil {
 		return
 	}
@@ -119,8 +119,8 @@ parse:
 	goto scan
 }
 
-// DeserialiseState deserializes transaction state from binary data
-func (entity *Transaction) DeserialiseState(data []byte) {
+// DeserializeState deserializes transaction state from binary data
+func (entity *Transaction) DeserializeState(data []byte) {
 	if entity == nil {
 		return
 	}

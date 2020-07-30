@@ -30,7 +30,7 @@ func LoadTransaction(storage *localfs.PlaintextStorage, id string) (*model.Trans
 	}
 	result := new(model.Transaction)
 	result.IDTransaction = id
-	result.Deserialise(data)
+	result.Deserialize(data)
 	return result, nil
 }
 
@@ -43,20 +43,20 @@ func LoadTransactionState(storage *localfs.PlaintextStorage, id string) (string,
 	}
 	result := new(model.Transaction)
 	result.IDTransaction = id
-	result.DeserialiseState(data)
+	result.DeserializeState(data)
 	return result.State, nil
 }
 
 // CreateTransaction persist transaction entity state to storage
 func CreateTransaction(storage *localfs.PlaintextStorage, entity *model.Transaction) error {
 	transactionPath := utils.TransactionPath(entity.IDTransaction)
-	data := entity.Serialise()
+	data := entity.Serialize()
 	return storage.WriteFileExclusive(transactionPath, data)
 }
 
 // UpdateTransaction persist update of transaction to disk
 func UpdateTransaction(storage *localfs.PlaintextStorage, entity *model.Transaction) error {
 	transactionPath := utils.TransactionPath(entity.IDTransaction)
-	data := entity.Serialise()
+	data := entity.Serialize()
 	return storage.WriteFile(transactionPath, data)
 }
