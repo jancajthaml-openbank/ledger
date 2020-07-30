@@ -230,7 +230,7 @@ jobs:
               echo -e "${VERSION}-${META}" > /mnt/ramdisk/FULL_VERSION
             else
               echo -e "${CIRCLE_TAG#v}" > /mnt/ramdisk/SHORT_VERSION
-              echo -e "${CIRCLE_TAG}" > /mnt/ramdisk/FULL_VERSION
+              echo -e "${CIRCLE_TAG}-master" > /mnt/ramdisk/FULL_VERSION
             fi
       - save_cache:
           key: versions-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
@@ -538,7 +538,7 @@ jobs:
               echo -e "${VERSION}-${META}" > /home/circleci/project/FULL_VERSION
             else
               echo -e "${CIRCLE_TAG#v}" > /home/circleci/project/SHORT_VERSION
-              echo -e "${CIRCLE_TAG}" > /home/circleci/project/FULL_VERSION
+              echo -e "${CIRCLE_TAG}-master" > /home/circleci/project/FULL_VERSION
             fi
       - run:
           name: Run blackbox tests
