@@ -31,17 +31,30 @@ if [ -z "${OUTPUT}" ] ; then
   exit 1
 fi
 
-if [ -d ${OUTPUT} ] ; then
-  rm -rf ${OUTPUT}/*
-fi
-
 OUTPUT_FILE=${OUTPUT}/$(basename ${SOURCE})-${PLATFORM}-${ARCH}
 
 ################################################################################
 
+lifecycle::go::clean() {
+  local source="$1"
+  if [ -z ${source} -o ! -d ${source} ] ; then
+    return
+  fi
+  local output="$2"
+  if [ -z ${output} -o ! -d ${output} ] ; then
+    return
+  fi
+
+  find "${output}" -name "$(basename ${source})*${ARCH}*" -exec rm -f {} \;
+  echo "[info] ${output} cleaned"
+
+  cd ${source} && go clean
+  echo "[info] ${source} cleaned"
+}
+
 lifecycle::go::build() {
-  local dir="$1"
-  if [ -z ${dir} -o ! -d ${dir} ] ; then
+  local source="$1"
+  if [ -z ${source} -o ! -d ${source} ] ; then
     return
   fi
 
@@ -50,19 +63,13 @@ lifecycle::go::build() {
     return
   fi
 
-  if [ -f ${output} ] ; then
-    rm -f ${output}
-  fi
 
-  cd ${dir}
-
-  go clean
-
-  echo "[info] ${output} cleaned"
 
   case ${ARCH} in
 
     armhf)
+      cd ${source} && \
+      \
       GOOS=${PLATFORM} \
       GOARM=7 \
       GOARCH=arm \
@@ -77,6 +84,8 @@ lifecycle::go::build() {
     ;;
 
     arm64)
+      cd ${source} && \
+      \
       GOOS=${PLATFORM} \
       GOARCH=arm64 \
       CGO_ENABLED=1 \
@@ -90,6 +99,8 @@ lifecycle::go::build() {
     ;;
 
     amd64)
+      cd ${source} && \
+      \
       GOOS=${PLATFORM} \
       GOARCH=amd64 \
       CGO_ENABLED=1 \
@@ -112,8 +123,6 @@ lifecycle::go::build() {
   chmod +x ${output}
 
   echo "[info] ${output} compiled"
-
-  du -hs ${output}
 }
 
 lifecycle::go::strip() {
@@ -142,11 +151,13 @@ lifecycle::go::strip() {
   esac
 
   echo "[info] ${output} stripped"
-
-  du -hs ${output}
 }
 
 ################################################################################
+
+lifecycle::go::clean \
+  ${SOURCE} \
+  ${OUTPUT}
 
 lifecycle::go::build \
   ${SOURCE} \
@@ -154,3 +165,5 @@ lifecycle::go::build \
 
 lifecycle::go::strip \
   ${OUTPUT_FILE}
+
+du -hs ${OUTPUT_FILE}
