@@ -112,7 +112,7 @@ release:
 	@docker-compose \
 		run \
 		--rm release \
-		--version $(VERSION)+$(META) \
+		--version $(VERSION) \
 		--token ${GITHUB_RELEASE_TOKEN}
 
 .PHONY: bbtest
