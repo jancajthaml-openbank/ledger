@@ -26,6 +26,8 @@ import (
 // CreateTenant enables ledger-unit@{tenant}
 func CreateTenant(systemctl *system.SystemControl) func(c echo.Context) error {
 	return func(c echo.Context) error {
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+
 		tenant := c.Param("tenant")
 		if tenant == "" {
 			return fmt.Errorf("missing tenant")
@@ -45,6 +47,8 @@ func CreateTenant(systemctl *system.SystemControl) func(c echo.Context) error {
 // DeleteTenant disables ledger-unit@{tenant}
 func DeleteTenant(systemctl *system.SystemControl) func(c echo.Context) error {
 	return func(c echo.Context) error {
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+
 		tenant := c.Param("tenant")
 		if tenant == "" {
 			return fmt.Errorf("missing tenant")
@@ -64,6 +68,8 @@ func DeleteTenant(systemctl *system.SystemControl) func(c echo.Context) error {
 // ListTenants lists ledger-unit@
 func ListTenants(systemctl *system.SystemControl) func(c echo.Context) error {
 	return func(c echo.Context) error {
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+
 		units, err := systemctl.ListUnits("ledger-unit@")
 		if err != nil {
 			return err

@@ -31,6 +31,8 @@ import (
 // GetTransaction returns transaction state
 func GetTransaction(storage *localfs.PlaintextStorage) func(c echo.Context) error {
 	return func(c echo.Context) error {
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+
 		tenant := c.Param("tenant")
 		if tenant == "" {
 			return fmt.Errorf("missing tenant")
@@ -55,7 +57,6 @@ func GetTransaction(storage *localfs.PlaintextStorage) func(c echo.Context) erro
 			return err
 		}
 
-		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 		c.Response().WriteHeader(http.StatusOK)
 		c.Response().Write(chunk)
 		c.Response().Flush()
@@ -66,6 +67,8 @@ func GetTransaction(storage *localfs.PlaintextStorage) func(c echo.Context) erro
 // CreateTransaction creates new transaction for given tenant
 func CreateTransaction(storage *localfs.PlaintextStorage, system *actor.ActorSystem) func(c echo.Context) error {
 	return func(c echo.Context) error {
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+
 		tenant := c.Param("tenant")
 		if tenant == "" {
 			return fmt.Errorf("missing tenant")
@@ -122,6 +125,8 @@ func CreateTransaction(storage *localfs.PlaintextStorage, system *actor.ActorSys
 // GetTransactions return existing transactions of given tenant
 func GetTransactions(storage *localfs.PlaintextStorage) func(c echo.Context) error {
 	return func(c echo.Context) error {
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+
 		tenant := c.Param("tenant")
 		if tenant == "" {
 			return fmt.Errorf("missing tenant")
