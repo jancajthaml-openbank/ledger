@@ -27,23 +27,8 @@ def create_transfer(context, tenant):
     response = urllib.request.urlopen(request, timeout=10, context=ctx)
     assert response.code in [200, 201]
     response = response.read().decode('utf-8')
-    print('CASE 1 {}'.format(response))
-    print('CASE 1 {}'.format(response))
-    print('CASE 1 {}'.format(response))
-    print('CASE 1 {}'.format(response))
-    print('CASE 1 {}'.format(response))
-    print('CASE 1 {}'.format(response))
-    print('CASE 1 {}'.format(response))
     context.last_transaction_id = response or None
   except urllib.error.HTTPError as err:
-    print('CASE 2 {}'.format(err))
-    print('CASE 2 {}'.format(err))
-    print('CASE 2 {}'.format(err))
-    print('CASE 2 {}'.format(err))
-    print('CASE 2 {}'.format(err))
-    print('CASE 2 {}'.format(err))
-    print('CASE 2 {}'.format(err))
-
     assert err.code == 417, 'missing transaction id with {}'.format(ex)
     context.last_transaction_id = None
 
