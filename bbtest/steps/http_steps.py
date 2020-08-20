@@ -144,16 +144,6 @@ def check_http_response(context):
   response = context.http_response
   del context.http_response
 
-  print('>>>>{}<<<<'.format(response))
-  print('>>>>{}<<<<'.format(response))
-  print('>>>>{}<<<<'.format(response))
-  print('>>>>{}<<<<'.format(response))
-  print('>>>>{}<<<<'.format(response))
-  print('>>>>{}<<<<'.format(response))
-  print('>>>>{}<<<<'.format(response))
-  print('>>>>{}<<<<'.format(response))
-  print('>>>>{}<<<<'.format(response))
-
   if 'status' in options:
     assert response['status'] == options['status'], 'expected status {} actual {}'.format(options['status'], response['status'])
 
