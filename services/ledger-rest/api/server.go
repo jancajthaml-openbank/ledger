@@ -27,12 +27,12 @@ import (
 	"github.com/jancajthaml-openbank/ledger-rest/system"
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
 
-	"github.com/gorilla/mux"
 	localfs "github.com/jancajthaml-openbank/local-fs"
+	"github.com/labstack/echo/v4"
 )
 
-// Server is a fascade for http-server following handler api of Gin and lifecycle
-// api of http
+// Server is a fascade for http-server following handler api of Gin and
+// lifecycle api of http
 type Server struct {
 	utils.DaemonSupport
 	Storage       *localfs.PlaintextStorage
@@ -41,12 +41,9 @@ type Server struct {
 	MemoryMonitor *system.MemoryMonitor
 	ActorSystem   *actor.ActorSystem
 	underlying    *http.Server
-	router        *mux.Router
 	key           []byte
 	cert          []byte
 }
-
-type Endpoint func(*Server) func(http.ResponseWriter, *http.Request)
 
 type tcpKeepAliveListener struct {
 	*net.TCPListener
@@ -81,7 +78,7 @@ func cloneTLSConfig(cfg *tls.Config) *tls.Config {
 
 // NewServer returns new secure server instance
 func NewServer(ctx context.Context, port int, secretsPath string, actorSystem *actor.ActorSystem, systemControl *system.SystemControl, diskMonitor *system.DiskMonitor, memoryMonitor *system.MemoryMonitor, storage *localfs.PlaintextStorage) Server {
-	router := mux.NewRouter()
+	router := echo.New()
 
 	cert, err := ioutil.ReadFile(secretsPath + "/domain.local.crt")
 	if err != nil {
@@ -93,18 +90,28 @@ func NewServer(ctx context.Context, port int, secretsPath string, actorSystem *a
 		log.Fatalf("unable to load certificate %s/domain.local.key", secretsPath)
 	}
 
-	result := Server{
+	router.GET("/health", HealtCheck(memoryMonitor, diskMonitor))
+	router.HEAD("/health", HealtCheck(memoryMonitor, diskMonitor))
+
+	router.GET("/tenant", ListTenants(systemControl))
+	router.POST("/tenant/:tenant", CreateTenant(systemControl))
+	router.DELETE("/tenant/:tenant", DeleteTenant(systemControl))
+
+	router.GET("/transaction/:tenant/:id", GetTransaction(storage))
+	router.POST("/transaction/:tenant", CreateTransaction(storage, actorSystem))
+	router.GET("/transaction/:tenant", GetTransactions(storage))
+
+	return Server{
 		DaemonSupport: utils.NewDaemonSupport(ctx, "http-server"),
 		Storage:       storage,
 		ActorSystem:   actorSystem,
-		router:        router,
 		SystemControl: systemControl,
 		DiskMonitor:   diskMonitor,
 		MemoryMonitor: memoryMonitor,
 		underlying: &http.Server{
 			Addr:         fmt.Sprintf("127.0.0.1:%d", port),
-			ReadTimeout:  30 * time.Second,
-			WriteTimeout: 30 * time.Second,
+			ReadTimeout:  15 * time.Second,
+			WriteTimeout: 15 * time.Second,
 			Handler:      router,
 			TLSConfig: &tls.Config{
 				MinVersion:               tls.VersionTLS12,
@@ -122,20 +129,6 @@ func NewServer(ctx context.Context, port int, secretsPath string, actorSystem *a
 		key:  key,
 		cert: cert,
 	}
-
-	result.HandleFunc("/health", HealtCheck, "GET", "HEAD")
-	result.HandleFunc("/tenant/{tenant}", TenantPartial, "POST", "DELETE")
-	result.HandleFunc("/tenant", TenantsPartial, "GET")
-	result.HandleFunc("/transaction/{tenant}/{transaction}", TransactionPartial, "GET")
-	result.HandleFunc("/transaction/{tenant}", TransactionsPartial, "POST", "GET")
-
-	return result
-}
-
-// HandleFunc registers route
-func (server Server) HandleFunc(path string, handle Endpoint, methods ...string) *mux.Route {
-	log.Debugf("HTTP route %+v %+v registered", methods, path)
-	return server.router.HandleFunc(path, handle(&server)).Methods(methods...)
 }
 
 // Start handles everything needed to start http-server daemon
@@ -168,7 +161,7 @@ func (server Server) Start() {
 	}
 
 	go func() {
-		log.Infof("Start http-server daemon, listening on :%d", ln.Addr().(*net.TCPAddr).Port)
+		log.Infof("Start http-server daemon, listening on 127.0.0.1:%d", ln.Addr().(*net.TCPAddr).Port)
 		tlsListener := tls.NewListener(tcpKeepAliveListener{ln.(*net.TCPListener)}, config)
 		err := server.underlying.Serve(tlsListener)
 		if err != nil && err != http.ErrServerClosed {

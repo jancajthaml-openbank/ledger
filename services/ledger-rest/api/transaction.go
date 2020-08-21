@@ -15,6 +15,7 @@
 package api
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -23,200 +24,131 @@ import (
 	"github.com/jancajthaml-openbank/ledger-rest/persistence"
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
 
-	"github.com/gorilla/mux"
+	localfs "github.com/jancajthaml-openbank/local-fs"
+	"github.com/labstack/echo/v4"
 )
 
-// TransactionPartial returns http handler for single transaction
-func TransactionPartial(server *Server) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
+// GetTransaction returns transaction state
+func GetTransaction(storage *localfs.PlaintextStorage) func(c echo.Context) error {
+	return func(c echo.Context) error {
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 
-		tenant := vars["tenant"]
-		transaction := vars["transaction"]
-
-		if tenant == "" || transaction == "" {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusNotFound)
-			w.Write(emptyJSONObject)
-			return
-		}
-
-		switch r.Method {
-
-		case "GET":
-			GetTransaction(server, tenant, transaction, w, r)
-			return
-
-		default:
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			w.Write(emptyJSONObject)
-			return
-
-		}
-	}
-}
-
-// TransactionsPartial returns http handler for transactions
-func TransactionsPartial(server *Server) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-
-		tenant := vars["tenant"]
-
+		tenant := c.Param("tenant")
 		if tenant == "" {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusNotFound)
-			w.Write(emptyJSONArray)
-			return
+			return fmt.Errorf("missing tenant")
+		}
+		id := c.Param("id")
+		if id == "" {
+			return fmt.Errorf("missing id")
 		}
 
-		switch r.Method {
+		transaction, err := persistence.LoadTransaction(storage, tenant, id)
+		if err != nil {
+			return err
+		}
 
-		case "GET":
-			GetTransactions(server, tenant, w, r)
-			return
+		if transaction == nil {
+			c.Response().WriteHeader(http.StatusNotFound)
+			return nil
+		}
 
-		case "POST":
-			CreateTransaction(server, tenant, w, r)
-			return
+		chunk, err := utils.JSON.Marshal(transaction)
+		if err != nil {
+			return err
+		}
+
+		c.Response().WriteHeader(http.StatusOK)
+		c.Response().Write(chunk)
+		c.Response().Flush()
+		return nil
+	}
+}
+
+// CreateTransaction creates new transaction for given tenant
+func CreateTransaction(storage *localfs.PlaintextStorage, system *actor.ActorSystem) func(c echo.Context) error {
+	return func(c echo.Context) error {
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+
+		tenant := c.Param("tenant")
+		if tenant == "" {
+			return fmt.Errorf("missing tenant")
+		}
+
+		b, err := ioutil.ReadAll(c.Request().Body)
+		defer c.Request().Body.Close()
+		if err != nil {
+			c.Response().WriteHeader(http.StatusBadRequest)
+			return err
+		}
+
+		var req = new(model.Transaction)
+		if utils.JSON.Unmarshal(b, req) != nil {
+			c.Response().WriteHeader(http.StatusBadRequest)
+			return nil
+		}
+
+		switch actor.CreateTransaction(system, tenant, *req).(type) {
+
+		case *actor.TransactionCreated:
+			c.Response().Header().Set(echo.HeaderContentType, echo.MIMETextPlainCharsetUTF8)
+			c.Response().WriteHeader(http.StatusOK)
+			c.Response().Write([]byte(req.IDTransaction))
+			c.Response().Flush()
+			return nil
+
+		case *actor.TransactionRejected:
+			c.Response().Header().Set(echo.HeaderContentType, echo.MIMETextPlainCharsetUTF8)
+			c.Response().WriteHeader(http.StatusCreated)
+			c.Response().Write([]byte(req.IDTransaction))
+			c.Response().Flush()
+			return nil
+
+		case *actor.TransactionRefused:
+			c.Response().WriteHeader(http.StatusExpectationFailed)
+			return nil
+
+		case *actor.TransactionDuplicate:
+			c.Response().WriteHeader(http.StatusConflict)
+			return nil
+
+		case *actor.TransactionRace, *actor.ReplyTimeout:
+			c.Response().WriteHeader(http.StatusAccepted)
+			return nil
 
 		default:
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			w.Write(emptyJSONObject)
-			return
+			return err
 
 		}
-
 	}
 }
 
-// CreateTransaction creates new transaction
-func CreateTransaction(server *Server, tenant string, w http.ResponseWriter, r *http.Request) {
-	data, err := ioutil.ReadAll(r.Body)
-	defer r.Body.Close()
-	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(emptyJSONObject)
-		return
-	}
+// GetTransactions return existing transactions of given tenant
+func GetTransactions(storage *localfs.PlaintextStorage) func(c echo.Context) error {
+	return func(c echo.Context) error {
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 
-	var req = new(model.Transaction)
-	err = utils.JSON.Unmarshal(data, req)
-	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(emptyJSONObject)
-		return
-	}
+		tenant := c.Param("tenant")
+		if tenant == "" {
+			return fmt.Errorf("missing tenant")
+		}
 
-	switch actor.CreateTransaction(server.ActorSystem, tenant, *req).(type) {
-
-	case *actor.TransactionCreated:
-		resp, err := utils.JSON.Marshal(req)
+		transactions, err := persistence.LoadTransactionsIDS(storage, tenant)
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write(emptyJSONArray)
-			return
+			return err
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(resp)
-		return
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMETextPlainCharsetUTF8)
+		c.Response().WriteHeader(http.StatusOK)
 
-	case *actor.TransactionRejected:
-		resp, err := utils.JSON.Marshal(req)
-		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write(emptyJSONArray)
-			return
+		for idx, transaction := range transactions {
+			if idx == len(transactions)-1 {
+				c.Response().Write([]byte(transaction))
+			} else {
+				c.Response().Write([]byte(transaction + "\n"))
+			}
+			c.Response().Flush()
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		w.Write(resp)
-		return
-
-	case *actor.TransactionRefused:
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusExpectationFailed)
-		w.Write(emptyJSONObject)
-		return
-
-	case *actor.TransactionDuplicate:
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusConflict)
-		w.Write(emptyJSONObject)
-		return
-
-	case *actor.TransactionRace, *actor.ReplyTimeout:
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusAccepted)
-		w.Write(emptyJSONObject)
-		return
-
-	default:
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(emptyJSONObject)
-		return
-
+		return nil
 	}
-	return
-}
-
-// GetTransactions returns list of existing transactions
-func GetTransactions(server *Server, tenant string, w http.ResponseWriter, r *http.Request) {
-	transactions, err := persistence.LoadTransactionsIDS(server.Storage, tenant)
-	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(emptyJSONArray)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	resp, err := utils.JSON.Marshal(transactions)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(emptyJSONArray)
-	} else {
-		w.WriteHeader(http.StatusOK)
-		w.Write(resp)
-	}
-	return
-}
-
-// GetTransaction returns single existing transactions
-func GetTransaction(server *Server, tenant string, transaction string, w http.ResponseWriter, r *http.Request) {
-	transactions, err := persistence.LoadTransaction(server.Storage, tenant, transaction)
-	if err != nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(emptyJSONArray)
-		return
-	}
-
-	if transactions == nil {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNotFound)
-		w.Write(emptyJSONObject)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	resp, err := utils.JSON.Marshal(transactions)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(emptyJSONArray)
-	} else {
-		w.WriteHeader(http.StatusOK)
-		w.Write(resp)
-	}
-	return
 }

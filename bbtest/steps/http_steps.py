@@ -27,10 +27,9 @@ def create_transfer(context, tenant):
     response = urllib.request.urlopen(request, timeout=10, context=ctx)
     assert response.code in [200, 201]
     response = response.read().decode('utf-8')
-    response = json.loads(response)
-    context.last_transaction_id = response.get('id', None)
+    context.last_transaction_id = response or None
   except urllib.error.HTTPError as err:
-    assert err.code == 417
+    assert err.code == 417, 'missing transaction id with {}'.format(ex)
     context.last_transaction_id = None
 
 
@@ -43,7 +42,7 @@ def transaction_should_not_exist(context, tenant):
 
 @then('transaction of tenant {tenant} should exist')
 def transaction_should_exist(context, tenant):
-  assert context.last_transaction_id
+  assert context.last_transaction_id, 'missing last_transaction_id from context'
   path = 'reports/blackbox-tests/data/t_{}/transaction/{}'.format(tenant, context.last_transaction_id)
   assert os.path.isfile(path) is True, "{} does not exists but should".format(path)
 
@@ -120,15 +119,18 @@ def perform_http_request(context, uri):
   if context.text:
     request.add_header('Content-Type', 'application/json')
     request.data = context.text.encode('utf-8')
+
   context.http_response = dict()
 
   try:
     response = urllib.request.urlopen(request, timeout=10, context=ctx)
     context.http_response['status'] = str(response.status)
     context.http_response['body'] = response.read().decode('utf-8')
+    context.http_response['content-type'] = response.info().get_content_type()
   except urllib.error.HTTPError as err:
     context.http_response['status'] = str(err.code)
     context.http_response['body'] = err.read().decode('utf-8')
+    context.http_response['content-type'] = 'text-plain'
 
 
 @then('HTTP response is')
@@ -161,4 +163,19 @@ def check_http_response(context):
         assert type(a) == type(b), 'types differ at {} expected: {} actual: {}'.format(path, type(a), type(b))
         assert a == b, 'values differ at {} expected: {} actual: {}'.format(path, a, b)
 
-    diff('', json.loads(context.text), json.loads(response['body']))
+    stash = list()
+
+    if response['body']:
+      for line in response['body'].split('\n'):
+        if response['content-type'].startswith('text/plain'):
+          stash.append(line)
+        else:
+          stash.append(json.loads(line))
+
+    try:
+      expected = json.loads(context.text)
+      if type(expected) == dict:
+        stash = stash[0] if len(stash) else dict()
+      diff('', expected, stash)
+    except AssertionError as ex:
+      raise AssertionError('{} with response {}'.format(ex, response['body']))

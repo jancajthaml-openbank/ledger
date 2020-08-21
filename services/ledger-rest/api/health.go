@@ -19,44 +19,40 @@ import (
 
 	"github.com/jancajthaml-openbank/ledger-rest/system"
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
+
+	"github.com/labstack/echo/v4"
 )
 
 // HealtCheck returns 200 OK if service is healthy, 503 otherwise
-func HealtCheck(server *Server) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		units, err := server.SystemControl.GetUnitsProperties("ledger")
-		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Write(emptyJSONObject)
-			return
-		}
+func HealtCheck(memoryMonitor *system.MemoryMonitor, diskMonitor *system.DiskMonitor) func(c echo.Context) error {
+	return func(c echo.Context) error {
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 
 		status := system.SystemStatus{
-			Units: units,
 			Memory: system.MemoryStatus{
-				Free:      server.MemoryMonitor.GetFreeMemory(),
-				Used:      server.MemoryMonitor.GetUsedMemory(),
-				IsHealthy: server.MemoryMonitor.IsHealthy(),
+				Free:      memoryMonitor.GetFreeMemory(),
+				Used:      memoryMonitor.GetUsedMemory(),
+				IsHealthy: memoryMonitor.IsHealthy(),
 			},
 			Storage: system.StorageStatus{
-				Free:      server.DiskMonitor.GetFreeDiskSpace(),
-				Used:      server.DiskMonitor.GetUsedDiskSpace(),
-				IsHealthy: server.DiskMonitor.IsHealthy(),
+				Free:      diskMonitor.GetFreeDiskSpace(),
+				Used:      diskMonitor.GetUsedDiskSpace(),
+				IsHealthy: diskMonitor.IsHealthy(),
 			},
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		resp, err := utils.JSON.Marshal(status)
-		if err != nil {
-			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Write(emptyJSONArray)
-		} else if !status.Storage.IsHealthy || !status.Memory.IsHealthy {
-			w.WriteHeader(http.StatusServiceUnavailable)
-			w.Write(resp)
+		if !status.Storage.IsHealthy || !status.Memory.IsHealthy {
+			c.Response().WriteHeader(http.StatusServiceUnavailable)
 		} else {
-			w.WriteHeader(http.StatusOK)
-			w.Write(resp)
+			c.Response().WriteHeader(http.StatusOK)
 		}
+
+		chunk, err := utils.JSON.Marshal(status)
+		if err != nil {
+			return err
+		}
+		c.Response().Write(chunk)
+		c.Response().Flush()
+		return nil
 	}
 }

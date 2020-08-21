@@ -15,105 +15,78 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
+	"github.com/jancajthaml-openbank/ledger-rest/system"
 
-	"github.com/gorilla/mux"
+	"github.com/labstack/echo/v4"
 )
 
-// TenantPartial returns http handler for single tenant
-func TenantPartial(server *Server) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
+// CreateTenant enables ledger-unit@{tenant}
+func CreateTenant(systemctl *system.SystemControl) func(c echo.Context) error {
+	return func(c echo.Context) error {
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 
-		tenant := vars["tenant"]
-
+		tenant := c.Param("tenant")
 		if tenant == "" {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusNotFound)
-			w.Write(emptyJSONObject)
-			return
+			return fmt.Errorf("missing tenant")
 		}
 
-		switch r.Method {
-
-		case "POST":
-			EnableUnit(server, tenant, w, r)
-			return
-
-		case "DELETE":
-			DisableUnit(server, tenant, w, r)
-			return
-
-		default:
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			w.Write(emptyJSONObject)
-			return
-
-		}
-	}
-}
-
-// TenantsPartial returns http handler for tenants
-func TenantsPartial(server *Server) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-
-		units, err := server.SystemControl.ListUnits("ledger-unit@")
+		err := systemctl.EnableUnit("ledger-unit@" + tenant + ".service")
 		if err != nil {
-			log.Errorf("Error when listing units, %+v", err)
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write(emptyJSONObject)
-			return
+			return err
 		}
 
-		resp, err := utils.JSON.Marshal(units)
+		c.Response().WriteHeader(http.StatusOK)
+
+		return nil
+	}
+}
+
+// DeleteTenant disables ledger-unit@{tenant}
+func DeleteTenant(systemctl *system.SystemControl) func(c echo.Context) error {
+	return func(c echo.Context) error {
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+
+		tenant := c.Param("tenant")
+		if tenant == "" {
+			return fmt.Errorf("missing tenant")
+		}
+
+		err := systemctl.DisableUnit("ledger-unit@" + tenant + ".service")
 		if err != nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write(emptyJSONArray)
-			return
+			return err
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write(resp)
-		return
+		c.Response().WriteHeader(http.StatusOK)
+
+		return nil
 	}
 }
 
-// EnableUnit enables tenant unit
-func EnableUnit(server *Server, tenant string, w http.ResponseWriter, r *http.Request) {
-	err := server.SystemControl.EnableUnit("ledger-unit@" + tenant + ".service")
-	if err != nil {
-		log.Errorf("Error when enabling unit, %+v", err)
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(emptyJSONObject)
-		return
+// ListTenants lists ledger-unit@
+func ListTenants(systemctl *system.SystemControl) func(c echo.Context) error {
+	return func(c echo.Context) error {
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
+
+		units, err := systemctl.ListUnits("ledger-unit@")
+		if err != nil {
+			return err
+		}
+
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMETextPlainCharsetUTF8)
+		c.Response().WriteHeader(http.StatusOK)
+
+		for idx, unit := range units {
+			if idx == len(units)-1 {
+				c.Response().Write([]byte(unit))
+			} else {
+				c.Response().Write([]byte(unit + "\n"))
+			}
+			c.Response().Flush()
+		}
+
+		return nil
 	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(emptyJSONObject)
-	return
-}
-
-// DisableUnit disables tenant unit
-func DisableUnit(server *Server, tenant string, w http.ResponseWriter, r *http.Request) {
-	err := server.SystemControl.DisableUnit("ledger-unit@" + tenant + ".service")
-	if err != nil {
-		log.Errorf("Error when disabling unit, %+v", err)
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(emptyJSONObject)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(emptyJSONObject)
-	return
 }

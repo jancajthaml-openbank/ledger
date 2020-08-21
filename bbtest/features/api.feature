@@ -120,27 +120,6 @@ Feature: REST
     Then HTTP response is
       | key    | value |
       | status | 200   |
-      """
-      {
-        "id": "unique_transaction_id",
-        "transfers": [
-          {
-            "id": "unique_transfer_id",
-            "valueDate": "2018-03-04T17:08:22Z",
-            "credit": {
-              "tenant": "API",
-              "name": "xxx"
-            },
-            "debit": {
-              "tenant": "API",
-              "name": "yyy"
-            },
-            "amount": "1",
-            "currency": "XXX"
-          }
-        ]
-      }
-      """
 
     When I request HTTP https://127.0.0.1/transaction/API/unique_transaction_id
       | key    | value |
@@ -210,27 +189,6 @@ Feature: REST
     Then HTTP response is
       | key    | value |
       | status | 200   |
-      """
-      {
-        "id": "unique_transaction_id",
-        "transfers": [
-          {
-            "id": "unique_transfer_id",
-            "valueDate": "2018-03-04T17:08:22Z",
-            "credit": {
-              "tenant": "API",
-              "name": "xxx"
-            },
-            "debit": {
-              "tenant": "API",
-              "name": "yyy"
-            },
-            "amount": "1",
-            "currency": "XXX"
-          }
-        ]
-      }
-      """
 
     When I request HTTP https://127.0.0.1/transaction/API
       | key    | value |
