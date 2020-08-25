@@ -24,7 +24,8 @@ import (
 
 func loadConfFromEnv() Configuration {
 	logLevel := strings.ToUpper(getEnvString("LEDGER_LOG_LEVEL", "DEBUG"))
-	secrets := getEnvString("LEDGER_SECRETS", "")
+	serverKey := getEnvString("LEDGER_SERVER_KEY", "")
+	serverCert := getEnvString("LEDGER_SERVER_CERT", "")
 	rootStorage := getEnvString("LEDGER_STORAGE", "/data")
 	lakeHostname := getEnvString("LEDGER_LAKE_HOSTNAME", "")
 	port := getEnvInteger("LEDGER_HTTP_PORT", 4401)
@@ -33,14 +34,15 @@ func loadConfFromEnv() Configuration {
 	metricsOutput := getEnvFilename("LEDGER_METRICS_OUTPUT", "/tmp")
 	metricsRefreshRate := getEnvDuration("LEDGER_METRICS_REFRESHRATE", time.Second)
 
-	if lakeHostname == "" || secrets == "" || rootStorage == "" {
+	if lakeHostname == "" || serverKey == "" || serverCert == "" || rootStorage == "" {
 		log.Fatal("missing required parameter to run")
 	}
 
 	return Configuration{
 		RootStorage:        rootStorage,
 		ServerPort:         port,
-		SecretsPath:        secrets,
+		ServerKey:          serverKey,
+		ServerCert:         serverCert,
 		LakeHostname:       lakeHostname,
 		LogLevel:           logLevel,
 		MetricsRefreshRate: metricsRefreshRate,

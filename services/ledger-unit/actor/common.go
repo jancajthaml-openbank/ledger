@@ -15,7 +15,7 @@
 package actor
 
 import (
-	"strings"
+	"fmt"
 
 	"github.com/jancajthaml-openbank/ledger-unit/model"
 
@@ -23,132 +23,189 @@ import (
 	money "gopkg.in/inf.v0"
 )
 
+func parseTransfer(chunk string) (*model.Transfer, error) {
+	start := 0
+	end := len(chunk)
+	parts := make([]string, 8)
+	idx := 0
+	i := 0
+	for i < end && idx < 8 {
+		if chunk[i] == 59 {
+			if !(start == i && chunk[start] == 59) {
+				parts[idx] = chunk[start:i]
+				idx++
+			}
+			start = i + 1
+		}
+		i++
+	}
+	if idx < 8 && chunk[start] != 59 && len(chunk[start:]) > 0 {
+		parts[idx] = chunk[start:]
+		idx++
+	}
+
+	amount, ok := new(money.Dec).SetString(parts[5])
+	if !ok {
+		return nil, fmt.Errorf("invalid amount %s", parts[5])
+	}
+
+	return &model.Transfer{
+		IDTransfer: parts[0],
+		Credit: model.Account{
+			Tenant: parts[1],
+			Name:   parts[2],
+		},
+		Debit: model.Account{
+			Tenant: parts[3],
+			Name:   parts[4],
+		},
+		ValueDate: parts[7],
+		Amount:    amount,
+		Currency:  parts[6],
+	}, nil
+}
+
+func parseMessage(msg string, from system.Coordinates) (interface{}, error) {
+	start := 0
+	end := len(msg)
+	parts := make([]string, 40)
+	idx := 0
+	i := 0
+	for i < end && idx < 40 {
+		if msg[i] == 32 {
+			if !(start == i && msg[start] == 32) {
+				parts[idx] = msg[start:i]
+				idx++
+			}
+			start = i + 1
+		}
+		i++
+	}
+	if idx < 40 && msg[start] != 32 && len(msg[start:]) > 0 {
+		parts[idx] = msg[start:]
+		idx++
+	}
+
+	if i != end {
+		return nil, fmt.Errorf("message too large")
+	}
+
+	switch parts[0] {
+
+	case ReqCreateTransaction:
+		if idx > 2 {
+			transaction := model.Transaction{
+				IDTransaction: parts[1],
+			}
+			for _, part := range parts[2:idx] {
+				transfer, err := parseTransfer(part)
+				if err != nil {
+					return nil, fmt.Errorf("invalid transfer in message %s", msg)
+				}
+				transaction.Transfers = append(transaction.Transfers, *transfer)
+			}
+			return transaction, nil
+		}
+		return nil, fmt.Errorf("invalid message %s", msg)
+
+	case FatalError:
+		return FatalErrored{
+			Account: model.Account{
+				Tenant: from.Region[10:],
+				Name:   from.Name,
+			},
+		}, nil
+
+	case PromiseAccepted:
+		return PromiseWasAccepted{
+			Account: model.Account{
+				Tenant: from.Region[10:],
+				Name:   from.Name,
+			},
+		}, nil
+
+	case PromiseRejected:
+		if idx == 2 {
+			return PromiseWasRejected{
+				Account: model.Account{
+					Tenant: from.Region[10:],
+					Name:   from.Name,
+				},
+				Reason: parts[1],
+			}, nil
+		}
+		return nil, fmt.Errorf("invalid message %s", msg)
+
+	case CommitAccepted:
+		return CommitWasAccepted{
+			Account: model.Account{
+				Tenant: from.Region[10:],
+				Name:   from.Name,
+			},
+		}, nil
+
+	case CommitRejected:
+		if idx == 2 {
+			return CommitWasRejected{
+				Account: model.Account{
+					Tenant: from.Region[10:],
+					Name:   from.Name,
+				},
+				Reason: parts[1],
+			}, nil
+		}
+		return nil, fmt.Errorf("invalid message %s", msg)
+
+	case RollbackAccepted:
+		return RollbackWasAccepted{
+			Account: model.Account{
+				Tenant: from.Region[10:],
+				Name:   from.Name,
+			},
+		}, nil
+
+	case RollbackRejected:
+		if idx == 2 {
+			return RollbackWasRejected{
+				Account: model.Account{
+					Tenant: from.Region[10:],
+					Name:   from.Name,
+				},
+				Reason: parts[1],
+			}, nil
+		}
+		return nil, fmt.Errorf("invalid message %s", msg)
+
+	default:
+		return nil, fmt.Errorf("invalid message %s", msg)
+
+	}
+
+}
+
 // ProcessRemoteMessage processing of remote message to this wall
 func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 	return func(msg string, to system.Coordinates, from system.Coordinates) {
-
-		parts := strings.Split(msg, " ")
-
-		var (
-			message interface{}
-			ref     *system.Envelope
-			err     error
-		)
-
-		if parts[0] == ReqCreateTransaction {
-			if len(parts) > 2 {
-				transaction := model.Transaction{
-					IDTransaction: parts[1],
-				}
-
-				for _, transferPart := range parts[2:] {
-					transferParts := strings.Split(transferPart, ";")
-					amount, _ := new(money.Dec).SetString(transferParts[5])
-					transfer := model.Transfer{
-						IDTransfer: transferParts[0],
-						Credit: model.Account{
-							Tenant: transferParts[1],
-							Name:   transferParts[2],
-						},
-						Debit: model.Account{
-							Tenant: transferParts[3],
-							Name:   transferParts[4],
-						},
-						ValueDate: transferParts[7],
-						Amount:    amount,
-						Currency:  transferParts[6],
-					}
-					transaction.Transfers = append(transaction.Transfers, transfer)
-				}
-				message = transaction
-				ref, err = NewTransactionActor(s, to.Name)
-				if err != nil {
-					log.Warnf("Unable to spray from [remote %v -> local %v] : %+v", from, to, msg)
-					s.SendMessage(FatalError, from, to)
-					return
-				}
-			}
-		} else {
-			ref, err = s.ActorOf(to.Name)
-			if err != nil {
+		message, err := parseMessage(msg, from)
+		if err != nil {
+			log.Warnf("%s [remote %v -> local %v]", err, from, to)
+			s.SendMessage(FatalError, from, to)
+			return
+		}
+		var ref *system.Envelope
+		switch message.(type) {
+		case model.Transaction:
+			if ref, err = NewTransactionActor(s, to.Name); err != nil {
+				log.Warnf("%s [remote %v -> local %v]", err, from, to)
+				s.SendMessage(FatalError, from, to)
 				return
 			}
-
-			switch parts[0] {
-
-			case FatalError:
-				message = FatalErrored{
-					Account: model.Account{
-						Tenant: from.Region[10:],
-						Name:   from.Name,
-					},
-				}
-
-			case PromiseAccepted:
-				message = PromiseWasAccepted{
-					Account: model.Account{
-						Tenant: from.Region[10:],
-						Name:   from.Name,
-					},
-				}
-
-			case PromiseRejected:
-				if len(parts) == 2 {
-					message = PromiseWasRejected{
-						Account: model.Account{
-							Tenant: from.Region[10:],
-							Name:   from.Name,
-						},
-						Reason: parts[1],
-					}
-				}
-
-			case CommitAccepted:
-				message = CommitWasAccepted{
-					Account: model.Account{
-						Tenant: from.Region[10:],
-						Name:   from.Name,
-					},
-				}
-
-			case CommitRejected:
-				if len(parts) == 2 {
-					message = CommitWasRejected{
-						Account: model.Account{
-							Tenant: from.Region[10:],
-							Name:   from.Name,
-						},
-						Reason: parts[1],
-					}
-				}
-
-			case RollbackAccepted:
-				message = RollbackWasAccepted{
-					Account: model.Account{
-						Tenant: from.Region[10:],
-						Name:   from.Name,
-					},
-				}
-
-			case RollbackRejected:
-				if len(parts) == 2 {
-					message = RollbackWasRejected{
-						Account: model.Account{
-							Tenant: from.Region[10:],
-							Name:   from.Name,
-						},
-						Reason: parts[1],
-					}
-				}
-
+		default:
+			if ref, err = s.ActorOf(to.Name); err != nil {
+				log.Warnf("Actor not found [remote %v -> local %v]", from, to)
+				return
 			}
 		}
-
-		if message == nil {
-			log.Warnf("Deserialization of unsuported message [remote %v -> local %v] : %+v", from, to, msg)
-			message = FatalError
-		}
-
 		ref.Tell(message, to, from)
 		return
 	}
@@ -159,8 +216,9 @@ func NewTransactionActor(s *ActorSystem, name string) (*system.Envelope, error) 
 	envelope := system.NewEnvelope(name, NewTransactionState())
 	err := s.RegisterActor(envelope, InitialTransaction(s))
 	if err != nil {
-		log.Warnf("Spawning Transaction Actor %s Error unable to register", name)
+		log.Warnf("%s ~ Spawning Actor Error unable to register", name)
 		return nil, err
 	}
+	log.Debugf("%s ~ Actor Spawned", name)
 	return envelope, nil
 }

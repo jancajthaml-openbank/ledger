@@ -22,8 +22,10 @@ type Configuration struct {
 	RootStorage string
 	// ServerPort is port which server is bound to
 	ServerPort int
-	// SecretsPath directory where .key and .crt is stored
-	SecretsPath string
+	// ServerKey path to server tls key file
+	ServerKey string
+	// ServerCert path to server tls cert file
+	ServerCert string
 	// LakeHostname represent hostname of openbank lake service
 	LakeHostname string
 	// LogLevel ignorecase log level
