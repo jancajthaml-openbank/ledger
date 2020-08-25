@@ -19,8 +19,6 @@ services:
       - GOARCH
       - GOPATH=/go
       - COMPOSE_PROJECT_NAME
-    entrypoint:
-      - go
 
   # -------------------------------------------------------------------------- #
 
