@@ -19,8 +19,9 @@ class UnitHelper(object):
       "STORAGE": "{}/reports/blackbox-tests/data".format(os.getcwd()),
       "LOG_LEVEL": "DEBUG",
       "HTTP_PORT": 443,
-      "SECRETS": "/etc/ledger/secrets",
-      "LAKE_HOSTNAME": "localhost",
+      "SERVER_KEY": "/etc/ledger/secrets/domain.local.key",
+      "SERVER_CERT": "/etc/ledger/secrets/domain.local.crt",
+      "LAKE_HOSTNAME": "127.0.0.1",
       "TRANSACTION_INTEGRITY_SCANINTERVAL": "24h",
       "MEMORY_THRESHOLD": 0,
       "STORAGE_THRESHOLD": 0,
@@ -150,5 +151,5 @@ class UnitHelper(object):
   def __get_systemd_units(self):
     (code, result, error) = execute(['systemctl', 'list-units', '--no-legend'])
     result = [item.split(' ')[0].strip() for item in result.split(os.linesep)]
-    result = [item for item in result if "ledger" in item]
+    result = [item for item in result if "ledger" in item and not item.endswith('unit.slice')]
     return result

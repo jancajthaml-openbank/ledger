@@ -2,25 +2,31 @@
 set -e
 
 if [ "$1" = configure ] && [ -f /etc/ledger/conf.d/init.conf ] ; then
-  secrets=$(sed -n -e 's/^.*LEDGER_SECRETS=//p' /etc/ledger/conf.d/init.conf 2>/dev/null | awk '{gsub(/^ +| +$/,"")} {print $0}')
 
-  if [ -z "${secrets}" ] ; then
-    (>&2 echo "LEDGER_SECRETS are not defined at /etc/ledger/conf.d/init.conf")
+  ledger_server_key=$(sed -n -e 's/^.*LEDGER_SERVER_KEY=//p' /etc/ledger/conf.d/init.conf 2>/dev/null | awk '{gsub(/^ +| +$/,"")} {print $0}')
+  if [ -z "${ledger_server_key}" ] ; then
+    (>&2 echo "LEDGER_SERVER_KEY is not defined at /etc/ledger/conf.d/init.conf")
     exit 1
   fi
 
-  if [ ! -f "${secrets}/domain.local.crt" ] || [ ! -f "${secrets}/domain.local.key" ] ; then
-    mkdir -p "${secrets}"
+  ledger_server_cert=$(sed -n -e 's/^.*LEDGER_SERVER_CERT=//p' /etc/ledger/conf.d/init.conf 2>/dev/null | awk '{gsub(/^ +| +$/,"")} {print $0}')
+  if [ -z "${ledger_server_cert}" ] ; then
+    (>&2 echo "LEDGER_SERVER_CERT is not defined at /etc/ledger/conf.d/init.conf")
+    exit 1
+  fi
+
+  if [ ! -f "${ledger_server_cert}" -o ! -f "${ledger_server_key}" ] ; then
+    mkdir -p $(dirname "${ledger_server_cert}") $(dirname "${ledger_server_key}")
 
     openssl req \
       -x509 \
       -nodes \
       -newkey rsa:2048 \
-      -keyout "${secrets}/domain.local.key" \
-      -out "${secrets}/domain.local.crt" \
+      -keyout "${ledger_server_key}" \
+      -out "${ledger_server_cert}" \
       -days 1 \
       -subj "/C=CZ/ST=Czechia/L=Prague/O=OpenBanking/OU=IT/CN=localhost/emailAddress=jan.cajthaml@gmail.com"
-    echo "generated temporary certificates at ${secrets} valid for 24 hours"
+    echo "generated temporary x509 key pair ${ledger_server_key} and ${ledger_server_cert} valid for 24 hours"
   fi
 fi
 

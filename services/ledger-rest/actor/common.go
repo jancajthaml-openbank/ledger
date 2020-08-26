@@ -15,54 +15,58 @@
 package actor
 
 import (
-	"strings"
+	"fmt"
 
 	system "github.com/jancajthaml-openbank/actor-system"
 )
 
-// ProcessRemoteMessage processing of remote message to this wall
+func parseMessage(msg string) (interface{}, error) {
+	end := len(msg)
+	i := 0
+	for i < end && msg[i] != 32 {
+		i++
+	}
+
+	switch msg[0:i] {
+
+	case FatalError:
+		return FatalError, nil
+
+	case RespCreateTransaction:
+		return new(TransactionCreated), nil
+
+	case RespTransactionRefused:
+		return new(TransactionRefused), nil
+
+	case RespTransactionRejected:
+		return new(TransactionRejected), nil
+
+	case RespTransactionRace:
+		return new(TransactionRace), nil
+
+	case RespTransactionMissing:
+		return new(TransactioMissing), nil
+
+	case RespTransactionDuplicate:
+		return new(TransactionDuplicate), nil
+
+	default:
+		return nil, fmt.Errorf("unknown message %s", msg)
+	}
+}
+
+// ProcessMessage processing of remote message
 func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 	return func(msg string, to system.Coordinates, from system.Coordinates) {
-
 		ref, err := s.ActorOf(to.Name)
 		if err != nil {
 			// FIXME forward into deadletter receiver and finish whatever has started
-			log.Warnf("Deadletter received [remote %v -> local %v] : %+v", from, to, msg)
 			return
 		}
-
-		parts := strings.Split(msg, " ")
-
-		var message interface{}
-
-		switch parts[0] {
-
-		case FatalError:
-			message = FatalError
-
-		case RespCreateTransaction:
-			message = new(TransactionCreated)
-
-		case RespTransactionRefused:
-			message = new(TransactionRefused)
-
-		case RespTransactionRejected:
-			message = new(TransactionRejected)
-
-		case RespTransactionRace:
-			message = new(TransactionRace)
-
-		case RespTransactionMissing:
-			message = new(TransactioMissing)
-
-		case RespTransactionDuplicate:
-			message = new(TransactionDuplicate)
-
-		default:
-			log.Warnf("Deserialization of unsuported message [remote %v -> local %v] : %+v", from, to, msg)
-			message = FatalError
+		message, err := parseMessage(msg)
+		if err != nil {
+			log.Warnf("%s [remote %v -> local %v]", err, from, to)
 		}
-
 		ref.Tell(message, to, from)
 		return
 	}
