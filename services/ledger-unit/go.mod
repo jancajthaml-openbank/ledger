@@ -3,7 +3,7 @@ module github.com/jancajthaml-openbank/ledger-unit
 go 1.14
 
 require (
-	github.com/jancajthaml-openbank/actor-system v1.1.0
+	github.com/jancajthaml-openbank/actor-system v1.1.1
 	github.com/jancajthaml-openbank/local-fs v1.1.4
 	github.com/json-iterator/go v1.1.10
 	github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0
