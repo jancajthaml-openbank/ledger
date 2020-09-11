@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/coreos/go-systemd/v22 v22.1.0
-	github.com/jancajthaml-openbank/actor-system v1.1.0
+	github.com/jancajthaml-openbank/actor-system v1.1.1
 	github.com/jancajthaml-openbank/local-fs v1.1.4
 	github.com/json-iterator/go v1.1.10
 	github.com/labstack/echo/v4 v4.1.16

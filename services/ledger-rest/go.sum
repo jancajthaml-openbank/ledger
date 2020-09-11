@@ -9,6 +9,8 @@ github.com/godbus/dbus/v5 v5.0.3/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5x
 github.com/google/gofuzz v1.0.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
 github.com/jancajthaml-openbank/actor-system v1.1.0 h1:AdToEqUNrQFum2CZVU7a3W+vJ9w1Gyrt8pyffj11wQc=
 github.com/jancajthaml-openbank/actor-system v1.1.0/go.mod h1:yuaq5gqMveJjG9Xw+5z6pZVBTSt0XGrRCTTeWmebnlg=
+github.com/jancajthaml-openbank/actor-system v1.1.1 h1:lui3TYMFrmxFYN6CrpxaoohBgki+Q/M8adToPBPQwkI=
+github.com/jancajthaml-openbank/actor-system v1.1.1/go.mod h1:hw8242Kf2LeCNSxzJwgqEjMqGue+8Wzz/w9M+8G4+28=
 github.com/jancajthaml-openbank/local-fs v1.1.4 h1:HjMBdyRsJuNgdz9xX/sjDL7qJ90IseSJUkNSwUoyHdY=
 github.com/jancajthaml-openbank/local-fs v1.1.4/go.mod h1:Hulcb84Ev/x3d6BNM3tMWvkoMjAHxvUAfRsr88kdlpE=
 github.com/json-iterator/go v1.1.10 h1:Kz6Cvnvv2wGdaG/V8yMvfkmNiXq9Ya2KUv4rouJJr68=
