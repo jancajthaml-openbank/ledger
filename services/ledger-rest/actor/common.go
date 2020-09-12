@@ -65,7 +65,7 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 		}
 		message, err := parseMessage(msg)
 		if err != nil {
-			log.Warnf("%s [remote %v -> local %v]", err, from, to)
+			log.Warn().Msgf("%s [remote %v -> local %v]", err, from, to)
 		}
 		ref.Tell(message, to, from)
 		return

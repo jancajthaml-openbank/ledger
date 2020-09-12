@@ -77,7 +77,7 @@ func (monitor *DiskMonitor) CheckDiskSpace() {
 	atomic.StoreUint64(monitor.used, used)
 
 	if monitor.limit > 0 && free < monitor.limit {
-		log.Warnf("Not enough disk space to continue operating")
+		log.Warn().Msgf("Not enough disk space to continue operating")
 		atomic.StoreInt32(monitor.ok, 0)
 		return
 	}
@@ -101,7 +101,7 @@ func (monitor DiskMonitor) Start() {
 		return
 	}
 
-	log.Info("Start disk space monitor daemon")
+	log.Info().Msg("Start disk space monitor daemon")
 
 	go func() {
 		for {
@@ -116,5 +116,5 @@ func (monitor DiskMonitor) Start() {
 	}()
 
 	monitor.WaitStop()
-	log.Info("Stop disk space monitor daemon")
+	log.Info().Msg("Stop disk space monitor daemon")
 }

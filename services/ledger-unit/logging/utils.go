@@ -15,24 +15,34 @@
 package logging
 
 import (
-	"github.com/sirupsen/logrus"
 	"os"
-	"strings"
+	"time"
+	"github.com/rs/zerolog"
 )
 
-// NewLogger returns logger with preset field
-func NewLogger(name string) logrus.FieldLogger {
-	return logrus.WithField("src", name)
+var log = New("global")
+
+// New returns logger with preset field
+func New(name string) zerolog.Logger {
+	output := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.RFC3339}
+	return zerolog.New(output).With().Timestamp().Str("src", name).Logger()
 }
 
 // SetupLogger properly sets up logging
 func SetupLogger(level string) {
-	if logLevel, err := logrus.ParseLevel(level); err == nil {
-		logrus.Infof("Log level set to %v", strings.ToUpper(level))
-		logrus.SetLevel(logLevel)
-	} else {
-		logrus.Warnf("Invalid log level %v, using level WARN", level)
-		logrus.SetLevel(logrus.WarnLevel)
+	switch (level) {
+		case "DEBUG":
+			log.Info().Msg("Log level set to DEBUG")
+			zerolog.SetGlobalLevel(zerolog.DebugLevel)
+		case "INFO":
+			log.Info().Msg("Log level set to INFO")
+			zerolog.SetGlobalLevel(zerolog.InfoLevel)
+		case "ERROR":
+			log.Info().Msg("Log level set to ERROR")
+			zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+		default:
+			log.Warn().Msgf("Invalid log level %v, using level INFO", level)
+			log.Info().Msg("Log level set to INFO")
+			zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
-	logrus.SetOutput(os.Stdout)
 }

@@ -47,7 +47,8 @@ func NewServer(ctx context.Context, port int, certPath string, keyPath string, a
 
 	certificate, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {
-		log.Fatalf("Invalid cert %s and key %s", certPath, keyPath)
+		log.Error().Msgf("Invalid cert %s and key %s", certPath, keyPath)
+		panic(fmt.Sprintf("Invalid cert %s and key %s", certPath, keyPath))
 	}
 
 	router.GET("/health", HealtCheck(memoryMonitor, diskMonitor))
@@ -108,11 +109,11 @@ func (server Server) Start() {
 
 	go func() {
 		defer server.Stop()
-		log.Infof("Start http-server daemon, listening on %s", server.underlying.Addr)
+		log.Info().Msgf("Start http-server daemon, listening on %s", server.underlying.Addr)
 		tlsListener := tls.NewListener(tcpKeepAliveListener{ln.(*net.TCPListener)}, server.underlying.TLSConfig)
 		err := server.underlying.Serve(tlsListener)
 		if err != nil && err != http.ErrServerClosed {
-			log.Errorf("http-server error %v", err)
+			log.Error().Msgf("http-server error %v", err)
 		}
 	}()
 
@@ -126,5 +127,5 @@ func (server Server) Start() {
 	}()
 
 	server.WaitStop()
-	log.Info("Stop http-server daemon")
+	log.Info().Msg("Stop http-server daemon")
 }
