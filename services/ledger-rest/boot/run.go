@@ -86,16 +86,16 @@ func (prog Program) Start() {
 	}
 
 	if err := prog.WaitReady(5 * time.Second); err != nil {
-		log.Errorf("Error when starting daemons: %+v", err)
+		log.Error().Msgf("Error when starting daemons: %+v", err)
 	} else {
 		utils.NotifyServiceReady()
 		prog.GreenLight()
-		log.Info("Program Started")
+		log.Info().Msg("Program Started")
 		signal.Notify(prog.interrupt, syscall.SIGINT, syscall.SIGTERM)
 		prog.WaitInterrupt()
 	}
 
-	log.Info("Program Stopping")
+	log.Info().Msg("Program Stopping")
 	utils.NotifyServiceStopping()
 
 	prog.cancel()

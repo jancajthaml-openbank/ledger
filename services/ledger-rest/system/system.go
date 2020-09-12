@@ -21,9 +21,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
-
 	"github.com/coreos/go-systemd/v22/dbus"
+	"github.com/jancajthaml-openbank/ledger-rest/utils"
 )
 
 // SystemControl represents systemctl subroutine
@@ -47,7 +46,6 @@ func NewSystemControl(ctx context.Context) SystemControl {
 
 // ListUnits returns list of unit names
 func (sys SystemControl) ListUnits(prefix string) ([]string, error) {
-	log.Debugf("Listing units %+v", prefix)
 
 	units, err := sys.underlying.ListUnits()
 	if err != nil {
@@ -71,7 +69,6 @@ func (sys SystemControl) ListUnits(prefix string) ([]string, error) {
 
 // GetUnitsProperties return unit properties
 func (sys SystemControl) GetUnitsProperties(prefix string) (map[string]UnitStatus, error) {
-	log.Debugf("Getting units %+v status", prefix)
 
 	units, err := sys.underlying.ListUnits()
 	if err != nil {
@@ -103,11 +100,9 @@ func (sys SystemControl) GetUnitsProperties(prefix string) (map[string]UnitStatu
 
 // DisableUnit disables unit
 func (sys SystemControl) DisableUnit(name string) error {
-	log.Debugf("Disabling unit %s", name)
 
 	ch := make(chan string)
 
-	// FIXME
 	if _, err := sys.underlying.StopUnit(name, "replace", ch); err != nil {
 		return fmt.Errorf("unable to stop unit %s because %+v", name, err)
 	}
@@ -118,8 +113,8 @@ func (sys SystemControl) DisableUnit(name string) error {
 		if result != "done" {
 			return fmt.Errorf("unable to stop unit %s", name)
 		}
-		log.Infof("Stopped unit %s", name)
-		log.Infof("Disabling unit %s", name)
+		log.Info().Msgf("Stopped unit %s", name)
+		log.Info().Msgf("Disabling unit %s", name)
 
 		if _, err := sys.underlying.DisableUnitFiles([]string{name}, false); err != nil {
 			return fmt.Errorf("unable to disable unit %s because %+v", name, err)
@@ -135,7 +130,6 @@ func (sys SystemControl) DisableUnit(name string) error {
 
 // EnableUnit enables unit
 func (sys SystemControl) EnableUnit(name string) error {
-	log.Debugf("Enabling units %s", name)
 
 	if _, _, err := sys.underlying.EnableUnitFiles([]string{name}, false, false); err != nil {
 		return fmt.Errorf("unable to enable unit %s because %+v", name, err)
@@ -153,7 +147,7 @@ func (sys SystemControl) EnableUnit(name string) error {
 		if result != "done" {
 			return fmt.Errorf("unable to start unit %s", name)
 		}
-		log.Infof("Started unit %s", name)
+		log.Info().Msgf("Started unit %s", name)
 		return nil
 
 	case <-time.After(3 * time.Second):
@@ -179,7 +173,7 @@ func (sys SystemControl) Start() {
 		return
 	}
 
-	log.Info("Start system-control daemon")
+	log.Info().Msg("Start system-control daemon")
 
 	go func() {
 		for {
@@ -192,5 +186,5 @@ func (sys SystemControl) Start() {
 	}()
 
 	sys.WaitStop()
-	log.Info("Stop system-control daemon")
+	log.Info().Msg("Stop system-control daemon")
 }

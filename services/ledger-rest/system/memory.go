@@ -73,7 +73,7 @@ func (monitor *MemoryMonitor) CheckMemoryAllocation() {
 	var sysStat = new(syscall.Sysinfo_t)
 	err := syscall.Sysinfo(sysStat)
 	if err != nil {
-		log.Warnf("Unable to obtain memory stats")
+		log.Warn().Msgf("Unable to obtain memory stats")
 		atomic.StoreInt32(monitor.ok, 0)
 		return
 	}
@@ -84,7 +84,7 @@ func (monitor *MemoryMonitor) CheckMemoryAllocation() {
 	atomic.StoreUint64(monitor.used, memStat.Sys)
 
 	if monitor.limit > 0 && free < monitor.limit {
-		log.Warnf("Not enough memory to continue operating")
+		log.Warn().Msgf("Not enough memory to continue operating")
 		atomic.StoreInt32(monitor.ok, 0)
 		return
 	}
@@ -108,7 +108,7 @@ func (monitor MemoryMonitor) Start() {
 		return
 	}
 
-	log.Info("Start memory-monitor daemon")
+	log.Info().Msg("Start memory-monitor daemon")
 
 	go func() {
 		for {
@@ -123,5 +123,5 @@ func (monitor MemoryMonitor) Start() {
 	}()
 
 	monitor.WaitStop()
-	log.Info("Stop memory-monitor daemon")
+	log.Info().Msg("Stop memory-monitor daemon")
 }

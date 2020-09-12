@@ -29,7 +29,7 @@ func CreateTransaction(sys *ActorSystem, tenant string, transaction model.Transa
 	sys.Metrics.TimeCreateTransaction(func() {
 		defer func() {
 			if r := recover(); r != nil {
-				log.Errorf("CreateTransaction recovered in %+v", r)
+				log.Error().Msgf("CreateTransaction recovered in %+v", r)
 				result = nil
 			}
 		}()
@@ -62,7 +62,7 @@ func CreateTransaction(sys *ActorSystem, tenant string, transaction model.Transa
 			return
 
 		case <-time.After(25 * time.Second):
-			log.Warnf("Create transaction %s/%s timeout", tenant, transaction.IDTransaction)
+			log.Warn().Msgf("Create transaction %s/%s timeout", tenant, transaction.IDTransaction)
 			result = new(ReplyTimeout)
 			return
 		}

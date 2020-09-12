@@ -32,3 +32,13 @@ Feature: Service can be configured
     """
       Log level set to INFO
     """
+
+ Scenario: configure log level to INVALID
+    Given lake is configured with
+      | property  | value   |
+      | LOG_LEVEL | INVALID |
+
+    Then journalctl of "ledger-unit@CONFIGURATION_INFO.service" contains following
+    """
+      Log level set to INFO
+    """

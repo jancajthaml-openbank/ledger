@@ -31,7 +31,8 @@ func loadConfFromEnv() Configuration {
 	metricsRefreshRate := getEnvDuration("LEDGER_METRICS_REFRESHRATE", time.Second)
 
 	if tenant == "" || lakeHostname == "" || storage == "" {
-		log.Fatal("missing required parameter to run")
+		log.Error().Msg("missing required parameter to run")
+		panic("missing required parameter to run")
 	}
 
 	return Configuration{
@@ -72,7 +73,7 @@ func getEnvDuration(key string, fallback time.Duration) time.Duration {
 	}
 	cast, err := time.ParseDuration(value)
 	if err != nil {
-		log.Errorf("invalid value of variable %s", key)
+		log.Error().Msgf("invalid value of variable %s", key)
 		return fallback
 	}
 	return cast

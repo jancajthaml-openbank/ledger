@@ -18,4 +18,4 @@ import (
 	"github.com/jancajthaml-openbank/ledger-unit/logging"
 )
 
-var log = logging.NewLogger("actor")
+var log = logging.New("actor")

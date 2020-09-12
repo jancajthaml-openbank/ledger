@@ -34,7 +34,7 @@ func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 					state.ReplyTo,
 					context.Receiver,
 				)
-				log.WithField("transaction", state.Transaction.IDTransaction).Warn("Already in progress")
+				log.Warn().Msgf("transaction %s already in progress", state.Transaction.IDTransaction)
 				return
 			}
 			state.PrepareNewForTransaction(msg, context.Sender)
@@ -106,7 +106,7 @@ func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		state.ResetMarks()
 		context.Self.Become(state, PromisingTransaction(s))
 
-		log.WithField("transaction", state.Transaction.IDTransaction).Debug("Start->Promise")
+		log.Debug().Msgf("transaction %s Start->Promise", state.Transaction.IDTransaction)
 	}
 }
 
@@ -123,7 +123,7 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 			state.Transaction.State = persistence.StatusRejected
 			err := persistence.UpdateTransaction(s.Storage, &state.Transaction)
 			if err != nil {
-				log.WithField("transaction", state.Transaction.IDTransaction).Errorf("Promise failed to update transaction %+v", err)
+				log.Error().Msgf("transaction %s Promise failed to update transaction %+v", state.Transaction.IDTransaction, err)
 				s.SendMessage(
 					RespTransactionRefused+" "+state.Transaction.IDTransaction,
 					state.ReplyTo,
@@ -140,13 +140,13 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 				state.ReplyTo,
 				context.Receiver,
 			)
-			log.WithField("transaction", state.Transaction.IDTransaction).Debug("Promise Rejected All")
+			log.Debug().Msgf("transaction %s Promise Rejected All", state.Transaction.IDTransaction)
 			return
 		}
 
 		if state.FailedResponses > 0 {
-			log.WithField("transaction", state.Transaction.IDTransaction).Debugf("Promise Rejected Some [total: %d, accepted: %d, rejected: %d]", len(state.Negotiation), state.FailedResponses, state.OkResponses)
-			log.WithField("transaction", state.Transaction.IDTransaction).Debug("Promise->Rollback")
+			log.Debug().Msgf("transaction %s Promise Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
+			log.Debug().Msgf("transaction %s Promise->Rollback", state.Transaction.IDTransaction)
 
 			state.ResetMarks()
 			context.Self.Become(state, RollbackingTransaction(s))
@@ -165,7 +165,7 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 			return
 		}
 
-		log.WithField("transaction", state.Transaction.IDTransaction).Debug("Promise Accepted All")
+		log.Debug().Msgf("transaction %s Promise Accepted All", state.Transaction.IDTransaction)
 
 		state.Transaction.State = persistence.StatusAccepted
 
@@ -177,7 +177,7 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 				context.Receiver,
 			)
 
-			log.WithField("transaction", state.Transaction.IDTransaction).Warn("Promise failed to accept transaction")
+			log.Warn().Msgf("transaction %s Promise failed to accept transaction", state.Transaction.IDTransaction)
 
 			s.UnregisterActor(context.Sender.Name)
 			return
@@ -196,7 +196,7 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		state.ResetMarks()
 		context.Self.Become(state, CommitingTransaction(s))
-		log.WithField("transaction", state.Transaction.IDTransaction).Debug("Promise->Commit")
+		log.Debug().Msgf("transaction %s Promise->Commit", state.Transaction.IDTransaction)
 		return
 	}
 }
@@ -211,13 +211,13 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		}
 
 		if state.FailedResponses > 0 {
-			log.WithField("transaction", state.Transaction.IDTransaction).Debugf("Commit Rejected Some [total: %d, accepted: %d, rejected: %d]", len(state.Negotiation), state.FailedResponses, state.OkResponses)
+			log.Debug().Msgf("transaction %s Commit Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
 
 			state.Transaction.State = persistence.StatusRejected
 
 			err := persistence.UpdateTransaction(s.Storage, &state.Transaction)
 			if err != nil {
-				log.WithField("transaction", state.Transaction.IDTransaction).Errorf("Commit failed to update transaction %+v", err)
+				log.Error().Msgf("transaction %s Commit failed to update transaction %+v", state.Transaction.IDTransaction, err)
 				s.SendMessage(
 					RespTransactionRefused+" "+state.Transaction.IDTransaction,
 					state.ReplyTo,
@@ -241,12 +241,12 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 			state.ResetMarks()
 			context.Self.Become(state, RollbackingTransaction(s))
 
-			log.WithField("transaction", state.Transaction.IDTransaction).Debug("Commit->Rollback")
+			log.Debug().Msgf("transaction %s Commit->Rollback", state.Transaction.IDTransaction)
 
 			return
 		}
 
-		log.WithField("transaction", state.Transaction.IDTransaction).Debug("Commit Accepted All")
+		log.Debug().Msgf("transaction %s Commit Accepted All", state.Transaction.IDTransaction)
 
 		state.Transaction.State = persistence.StatusCommitted
 
@@ -259,7 +259,7 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 				context.Receiver,
 			)
 
-			log.WithField("transaction", state.Transaction.IDTransaction).Warn("Commit failed to commit transaction")
+			log.Warn().Msgf("transaction %s Commit failed to commit transaction", state.Transaction.IDTransaction)
 
 			s.UnregisterActor(context.Sender.Name)
 			return
@@ -277,8 +277,8 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 			context.Receiver,
 		)
 
-		log.WithField("transaction", state.Transaction.IDTransaction).Info("New Transaction Committed")
-		log.WithField("transaction", state.Transaction.IDTransaction).Debug("Commit->End")
+		log.Info().Msgf("New Transaction %s Committed", state.Transaction.IDTransaction)
+		log.Debug().Msgf("transaction %s Commit->End", state.Transaction.IDTransaction)
 
 		s.UnregisterActor(context.Sender.Name)
 		return
@@ -301,13 +301,13 @@ func RollbackingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 				context.Receiver,
 			)
 
-			log.WithField("transaction", state.Transaction.IDTransaction).Debugf("Rollback Rejected Some [total: %d, accepted: %d, rejected: %d]", len(state.Negotiation), state.FailedResponses, state.OkResponses)
+			log.Debug().Msgf("transaction %s Rollback Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
 
 			s.UnregisterActor(context.Sender.Name)
 			return
 		}
 
-		log.WithField("transaction", state.Transaction.IDTransaction).Debug("Rollback Accepted All")
+		log.Debug().Msgf("transaction %s Rollback Accepted All", state.Transaction.IDTransaction)
 
 		// FIXME
 		//rollBackReason := "unknown"
@@ -316,14 +316,14 @@ func RollbackingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		err := persistence.UpdateTransaction(s.Storage, &state.Transaction)
 		if err != nil {
-			log.WithField("transaction", state.Transaction.IDTransaction).Errorf("Rollback failed to update transaction %+v", err)
+			log.Error().Msgf("transaction %s Rollback failed to update transaction %+v", state.Transaction.IDTransaction, err)
 			s.SendMessage(
 				RespTransactionRefused+" "+state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
 
-			log.WithField("transaction", state.Transaction.IDTransaction).Warn("Rollback failed to rollback transaction")
+			log.Warn().Msgf("transaction %s Rollback failed to rollback transaction", state.Transaction.IDTransaction)
 
 			s.UnregisterActor(context.Sender.Name)
 			return
@@ -337,8 +337,8 @@ func RollbackingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 			context.Receiver,
 		)
 
-		log.WithField("transaction", state.Transaction.IDTransaction).Info("New Transaction Rollbacked")
-		log.WithField("transaction", state.Transaction.IDTransaction).Debug("Rollback->End")
+		log.Info().Msgf("New Transaction %s Rollbacked", state.Transaction.IDTransaction)
+		log.Debug().Msgf("transaction %s Rollback->End", state.Transaction.IDTransaction)
 
 		s.UnregisterActor(context.Sender.Name)
 		return

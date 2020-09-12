@@ -55,14 +55,14 @@ func (scan TransactionFinalizer) getTransactions() []string {
 }
 
 func (scan TransactionFinalizer) finalizeStaleTransactions() {
-	log.Info("Performing stale transactions scan")
+	log.Info().Msg("Performing stale transactions scan")
 	transactions := scan.getTransactions()
 	for _, transaction := range transactions {
 		instance := scan.getTransaction(transaction)
 		if instance == nil {
 			continue
 		}
-		log.WithField("transaction", transaction).Infof("Transaction in state %s needs completion", instance.State)
+		log.Info().Msgf("Transaction %s in state %s needs completion", transaction, instance.State)
 		scan.callback(*instance)
 	}
 }
@@ -104,7 +104,7 @@ func (scan TransactionFinalizer) Start() {
 		return
 	}
 
-	log.Infof("Start transaction-finalizer check daemon, scan each %v", scan.scanInterval)
+	log.Info().Msgf("Start transaction-finalizer check daemon, scan each %v", scan.scanInterval)
 
 	go func() {
 		for {
@@ -121,5 +121,5 @@ func (scan TransactionFinalizer) Start() {
 	}()
 
 	scan.WaitStop()
-	log.Info("Stop transaction-finalizer daemon")
+	log.Info().Msg("Stop transaction-finalizer daemon")
 }
