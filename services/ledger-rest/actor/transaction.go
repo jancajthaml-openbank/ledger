@@ -37,7 +37,7 @@ func CreateTransaction(sys *ActorSystem, tenant string, transaction model.Transa
 		ch := make(chan interface{})
 		defer close(ch)
 
-		envelope := system.NewEnvelope("transaction/"+xid.New().String(), nil)
+		envelope := system.NewActor("transaction/"+xid.New().String(), nil)
 		defer sys.UnregisterActor(envelope.Name)
 
 		sys.RegisterActor(envelope, func(state interface{}, context system.Context) {

@@ -32,7 +32,7 @@ type ActorSystem struct {
 // NewActorSystem returns actor system fascade
 func NewActorSystem(ctx context.Context, lakeEndpoint string, metrics *metrics.Metrics) ActorSystem {
 	result := ActorSystem{
-		System:  system.NewSystem(ctx, "LedgerRest", lakeEndpoint),
+		System:  system.New(ctx, "LedgerRest", lakeEndpoint),
 		Metrics: metrics,
 	}
 
