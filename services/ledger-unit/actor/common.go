@@ -192,7 +192,7 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 			s.SendMessage(FatalError, from, to)
 			return
 		}
-		var ref *system.Envelope
+		var ref *system.Actor
 		switch message.(type) {
 		case model.Transaction:
 			if ref, err = NewTransactionActor(s, to.Name); err != nil {
@@ -212,8 +212,8 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 }
 
 // NewTransactionActor creates new transaction actor
-func NewTransactionActor(s *ActorSystem, name string) (*system.Envelope, error) {
-	envelope := system.NewEnvelope(name, NewTransactionState())
+func NewTransactionActor(s *ActorSystem, name string) (*system.Actor, error) {
+	envelope := system.NewActor(name, NewTransactionState())
 	err := s.RegisterActor(envelope, InitialTransaction(s))
 	if err != nil {
 		log.Warn().Msgf("%s ~ Spawning Actor Error unable to register", name)

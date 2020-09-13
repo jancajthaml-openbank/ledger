@@ -34,7 +34,7 @@ type ActorSystem struct {
 // NewActorSystem returns actor system fascade
 func NewActorSystem(ctx context.Context, tenant string, lakeEndpoint string, metrics *metrics.Metrics, storage *localfs.PlaintextStorage) ActorSystem {
 	result := ActorSystem{
-		System:  system.NewSystem(ctx, "LedgerUnit/"+tenant, lakeEndpoint),
+		System:  system.New(ctx, "LedgerUnit/"+tenant, lakeEndpoint),
 		Storage: storage,
 		Metrics: metrics,
 	}

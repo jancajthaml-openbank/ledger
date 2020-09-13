@@ -3,8 +3,8 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/google/gofuzz v1.0.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
-github.com/jancajthaml-openbank/actor-system v1.1.1 h1:lui3TYMFrmxFYN6CrpxaoohBgki+Q/M8adToPBPQwkI=
-github.com/jancajthaml-openbank/actor-system v1.1.1/go.mod h1:hw8242Kf2LeCNSxzJwgqEjMqGue+8Wzz/w9M+8G4+28=
+github.com/jancajthaml-openbank/actor-system v1.2.0 h1:5YXlSVsp1DENWbt28LIrGPFbOdpIZ9c3vEyjIQ6eOyE=
+github.com/jancajthaml-openbank/actor-system v1.2.0/go.mod h1:hw8242Kf2LeCNSxzJwgqEjMqGue+8Wzz/w9M+8G4+28=
 github.com/jancajthaml-openbank/local-fs v1.1.4 h1:HjMBdyRsJuNgdz9xX/sjDL7qJ90IseSJUkNSwUoyHdY=
 github.com/jancajthaml-openbank/local-fs v1.1.4/go.mod h1:Hulcb84Ev/x3d6BNM3tMWvkoMjAHxvUAfRsr88kdlpE=
 github.com/json-iterator/go v1.1.10 h1:Kz6Cvnvv2wGdaG/V8yMvfkmNiXq9Ya2KUv4rouJJr68=
