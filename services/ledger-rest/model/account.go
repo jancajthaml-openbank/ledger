@@ -15,12 +15,12 @@
 package model
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
-
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
 )
 
+// Account represents vault account namespace
 type Account struct {
 	Tenant string `json:"tenant"`
 	Name   string `json:"name"`
@@ -35,7 +35,7 @@ func (entity *Account) UnmarshalJSON(data []byte) error {
 		Tenant string `json:"tenant"`
 		Name   string `json:"name"`
 	}{}
-	err := utils.JSON.Unmarshal(data, &all)
+	err := json.Unmarshal(data, &all)
 	if err != nil {
 		return err
 	}

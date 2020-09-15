@@ -42,7 +42,7 @@ type tcpKeepAliveListener struct {
 }
 
 // NewServer returns new secure server instance
-func NewServer(ctx context.Context, port int, certPath string, keyPath string, actorSystem *actor.ActorSystem, systemControl *system.SystemControl, diskMonitor *system.DiskMonitor, memoryMonitor *system.MemoryMonitor, storage *localfs.PlaintextStorage) Server {
+func NewServer(ctx context.Context, port int, certPath string, keyPath string, actorSystem *actor.System, systemControl *system.Control, diskMonitor *system.DiskMonitor, memoryMonitor *system.MemoryMonitor, storage *localfs.PlaintextStorage) Server {
 	router := echo.New()
 
 	certificate, err := tls.LoadX509KeyPair(certPath, keyPath)

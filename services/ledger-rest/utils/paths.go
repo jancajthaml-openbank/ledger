@@ -19,7 +19,7 @@ func TransactionsPath(tenant string) string {
 	return "t_" + tenant + "/transaction"
 }
 
-// TransactionsPath returns filepath for single transaction
+// TransactionPath returns filepath for single transaction
 func TransactionPath(tenant, id string) string {
 	return "t_" + tenant + "/transaction/" + id
 }

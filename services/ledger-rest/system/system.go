@@ -25,27 +25,27 @@ import (
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
 )
 
-// SystemControl represents systemctl subroutine
-type SystemControl struct {
+// Control represents systemctl subroutine
+type Control struct {
 	utils.DaemonSupport
 	underlying *dbus.Conn
 }
 
 // NewSystemControl returns new systemctl fascade
-func NewSystemControl(ctx context.Context) SystemControl {
+func NewSystemControl(ctx context.Context) Control {
 	conn, err := dbus.New()
 	if err != nil {
 		panic(fmt.Sprintf("Unable to obtain dbus connection because %+v", err))
 	}
 
-	return SystemControl{
+	return Control{
 		DaemonSupport: utils.NewDaemonSupport(ctx, "system-control"),
 		underlying:    conn,
 	}
 }
 
 // ListUnits returns list of unit names
-func (sys SystemControl) ListUnits(prefix string) ([]string, error) {
+func (sys Control) ListUnits(prefix string) ([]string, error) {
 
 	units, err := sys.underlying.ListUnits()
 	if err != nil {
@@ -68,7 +68,7 @@ func (sys SystemControl) ListUnits(prefix string) ([]string, error) {
 }
 
 // GetUnitsProperties return unit properties
-func (sys SystemControl) GetUnitsProperties(prefix string) (map[string]UnitStatus, error) {
+func (sys Control) GetUnitsProperties(prefix string) (map[string]UnitStatus, error) {
 
 	units, err := sys.underlying.ListUnits()
 	if err != nil {
@@ -99,7 +99,7 @@ func (sys SystemControl) GetUnitsProperties(prefix string) (map[string]UnitStatu
 }
 
 // DisableUnit disables unit
-func (sys SystemControl) DisableUnit(name string) error {
+func (sys Control) DisableUnit(name string) error {
 
 	ch := make(chan string)
 
@@ -129,7 +129,7 @@ func (sys SystemControl) DisableUnit(name string) error {
 }
 
 // EnableUnit enables unit
-func (sys SystemControl) EnableUnit(name string) error {
+func (sys Control) EnableUnit(name string) error {
 
 	if _, _, err := sys.underlying.EnableUnitFiles([]string{name}, false, false); err != nil {
 		return fmt.Errorf("unable to enable unit %s because %+v", name, err)
@@ -159,7 +159,7 @@ func (sys SystemControl) EnableUnit(name string) error {
 }
 
 // Start handles everything needed to start system-control daemon
-func (sys SystemControl) Start() {
+func (sys Control) Start() {
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 

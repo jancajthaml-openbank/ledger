@@ -228,3 +228,10 @@ Feature: REST
     Then HTTP response is
       | key    | value |
       | status | 200   |
+
+    When I request HTTP https://127.0.0.1/health
+      | key    | value |
+      | method | HEAD  |
+    Then HTTP response is
+      | key    | value |
+      | status | 200   |

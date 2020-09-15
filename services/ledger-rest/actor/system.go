@@ -23,15 +23,15 @@ import (
 	system "github.com/jancajthaml-openbank/actor-system"
 )
 
-// ActorSystem represents actor system subroutine
-type ActorSystem struct {
+// System represents actor system subroutine
+type System struct {
 	system.System
 	Metrics *metrics.Metrics
 }
 
 // NewActorSystem returns actor system fascade
-func NewActorSystem(ctx context.Context, lakeEndpoint string, metrics *metrics.Metrics) ActorSystem {
-	result := ActorSystem{
+func NewActorSystem(ctx context.Context, lakeEndpoint string, metrics *metrics.Metrics) System {
+	result := System{
 		System:  system.New(ctx, "LedgerRest", lakeEndpoint),
 		Metrics: metrics,
 	}
@@ -41,26 +41,26 @@ func NewActorSystem(ctx context.Context, lakeEndpoint string, metrics *metrics.M
 }
 
 // Start daemon noop
-func (system ActorSystem) Start() {
+func (system System) Start() {
 	system.System.Start()
 }
 
 // Stop daemon noop
-func (system ActorSystem) Stop() {
+func (system System) Stop() {
 	system.System.Stop()
 }
 
 // WaitStop daemon noop
-func (system ActorSystem) WaitStop() {
+func (system System) WaitStop() {
 	system.System.WaitStop()
 }
 
 // GreenLight daemon noop
-func (system ActorSystem) GreenLight() {
+func (system System) GreenLight() {
 	system.System.GreenLight()
 }
 
 // WaitReady wait for system to be ready
-func (system ActorSystem) WaitReady(deadline time.Duration) error {
+func (system System) WaitReady(deadline time.Duration) error {
 	return system.System.WaitReady(deadline)
 }

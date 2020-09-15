@@ -16,8 +16,8 @@ package metrics
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
 	"os"
 	"runtime"
 	"strconv"
@@ -27,11 +27,11 @@ import (
 // MarshalJSON serializes Metrics as json bytes
 func (metrics *Metrics) MarshalJSON() ([]byte, error) {
 	if metrics == nil {
-		return nil, fmt.Errorf("cannot marshall nil")
+		return nil, fmt.Errorf("cannot marshal nil")
 	}
 
 	if metrics.createTransactionLatency == nil {
-		return nil, fmt.Errorf("cannot marshall nil references")
+		return nil, fmt.Errorf("cannot marshal nil references")
 	}
 
 	var stats = new(runtime.MemStats)
@@ -51,11 +51,11 @@ func (metrics *Metrics) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON deserializes Metrics from json bytes
 func (metrics *Metrics) UnmarshalJSON(data []byte) error {
 	if metrics == nil {
-		return fmt.Errorf("cannot unmarshall to nil")
+		return fmt.Errorf("cannot unmarshal to nil")
 	}
 
 	if metrics.createTransactionLatency == nil {
-		return fmt.Errorf("cannot unmarshall to nil references")
+		return fmt.Errorf("cannot unmarshal to nil references")
 	}
 
 	aux := &struct {
@@ -64,7 +64,7 @@ func (metrics *Metrics) UnmarshalJSON(data []byte) error {
 		CreateTransactionLatency float64 `json:"createTransactionLatency"`
 	}{}
 
-	if err := utils.JSON.Unmarshal(data, &aux); err != nil {
+	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
 
@@ -78,7 +78,7 @@ func (metrics *Metrics) Persist() error {
 	if metrics == nil {
 		return fmt.Errorf("cannot persist nil reference")
 	}
-	data, err := utils.JSON.Marshal(metrics)
+	data, err := json.Marshal(metrics)
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func (metrics *Metrics) Hydrate() error {
 	if err != nil {
 		return err
 	}
-	err = utils.JSON.Unmarshal(data, metrics)
+	err = json.Unmarshal(data, metrics)
 	if err != nil {
 		return err
 	}

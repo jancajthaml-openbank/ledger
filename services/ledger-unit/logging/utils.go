@@ -15,9 +15,9 @@
 package logging
 
 import (
+	"github.com/rs/zerolog"
 	"os"
 	"time"
-	"github.com/rs/zerolog"
 )
 
 var log = New("global")
@@ -30,19 +30,19 @@ func New(name string) zerolog.Logger {
 
 // SetupLogger properly sets up logging
 func SetupLogger(level string) {
-	switch (level) {
-		case "DEBUG":
-			log.Info().Msg("Log level set to DEBUG")
-			zerolog.SetGlobalLevel(zerolog.DebugLevel)
-		case "INFO":
-			log.Info().Msg("Log level set to INFO")
-			zerolog.SetGlobalLevel(zerolog.InfoLevel)
-		case "ERROR":
-			log.Info().Msg("Log level set to ERROR")
-			zerolog.SetGlobalLevel(zerolog.ErrorLevel)
-		default:
-			log.Warn().Msgf("Invalid log level %v, using level INFO", level)
-			log.Info().Msg("Log level set to INFO")
-			zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	switch level {
+	case "DEBUG":
+		log.Info().Msg("Log level set to DEBUG")
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	case "INFO":
+		log.Info().Msg("Log level set to INFO")
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	case "ERROR":
+		log.Info().Msg("Log level set to ERROR")
+		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	default:
+		log.Warn().Msgf("Invalid log level %v, using level INFO", level)
+		log.Info().Msg("Log level set to INFO")
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
 }
