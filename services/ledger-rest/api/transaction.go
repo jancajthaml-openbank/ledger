@@ -15,14 +15,13 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-
 	"github.com/jancajthaml-openbank/ledger-rest/actor"
 	"github.com/jancajthaml-openbank/ledger-rest/model"
 	"github.com/jancajthaml-openbank/ledger-rest/persistence"
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
+	"io/ioutil"
+	"net/http"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
 	"github.com/labstack/echo/v4"
@@ -52,7 +51,7 @@ func GetTransaction(storage *localfs.PlaintextStorage) func(c echo.Context) erro
 			return nil
 		}
 
-		chunk, err := utils.JSON.Marshal(transaction)
+		chunk, err := json.Marshal(transaction)
 		if err != nil {
 			return err
 		}
@@ -65,7 +64,7 @@ func GetTransaction(storage *localfs.PlaintextStorage) func(c echo.Context) erro
 }
 
 // CreateTransaction creates new transaction for given tenant
-func CreateTransaction(storage *localfs.PlaintextStorage, system *actor.ActorSystem) func(c echo.Context) error {
+func CreateTransaction(storage *localfs.PlaintextStorage, system *actor.System) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 
@@ -82,7 +81,7 @@ func CreateTransaction(storage *localfs.PlaintextStorage, system *actor.ActorSys
 		}
 
 		var req = new(model.Transaction)
-		if utils.JSON.Unmarshal(b, req) != nil {
+		if json.Unmarshal(b, req) != nil {
 			c.Response().WriteHeader(http.StatusBadRequest)
 			return nil
 		}

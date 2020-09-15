@@ -41,7 +41,6 @@ func parseTransfer(chunk string) (*model.Transfer, error) {
 	}
 	if idx < 8 && chunk[start] != 59 && len(chunk[start:]) > 0 {
 		parts[idx] = chunk[start:]
-		idx++
 	}
 
 	amount, ok := new(money.Dec).SetString(parts[5])
@@ -183,8 +182,8 @@ func parseMessage(msg string, from system.Coordinates) (interface{}, error) {
 
 }
 
-// ProcessRemoteMessage processing of remote message to this wall
-func ProcessMessage(s *ActorSystem) system.ProcessMessage {
+// ProcessMessage processing of remote message to this wall
+func ProcessMessage(s *System) system.ProcessMessage {
 	return func(msg string, to system.Coordinates, from system.Coordinates) {
 		message, err := parseMessage(msg, from)
 		if err != nil {
@@ -212,13 +211,13 @@ func ProcessMessage(s *ActorSystem) system.ProcessMessage {
 }
 
 // NewTransactionActor creates new transaction actor
-func NewTransactionActor(s *ActorSystem, name string) (*system.Actor, error) {
+func NewTransactionActor(s *System, name string) (*system.Actor, error) {
 	envelope := system.NewActor(name, NewTransactionState())
 	err := s.RegisterActor(envelope, InitialTransaction(s))
 	if err != nil {
-		log.Warn().Msgf("%s ~ Spawning Actor Error unable to register", name)
+		log.Warn().Msgf("Unable to register %s actor", name)
 		return nil, err
 	}
-	log.Debug().Msgf("%s ~ Actor Spawned", name)
+	log.Debug().Msgf("Actor %s registered", name)
 	return envelope, nil
 }

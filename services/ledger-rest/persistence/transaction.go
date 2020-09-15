@@ -35,7 +35,7 @@ func LoadTransactionsIDS(storage *localfs.PlaintextStorage, tenant string) ([]st
 	return transactions, nil
 }
 
-// LoadTransactions loads transaction storage
+// LoadTransaction loads transaction storage
 func LoadTransaction(storage *localfs.PlaintextStorage, tenant string, id string) (*model.Transaction, error) {
 	path := utils.TransactionPath(tenant, id)
 	ok, err := storage.Exists(path)

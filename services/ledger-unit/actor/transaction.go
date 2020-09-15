@@ -21,7 +21,8 @@ import (
 	system "github.com/jancajthaml-openbank/actor-system"
 )
 
-func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
+// InitialTransaction represents initial transaction state
+func InitialTransaction(s *System) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(TransactionState)
 
@@ -34,7 +35,7 @@ func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 					state.ReplyTo,
 					context.Receiver,
 				)
-				log.Warn().Msgf("transaction %s already in progress", state.Transaction.IDTransaction)
+				log.Warn().Msgf("%s/Initial already in progress", state.Transaction.IDTransaction)
 				return
 			}
 			state.PrepareNewForTransaction(msg, context.Sender)
@@ -106,11 +107,12 @@ func InitialTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		state.ResetMarks()
 		context.Self.Become(state, PromisingTransaction(s))
 
-		log.Debug().Msgf("transaction %s Start->Promise", state.Transaction.IDTransaction)
+		log.Debug().Msgf("%s/Initial -> %s/Promise", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
 	}
 }
 
-func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
+// PromisingTransaction represents transaction in promising state
+func PromisingTransaction(s *System) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(TransactionState)
 		state.Mark(context.Data)
@@ -123,7 +125,7 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 			state.Transaction.State = persistence.StatusRejected
 			err := persistence.UpdateTransaction(s.Storage, &state.Transaction)
 			if err != nil {
-				log.Error().Msgf("transaction %s Promise failed to update transaction %+v", state.Transaction.IDTransaction, err)
+				log.Error().Msgf("%s/Promise failed to update transaction %+v", state.Transaction.IDTransaction, err)
 				s.SendMessage(
 					RespTransactionRefused+" "+state.Transaction.IDTransaction,
 					state.ReplyTo,
@@ -140,13 +142,13 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 				state.ReplyTo,
 				context.Receiver,
 			)
-			log.Debug().Msgf("transaction %s Promise Rejected All", state.Transaction.IDTransaction)
+			log.Debug().Msgf("%s/Promise Rejected All", state.Transaction.IDTransaction)
 			return
 		}
 
 		if state.FailedResponses > 0 {
-			log.Debug().Msgf("transaction %s Promise Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
-			log.Debug().Msgf("transaction %s Promise->Rollback", state.Transaction.IDTransaction)
+			log.Debug().Msgf("%s/Promise Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
+			log.Debug().Msgf("%s/Promise -> %s/Rollback", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
 
 			state.ResetMarks()
 			context.Self.Become(state, RollbackingTransaction(s))
@@ -165,7 +167,7 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 			return
 		}
 
-		log.Debug().Msgf("transaction %s Promise Accepted All", state.Transaction.IDTransaction)
+		log.Debug().Msgf("%s/Promise Accepted All", state.Transaction.IDTransaction)
 
 		state.Transaction.State = persistence.StatusAccepted
 
@@ -177,7 +179,7 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 				context.Receiver,
 			)
 
-			log.Warn().Msgf("transaction %s Promise failed to accept transaction", state.Transaction.IDTransaction)
+			log.Warn().Msgf("%s/Promise failed to accept transaction", state.Transaction.IDTransaction)
 
 			s.UnregisterActor(context.Sender.Name)
 			return
@@ -196,12 +198,13 @@ func PromisingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		state.ResetMarks()
 		context.Self.Become(state, CommitingTransaction(s))
-		log.Debug().Msgf("transaction %s Promise->Commit", state.Transaction.IDTransaction)
+		log.Debug().Msgf("%s/Promise -> %s/Commit", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
 		return
 	}
 }
 
-func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
+// CommitingTransaction represents transaction in committing state
+func CommitingTransaction(s *System) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(TransactionState)
 		state.Mark(context.Data)
@@ -211,13 +214,13 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		}
 
 		if state.FailedResponses > 0 {
-			log.Debug().Msgf("transaction %s Commit Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
+			log.Debug().Msgf("%s/Commit Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
 
 			state.Transaction.State = persistence.StatusRejected
 
 			err := persistence.UpdateTransaction(s.Storage, &state.Transaction)
 			if err != nil {
-				log.Error().Msgf("transaction %s Commit failed to update transaction %+v", state.Transaction.IDTransaction, err)
+				log.Error().Msgf("%s/Commit failed to update transaction %+v", state.Transaction.IDTransaction, err)
 				s.SendMessage(
 					RespTransactionRefused+" "+state.Transaction.IDTransaction,
 					state.ReplyTo,
@@ -241,12 +244,12 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 			state.ResetMarks()
 			context.Self.Become(state, RollbackingTransaction(s))
 
-			log.Debug().Msgf("transaction %s Commit->Rollback", state.Transaction.IDTransaction)
+			log.Debug().Msgf("%s/Commit -> %s/Rollback", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
 
 			return
 		}
 
-		log.Debug().Msgf("transaction %s Commit Accepted All", state.Transaction.IDTransaction)
+		log.Debug().Msgf("%s/Commit Accepted All", state.Transaction.IDTransaction)
 
 		state.Transaction.State = persistence.StatusCommitted
 
@@ -259,7 +262,7 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 				context.Receiver,
 			)
 
-			log.Warn().Msgf("transaction %s Commit failed to commit transaction", state.Transaction.IDTransaction)
+			log.Warn().Msgf("%s/Commit failed to commit transaction", state.Transaction.IDTransaction)
 
 			s.UnregisterActor(context.Sender.Name)
 			return
@@ -278,14 +281,15 @@ func CommitingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		)
 
 		log.Info().Msgf("New Transaction %s Committed", state.Transaction.IDTransaction)
-		log.Debug().Msgf("transaction %s Commit->End", state.Transaction.IDTransaction)
+		log.Debug().Msgf("%s/Commit -> Unregister", state.Transaction.IDTransaction)
 
 		s.UnregisterActor(context.Sender.Name)
 		return
 	}
 }
 
-func RollbackingTransaction(s *ActorSystem) func(interface{}, system.Context) {
+// RollbackingTransaction represents transaction in rollbacking state
+func RollbackingTransaction(s *System) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(TransactionState)
 		state.Mark(context.Data)
@@ -301,13 +305,13 @@ func RollbackingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 				context.Receiver,
 			)
 
-			log.Debug().Msgf("transaction %s Rollback Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
+			log.Debug().Msgf("%s/Rollback Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
 
 			s.UnregisterActor(context.Sender.Name)
 			return
 		}
 
-		log.Debug().Msgf("transaction %s Rollback Accepted All", state.Transaction.IDTransaction)
+		log.Debug().Msgf("%s/Rollback Accepted All", state.Transaction.IDTransaction)
 
 		// FIXME
 		//rollBackReason := "unknown"
@@ -316,14 +320,14 @@ func RollbackingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 
 		err := persistence.UpdateTransaction(s.Storage, &state.Transaction)
 		if err != nil {
-			log.Error().Msgf("transaction %s Rollback failed to update transaction %+v", state.Transaction.IDTransaction, err)
+			log.Error().Msgf("%s/Rollback failed to update transaction %+v", state.Transaction.IDTransaction, err)
 			s.SendMessage(
 				RespTransactionRefused+" "+state.Transaction.IDTransaction,
 				state.ReplyTo,
 				context.Receiver,
 			)
 
-			log.Warn().Msgf("transaction %s Rollback failed to rollback transaction", state.Transaction.IDTransaction)
+			log.Warn().Msgf("%s/Rollback failed to rollback transaction", state.Transaction.IDTransaction)
 
 			s.UnregisterActor(context.Sender.Name)
 			return
@@ -338,7 +342,7 @@ func RollbackingTransaction(s *ActorSystem) func(interface{}, system.Context) {
 		)
 
 		log.Info().Msgf("New Transaction %s Rollbacked", state.Transaction.IDTransaction)
-		log.Debug().Msgf("transaction %s Rollback->End", state.Transaction.IDTransaction)
+		log.Debug().Msgf("%s/Rollback -> Unregister", state.Transaction.IDTransaction)
 
 		s.UnregisterActor(context.Sender.Name)
 		return

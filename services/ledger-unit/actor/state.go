@@ -21,6 +21,7 @@ import (
 	system "github.com/jancajthaml-openbank/actor-system"
 )
 
+// TransactionState represent negotiation state of transaction actor
 type TransactionState struct {
 	Transaction     model.Transaction
 	Negotiation     map[model.Account]string
@@ -31,6 +32,7 @@ type TransactionState struct {
 	ReplyTo         system.Coordinates
 }
 
+// NewTransactionState returns initial negotiation transaction actor state
 func NewTransactionState() TransactionState {
 	return TransactionState{
 		OkResponses:     0,
@@ -39,12 +41,13 @@ func NewTransactionState() TransactionState {
 	}
 }
 
-func (state *TransactionState) Mark(response interface{}) {
+// Mark update negotiation state based on value
+func (state *TransactionState) Mark(value interface{}) {
 	if state == nil {
 		return
 	}
 
-	switch msg := response.(type) {
+	switch msg := value.(type) {
 
 	case PromiseWasAccepted:
 		if _, exists := state.WaitFor[msg.Account]; exists {
@@ -91,6 +94,7 @@ func (state *TransactionState) Mark(response interface{}) {
 	}
 }
 
+// ResetMarks zeroes out negotiation state
 func (state *TransactionState) ResetMarks() {
 	if state == nil {
 		return
@@ -103,10 +107,12 @@ func (state *TransactionState) ResetMarks() {
 	state.FailedResponses = 0
 }
 
+// IsNegotiationFinished tells whenever negotiation is finished
 func (state TransactionState) IsNegotiationFinished() bool {
 	return len(state.Negotiation) <= (state.OkResponses + state.FailedResponses)
 }
 
+// PrepareNewForTransaction prepares state for new negotiation
 func (state *TransactionState) PrepareNewForTransaction(transaction model.Transaction, requestedBy system.Coordinates) {
 	if state == nil {
 		return

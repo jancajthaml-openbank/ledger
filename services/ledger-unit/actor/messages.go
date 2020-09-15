@@ -15,13 +15,20 @@
 package actor
 
 const (
-	ReqCreateTransaction     = "NT"
-	RespCreateTransaction    = "T0"
-	RespTransactionRace      = "T1"
-	RespTransactionRefused   = "T2"
-	RespTransactionRejected  = "T3"
+	// ReqCreateTransaction ledger message request code for "Create Transaction"
+	ReqCreateTransaction = "NT"
+	// RespCreateTransaction ledger message response code for "Transaction Committed"
+	RespCreateTransaction = "T0"
+	// RespTransactionRace ledger message response code for "Transaction Race"
+	RespTransactionRace = "T1"
+	// RespTransactionRefused ledger message response code for "Transaction Refused"
+	RespTransactionRefused = "T2"
+	// RespTransactionRejected ledger message response code for "Transaction Rollbacked"
+	RespTransactionRejected = "T3"
+	// RespTransactionDuplicate ledger message response code for "Transaction Duplicate"
 	RespTransactionDuplicate = "T4"
-	RespTransactionMissing   = "T5"
+	// RespTransactionMissing ledger message response code for "Transaction Missing"
+	RespTransactionMissing = "T5"
 
 	// PromiseOrder vault message request code for "Promise"
 	PromiseOrder = "NP"

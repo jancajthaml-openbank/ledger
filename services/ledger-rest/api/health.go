@@ -15,10 +15,9 @@
 package api
 
 import (
-	"net/http"
-
+	"encoding/json"
 	"github.com/jancajthaml-openbank/ledger-rest/system"
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
+	"net/http"
 
 	"github.com/labstack/echo/v4"
 )
@@ -28,7 +27,7 @@ func HealtCheck(memoryMonitor *system.MemoryMonitor, diskMonitor *system.DiskMon
 	return func(c echo.Context) error {
 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 
-		status := system.SystemStatus{
+		status := system.Status{
 			Memory: system.MemoryStatus{
 				Free:      memoryMonitor.GetFreeMemory(),
 				Used:      memoryMonitor.GetUsedMemory(),
@@ -47,7 +46,7 @@ func HealtCheck(memoryMonitor *system.MemoryMonitor, diskMonitor *system.DiskMon
 			c.Response().WriteHeader(http.StatusOK)
 		}
 
-		chunk, err := utils.JSON.Marshal(status)
+		chunk, err := json.Marshal(status)
 		if err != nil {
 			return err
 		}

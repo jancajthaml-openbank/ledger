@@ -17,13 +17,13 @@ func TestPersist(t *testing.T) {
 	t.Log("error when caller is nil")
 	{
 		var entity *Metrics
-		assert.EqualError(t, entity.Persist(), "cannot persist nil reference")
+		assert.NotNil(t, entity.Persist())
 	}
 
 	t.Log("error when marshaling fails")
 	{
 		entity := Metrics{}
-		assert.EqualError(t, entity.Persist(), "cannot marshall nil references")
+		assert.NotNil(t, entity.Persist())
 	}
 
 	t.Log("happy path")

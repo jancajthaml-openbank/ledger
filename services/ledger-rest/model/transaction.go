@@ -16,23 +16,23 @@ package model
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
-
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
 
 	"github.com/rs/xid"
 	money "gopkg.in/inf.v0"
 )
 
-// Transaction represents egress message of transaction
+// Transaction represents transaction
 type Transaction struct {
 	IDTransaction string     `json:"id"`
 	Status        string     `json:"status,omitempty"`
 	Transfers     []Transfer `json:"transfers"`
 }
 
+// Transfer represents transfer
 type Transfer struct {
 	IDTransfer string     `json:"id"`
 	Credit     Account    `json:"credit"`
@@ -53,7 +53,7 @@ func (entity *Transaction) UnmarshalJSON(data []byte) error {
 		Transfers     []Transfer `json:"transfers"`
 	}{}
 
-	err := utils.JSON.Unmarshal(data, &all)
+	err := json.Unmarshal(data, &all)
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func (entity *Transfer) UnmarshalJSON(data []byte) error {
 		Currency  *string  `json:"currency"`
 	}{}
 
-	err := utils.JSON.Unmarshal(data, &all)
+	err := json.Unmarshal(data, &all)
 	if err != nil {
 		return err
 	}

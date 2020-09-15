@@ -14,11 +14,13 @@
 
 package model
 
+// Account represents vault account namespace
 type Account struct {
 	Tenant string
 	Name   string
 }
 
+// String serializes account to string partition key
 func (s Account) String() string {
 	return s.Tenant + "/" + s.Name
 }

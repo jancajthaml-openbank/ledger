@@ -35,8 +35,8 @@ type MemoryStatus struct {
 	IsHealthy bool   `json:"healthy"`
 }
 
-// SystemStatus represents system status snapshot
-type SystemStatus struct {
+// Status represents system status snapshot
+type Status struct {
 	Storage StorageStatus `json:"storage"`
 	Memory  MemoryStatus  `json:"memory"`
 }

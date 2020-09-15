@@ -25,7 +25,7 @@ import (
 )
 
 // CreateTransaction creates new transaction
-func CreateTransaction(sys *ActorSystem, tenant string, transaction model.Transaction) (result interface{}) {
+func CreateTransaction(sys *System, tenant string, transaction model.Transaction) (result interface{}) {
 	sys.Metrics.TimeCreateTransaction(func() {
 		defer func() {
 			if r := recover(); r != nil {

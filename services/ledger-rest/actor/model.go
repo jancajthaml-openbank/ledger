@@ -14,16 +14,23 @@
 
 package actor
 
+// ReplyTimeout message
 type ReplyTimeout struct{}
 
+// TransactionCreated message
 type TransactionCreated struct{}
 
+// TransactionRace message
 type TransactionRace struct{}
 
+// TransactionRefused message
 type TransactionRefused struct{}
 
+// TransactionRejected message
 type TransactionRejected struct{}
 
+// TransactionDuplicate message
 type TransactionDuplicate struct{}
 
+// TransactioMissing message
 type TransactioMissing struct{}
