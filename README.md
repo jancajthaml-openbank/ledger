@@ -3,6 +3,7 @@
 Service responsible for transaction negotiation and transaction journal.
 
 ![Health Check](https://github.com/jancajthaml-openbank/ledger/workflows/Health%20Check/badge.svg)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjancajthaml-openbank%2Fledger.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fjancajthaml-openbank%2Fledger?ref=badge_shield)
 
 [![godoc for jancajthaml-openbank/ledger](https://godoc.org/github.com/nathany/looper?status.svg)](https://godoc.org/github.com/jancajthaml-openbank/ledger) [![CircleCI](https://circleci.com/gh/jancajthaml-openbank/ledger/tree/master.svg?style=shield)](https://circleci.com/gh/jancajthaml-openbank/ledger/tree/master)
 
@@ -11,6 +12,9 @@ Service responsible for transaction negotiation and transaction journal.
 ## License
 
 Licensed under Apache 2.0 see LICENSE.md for details
+
+
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjancajthaml-openbank%2Fledger.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fjancajthaml-openbank%2Fledger?ref=badge_large)
 
 ## Contributing
 
