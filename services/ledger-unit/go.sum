@@ -5,6 +5,8 @@ github.com/jancajthaml-openbank/actor-system v1.2.0 h1:5YXlSVsp1DENWbt28LIrGPFbO
 github.com/jancajthaml-openbank/actor-system v1.2.0/go.mod h1:hw8242Kf2LeCNSxzJwgqEjMqGue+8Wzz/w9M+8G4+28=
 github.com/jancajthaml-openbank/local-fs v1.1.4 h1:HjMBdyRsJuNgdz9xX/sjDL7qJ90IseSJUkNSwUoyHdY=
 github.com/jancajthaml-openbank/local-fs v1.1.4/go.mod h1:Hulcb84Ev/x3d6BNM3tMWvkoMjAHxvUAfRsr88kdlpE=
+github.com/jancajthaml-openbank/local-fs v1.1.5 h1:gx4laehipkYP+bd5lD6/CnQrUE5TC/cuimmf+g/fduY=
+github.com/jancajthaml-openbank/local-fs v1.1.5/go.mod h1:1NbSlgcIJspEkr5PqtPZp7iixDUtHbt59jBtc+PNsGE=
 github.com/pebbe/zmq4 v1.2.1 h1:jrXQW3mD8Si2mcSY/8VBs2nNkK/sKCOEM0rHAfxyc8c=
 github.com/pebbe/zmq4 v1.2.1/go.mod h1:7N4y5R18zBiu3l0vajMUWQgZyjv464prE8RCyBcmnZM=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
