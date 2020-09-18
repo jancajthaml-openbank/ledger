@@ -11,6 +11,8 @@ github.com/jancajthaml-openbank/actor-system v1.2.0 h1:5YXlSVsp1DENWbt28LIrGPFbO
 github.com/jancajthaml-openbank/actor-system v1.2.0/go.mod h1:hw8242Kf2LeCNSxzJwgqEjMqGue+8Wzz/w9M+8G4+28=
 github.com/jancajthaml-openbank/local-fs v1.1.4 h1:HjMBdyRsJuNgdz9xX/sjDL7qJ90IseSJUkNSwUoyHdY=
 github.com/jancajthaml-openbank/local-fs v1.1.4/go.mod h1:Hulcb84Ev/x3d6BNM3tMWvkoMjAHxvUAfRsr88kdlpE=
+github.com/jancajthaml-openbank/local-fs v1.1.5 h1:gx4laehipkYP+bd5lD6/CnQrUE5TC/cuimmf+g/fduY=
+github.com/jancajthaml-openbank/local-fs v1.1.5/go.mod h1:1NbSlgcIJspEkr5PqtPZp7iixDUtHbt59jBtc+PNsGE=
 github.com/labstack/echo/v4 v4.1.17 h1:PQIBaRplyRy3OjwILGkPg89JRtH2x5bssi59G2EL3fo=
 github.com/labstack/echo/v4 v4.1.17/go.mod h1:Tn2yRQL/UclUalpb5rPdXDevbkJ+lp/2svdyFBg6CHQ=
 github.com/labstack/gommon v0.3.0 h1:JEeO0bvc78PKdyHxloTKiF8BD5iGrH8T6MSeGvSgob0=
