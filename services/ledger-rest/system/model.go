@@ -14,8 +14,8 @@
 
 package system
 
-// UnitStatus represents whitelist of properties we are willing to
-// expose via health check
+// UnitStatus represents whitelist of properties we are willing to expose via
+// health check
 type UnitStatus struct {
 	Status          string `json:"status"`
 	StatusChangedAt uint64 `json:"statusChangedAt"`

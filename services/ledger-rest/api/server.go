@@ -18,16 +18,14 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"net"
-	"net/http"
-	"time"
-
 	"github.com/jancajthaml-openbank/ledger-rest/actor"
 	"github.com/jancajthaml-openbank/ledger-rest/system"
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
-
 	localfs "github.com/jancajthaml-openbank/local-fs"
 	"github.com/labstack/echo/v4"
+	"net"
+	"net/http"
+	"time"
 )
 
 // Server is a fascade for http-server following handler api of Gin and

@@ -20,11 +20,10 @@ import (
 	"github.com/jancajthaml-openbank/ledger-rest/actor"
 	"github.com/jancajthaml-openbank/ledger-rest/model"
 	"github.com/jancajthaml-openbank/ledger-rest/persistence"
-	"io/ioutil"
-	"net/http"
-
 	localfs "github.com/jancajthaml-openbank/local-fs"
 	"github.com/labstack/echo/v4"
+	"io/ioutil"
+	"net/http"
 )
 
 // GetTransaction returns transaction state
@@ -131,7 +130,7 @@ func GetTransactions(storage *localfs.PlaintextStorage) func(c echo.Context) err
 			return fmt.Errorf("missing tenant")
 		}
 
-		transactions, err := persistence.LoadTransactionsIDS(storage, tenant)
+		transactions, err := persistence.LoadTransactionsIDs(storage, tenant)
 		if err != nil {
 			return err
 		}

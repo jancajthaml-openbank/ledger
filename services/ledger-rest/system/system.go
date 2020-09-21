@@ -17,12 +17,11 @@ package system
 import (
 	"context"
 	"fmt"
+	"github.com/coreos/go-systemd/v22/dbus"
+	"github.com/jancajthaml-openbank/ledger-rest/utils"
 	"sort"
 	"strings"
 	"time"
-
-	"github.com/coreos/go-systemd/v22/dbus"
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
 )
 
 // Control represents systemctl subroutine
@@ -46,7 +45,6 @@ func NewSystemControl(ctx context.Context) Control {
 
 // ListUnits returns list of unit names
 func (sys Control) ListUnits(prefix string) ([]string, error) {
-
 	units, err := sys.underlying.ListUnits()
 	if err != nil {
 		return nil, err
@@ -69,7 +67,6 @@ func (sys Control) ListUnits(prefix string) ([]string, error) {
 
 // GetUnitsProperties return unit properties
 func (sys Control) GetUnitsProperties(prefix string) (map[string]UnitStatus, error) {
-
 	units, err := sys.underlying.ListUnits()
 	if err != nil {
 		return nil, err
@@ -100,7 +97,6 @@ func (sys Control) GetUnitsProperties(prefix string) (map[string]UnitStatus, err
 
 // DisableUnit disables unit
 func (sys Control) DisableUnit(name string) error {
-
 	ch := make(chan string)
 
 	if _, err := sys.underlying.StopUnit(name, "replace", ch); err != nil {
@@ -130,7 +126,6 @@ func (sys Control) DisableUnit(name string) error {
 
 // EnableUnit enables unit
 func (sys Control) EnableUnit(name string) error {
-
 	if _, _, err := sys.underlying.EnableUnitFiles([]string{name}, false, false); err != nil {
 		return fmt.Errorf("unable to enable unit %s because %+v", name, err)
 	}

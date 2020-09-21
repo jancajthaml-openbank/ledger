@@ -16,12 +16,11 @@ package system
 
 import (
 	"context"
+	"github.com/jancajthaml-openbank/ledger-rest/utils"
 	"runtime"
 	"sync/atomic"
 	"syscall"
 	"time"
-
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
 )
 
 // MemoryMonitor represents memory monitoring subroutine

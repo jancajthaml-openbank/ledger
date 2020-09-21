@@ -16,7 +16,6 @@ package actor
 
 import (
 	"fmt"
-
 	system "github.com/jancajthaml-openbank/actor-system"
 )
 

@@ -16,11 +16,10 @@ package metrics
 
 import (
 	"context"
-	"time"
-
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
 	localfs "github.com/jancajthaml-openbank/local-fs"
 	metrics "github.com/rcrowley/go-metrics"
+	"time"
 )
 
 // Metrics holds metrics counters

@@ -15,13 +15,10 @@
 package actor
 
 import (
-	"time"
-
-	"github.com/rs/xid"
-
-	"github.com/jancajthaml-openbank/ledger-rest/model"
-
 	system "github.com/jancajthaml-openbank/actor-system"
+	"github.com/jancajthaml-openbank/ledger-rest/model"
+	"github.com/rs/xid"
+	"time"
 )
 
 // CreateTransaction creates new transaction

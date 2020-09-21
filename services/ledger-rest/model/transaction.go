@@ -18,11 +18,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/rs/xid"
+	"strconv"
 	"strings"
 	"time"
-
-	"github.com/rs/xid"
-	money "gopkg.in/inf.v0"
 )
 
 // Transaction represents transaction
@@ -34,12 +33,12 @@ type Transaction struct {
 
 // Transfer represents transfer
 type Transfer struct {
-	IDTransfer string     `json:"id"`
-	Credit     Account    `json:"credit"`
-	Debit      Account    `json:"debit"`
-	ValueDate  time.Time  `json:"valueDate"`
-	Amount     *money.Dec `json:"amount"`
-	Currency   string     `json:"currency"`
+	IDTransfer string    `json:"id"`
+	Credit     Account   `json:"credit"`
+	Debit      Account   `json:"debit"`
+	ValueDate  time.Time `json:"valueDate"`
+	Amount     string    `json:"amount"`
+	Currency   string    `json:"currency"`
 }
 
 // UnmarshalJSON is json Transaction unmarhalling companion
@@ -105,15 +104,14 @@ func (entity *Transfer) UnmarshalJSON(data []byte) error {
 	if all.Currency == nil {
 		return fmt.Errorf("required field \"currency\" is missing")
 	}
-
-	amount, ok := new(money.Dec).SetString(*all.Amount)
-	if !ok {
+	_, err = strconv.ParseFloat(*all.Amount, 64)
+	if err != nil {
 		return fmt.Errorf("invalid amount")
 	}
 
 	entity.Credit = *all.Credit
 	entity.Debit = *all.Debit
-	entity.Amount = amount
+	entity.Amount = *all.Amount
 	entity.Currency = *all.Currency
 
 	if all.ValueDate == nil {
@@ -148,7 +146,7 @@ func (entity Transfer) MarshalJSON() ([]byte, error) {
 	buffer.WriteString("\"},\"valueDate\":\"")
 	buffer.WriteString(entity.ValueDate.Format(time.RFC3339))
 	buffer.WriteString("\",\"amount\":\"")
-	buffer.WriteString(entity.Amount.String())
+	buffer.WriteString(entity.Amount)
 	buffer.WriteString("\",\"currency\":\"")
 	buffer.WriteString(entity.Currency)
 	buffer.WriteString("\"}")
@@ -166,7 +164,6 @@ func (entity *Transaction) Deserialize(data []byte) {
 		transfer := strings.SplitN(lines[i+1], " ", 8)
 
 		valueDate, _ := time.Parse(time.RFC3339, transfer[5])
-		amount, _ := new(money.Dec).SetString(transfer[6])
 
 		entity.Transfers[i] = Transfer{
 			IDTransfer: transfer[0],
@@ -179,7 +176,7 @@ func (entity *Transaction) Deserialize(data []byte) {
 				Name:   transfer[4],
 			},
 			ValueDate: valueDate,
-			Amount:    amount,
+			Amount:    transfer[6],
 			Currency:  transfer[7],
 		}
 	}

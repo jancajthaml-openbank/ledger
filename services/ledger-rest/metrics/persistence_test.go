@@ -2,15 +2,14 @@ package metrics
 
 import (
 	"encoding/json"
-	"io/ioutil"
-	"os"
-	"testing"
-	"time"
-
 	localfs "github.com/jancajthaml-openbank/local-fs"
 	metrics "github.com/rcrowley/go-metrics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"io/ioutil"
+	"os"
+	"testing"
+	"time"
 )
 
 func TestMarshalJSON(t *testing.T) {

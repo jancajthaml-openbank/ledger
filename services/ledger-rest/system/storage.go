@@ -16,11 +16,10 @@ package system
 
 import (
 	"context"
+	"github.com/jancajthaml-openbank/ledger-rest/utils"
 	"sync/atomic"
 	"syscall"
 	"time"
-
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
 )
 
 // DiskMonitor represents disk monitoring subroutine

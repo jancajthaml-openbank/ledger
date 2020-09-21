@@ -14,6 +14,7 @@
 
 package utils
 
+/*
 import "time"
 
 // Now returns epoch in ms
@@ -25,3 +26,4 @@ func Now() int64 {
 func Today() int64 {
 	return int64(86400) * int64(time.Now().Unix()/86400000)
 }
+*/

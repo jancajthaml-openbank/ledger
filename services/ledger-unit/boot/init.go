@@ -16,19 +16,16 @@ package boot
 
 import (
 	"context"
-	"os"
-
-	"github.com/rs/xid"
-
+	system "github.com/jancajthaml-openbank/actor-system"
 	"github.com/jancajthaml-openbank/ledger-unit/actor"
 	"github.com/jancajthaml-openbank/ledger-unit/config"
 	"github.com/jancajthaml-openbank/ledger-unit/logging"
 	"github.com/jancajthaml-openbank/ledger-unit/metrics"
 	"github.com/jancajthaml-openbank/ledger-unit/model"
 	"github.com/jancajthaml-openbank/ledger-unit/utils"
-
-	system "github.com/jancajthaml-openbank/actor-system"
 	localfs "github.com/jancajthaml-openbank/local-fs"
+	"github.com/rs/xid"
+	"os"
 )
 
 // Program encapsulate initialized application
