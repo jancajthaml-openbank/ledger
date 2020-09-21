@@ -35,7 +35,7 @@ lifecycle::go::lint() {
   \
   | sort -u \
   | while read file ; do
-    (gofmt -s -w ${file} || :)
+    (gofmt -w ${file} || :)
     (/go/bin/golint -min_confidence 0.5 ${file} || :)
     (/go/bin/misspell -q -locale US -source=text -w ${file} || :)
     (/go/bin/prealloc ${file} || :)

@@ -3,8 +3,6 @@ github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/jancajthaml-openbank/actor-system v1.2.0 h1:5YXlSVsp1DENWbt28LIrGPFbOdpIZ9c3vEyjIQ6eOyE=
 github.com/jancajthaml-openbank/actor-system v1.2.0/go.mod h1:hw8242Kf2LeCNSxzJwgqEjMqGue+8Wzz/w9M+8G4+28=
-github.com/jancajthaml-openbank/local-fs v1.1.4 h1:HjMBdyRsJuNgdz9xX/sjDL7qJ90IseSJUkNSwUoyHdY=
-github.com/jancajthaml-openbank/local-fs v1.1.4/go.mod h1:Hulcb84Ev/x3d6BNM3tMWvkoMjAHxvUAfRsr88kdlpE=
 github.com/jancajthaml-openbank/local-fs v1.1.5 h1:gx4laehipkYP+bd5lD6/CnQrUE5TC/cuimmf+g/fduY=
 github.com/jancajthaml-openbank/local-fs v1.1.5/go.mod h1:1NbSlgcIJspEkr5PqtPZp7iixDUtHbt59jBtc+PNsGE=
 github.com/pebbe/zmq4 v1.2.1 h1:jrXQW3mD8Si2mcSY/8VBs2nNkK/sKCOEM0rHAfxyc8c=
@@ -16,12 +14,9 @@ github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0 h1:MkV+77GLUNo
 github.com/rcrowley/go-metrics v0.0.0-20200313005456-10cdbea86bc0/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
 github.com/rs/xid v1.2.1 h1:mhH9Nq+C1fY2l1XIpgxIiUOfNpRBYH1kKcr+qfKgjRc=
 github.com/rs/xid v1.2.1/go.mod h1:+uKXf+4Djp6Md1KODXJxgGQPKngRmWyn10oCKFzNHOQ=
-github.com/rs/zerolog v1.19.0 h1:hYz4ZVdUgjXTBUmrkrw55j1nHx68LfOKIQk5IYtyScg=
-github.com/rs/zerolog v1.19.0/go.mod h1:IzD0RJ65iWH0w97OQQebJEvTZYvsCUm9WVLWBQrJRjo=
 github.com/rs/zerolog v1.20.0 h1:38k9hgtUBdxFwE34yS8rTHmHBa4eN16E4DJlv177LNs=
 github.com/rs/zerolog v1.20.0/go.mod h1:IzD0RJ65iWH0w97OQQebJEvTZYvsCUm9WVLWBQrJRjo=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
-github.com/stretchr/testify v1.6.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.6.1 h1:hDPOHmpOpP40lSULcqw7IrRb/u7w6RpDC9399XyoNd0=
 github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=

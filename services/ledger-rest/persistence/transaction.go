@@ -17,12 +17,11 @@ package persistence
 import (
 	"github.com/jancajthaml-openbank/ledger-rest/model"
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
-
 	localfs "github.com/jancajthaml-openbank/local-fs"
 )
 
-// LoadTransactionsIDS loads transaction ids from storage
-func LoadTransactionsIDS(storage *localfs.PlaintextStorage, tenant string) ([]string, error) {
+// LoadTransactionsIDs loads transaction ids from storage
+func LoadTransactionsIDs(storage *localfs.PlaintextStorage, tenant string) ([]string, error) {
 	path := utils.TransactionsPath(tenant)
 	ok, err := storage.Exists(path)
 	if err != nil || !ok {

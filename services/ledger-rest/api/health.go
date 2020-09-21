@@ -17,9 +17,8 @@ package api
 import (
 	"encoding/json"
 	"github.com/jancajthaml-openbank/ledger-rest/system"
-	"net/http"
-
 	"github.com/labstack/echo/v4"
+	"net/http"
 )
 
 // HealtCheck returns 200 OK if service is healthy, 503 otherwise

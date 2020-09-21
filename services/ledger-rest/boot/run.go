@@ -16,12 +16,11 @@ package boot
 
 import (
 	"fmt"
+	"github.com/jancajthaml-openbank/ledger-rest/utils"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
-
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
 )
 
 // WaitReady wait for daemons to be ready

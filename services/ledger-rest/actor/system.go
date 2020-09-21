@@ -16,11 +16,9 @@ package actor
 
 import (
 	"context"
-	"time"
-
-	"github.com/jancajthaml-openbank/ledger-rest/metrics"
-
 	system "github.com/jancajthaml-openbank/actor-system"
+	"github.com/jancajthaml-openbank/ledger-rest/metrics"
+	"time"
 )
 
 // System represents actor system subroutine

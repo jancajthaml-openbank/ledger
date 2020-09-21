@@ -16,7 +16,6 @@ package actor
 
 import (
 	"github.com/jancajthaml-openbank/ledger-rest/model"
-
 	"strings"
 	"time"
 )
@@ -57,7 +56,7 @@ func CreateTransactionMessage(transaction model.Transaction) string {
 		buffer.WriteString(";")
 		buffer.WriteString(transfer.Debit.Name)
 		buffer.WriteString(";")
-		buffer.WriteString(transfer.Amount.String())
+		buffer.WriteString(transfer.Amount)
 		buffer.WriteString(";")
 		buffer.WriteString(transfer.Currency)
 		buffer.WriteString(";")

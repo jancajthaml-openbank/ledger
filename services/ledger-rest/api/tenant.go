@@ -16,11 +16,9 @@ package api
 
 import (
 	"fmt"
-	"net/http"
-
 	"github.com/jancajthaml-openbank/ledger-rest/system"
-
 	"github.com/labstack/echo/v4"
+	"net/http"
 )
 
 // CreateTenant enables ledger-unit@{tenant}

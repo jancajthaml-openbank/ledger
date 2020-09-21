@@ -16,8 +16,6 @@ package boot
 
 import (
 	"context"
-	"os"
-
 	"github.com/jancajthaml-openbank/ledger-rest/actor"
 	"github.com/jancajthaml-openbank/ledger-rest/api"
 	"github.com/jancajthaml-openbank/ledger-rest/config"
@@ -25,8 +23,8 @@ import (
 	"github.com/jancajthaml-openbank/ledger-rest/metrics"
 	"github.com/jancajthaml-openbank/ledger-rest/system"
 	"github.com/jancajthaml-openbank/ledger-rest/utils"
-
 	localfs "github.com/jancajthaml-openbank/local-fs"
+	"os"
 )
 
 // Program encapsulate initialized application
