@@ -50,6 +50,7 @@ lifecycle::go::test() {
   go test \
     -v ./... \
     -coverprofile=${coverage_out} \
+    -covermode=count \
     -coverpkg=./... \
     -timeout=10s \
   | grc tee ${test_out}

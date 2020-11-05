@@ -16,7 +16,6 @@ class UnitHelper(object):
   @staticmethod
   def default_config():
     return {
-      "STORAGE": "{}/reports/blackbox-tests/data".format(os.getcwd()),
       "LOG_LEVEL": "DEBUG",
       "HTTP_PORT": 443,
       "SERVER_KEY": "/etc/ledger/secrets/domain.local.key",
@@ -26,8 +25,8 @@ class UnitHelper(object):
       "MEMORY_THRESHOLD": 0,
       "STORAGE_THRESHOLD": 0,
       "METRICS_REFRESHRATE": "1s",
-      "METRICS_OUTPUT": "{}/reports/blackbox-tests/metrics".format(os.getcwd()),
-      #"METRICS_CONTINUOUS": "true",  # fixme implement
+      "METRICS_OUTPUT": os.path.realpath('{}/../../reports/blackbox-tests/metrics'.format(os.path.dirname(__file__))),
+      "STORAGE": "/data",
     }
 
   def get_arch(self):
@@ -47,10 +46,24 @@ class UnitHelper(object):
     self.docker = docker.from_env()
     self.context = context
 
-  def download(self):
-    failure = None
-    os.makedirs('/tmp/packages', exist_ok=True)
+  def install(self, file):
+    cwd = os.path.realpath('{}/../..'.format(os.path.dirname(__file__)))
 
+    (code, result, error) = execute(['dpkg', '-c', file])
+    if code != 0:
+      raise RuntimeError('code: {}, stdout: [{}], stderr: [{}]'.format(code, result, error))
+    else:
+      os.makedirs('{}/reports/blackbox-tests/meta'.format(cwd), exist_ok=True)
+      with open('{}/reports/blackbox-tests/meta/debian.ledger.txt'.format(cwd), 'w') as fd:
+        fd.write(result)
+
+      result = [item for item in result.split(os.linesep)]
+      result = [item.rsplit('/', 1)[-1].strip() for item in result if "/lib/systemd/system/ledger" in item]
+      result = [item for item in result if not item.endswith('unit.slice')]
+
+      self.units = result
+
+  def download(self):
     self.image_version = os.environ.get('IMAGE_VERSION', '')
     self.debian_version = os.environ.get('UNIT_VERSION', '')
 
@@ -60,16 +73,25 @@ class UnitHelper(object):
     assert self.image_version, 'IMAGE_VERSION not provided'
     assert self.debian_version, 'UNIT_VERSION not provided'
 
+    cwd = os.path.realpath('{}/../..'.format(os.path.dirname(__file__)))
+
+    self.binary = '{}/packaging/bin/ledger_{}_{}.deb'.format(cwd, self.debian_version, self.arch)
+
+    if os.path.exists(self.binary):
+      self.install(self.binary)
+      return
+
+    os.makedirs(os.path.dirname(self.binary), exist_ok=True)
+
+    failure = None
     image = 'openbank/ledger:{}'.format(self.image_version)
     package = '/opt/artifacts/ledger_{}_{}.deb'.format(self.debian_version, self.arch)
-    target = '/tmp/packages/ledger.deb'
-
     temp = tempfile.NamedTemporaryFile(delete=True)
     try:
       with open(temp.name, 'w') as fd:
         fd.write(str(os.linesep).join([
           'FROM alpine',
-          'COPY --from={} {} {}'.format(image, package, target)
+          'COPY --from={} {} {}'.format(image, package, self.binary)
         ]))
 
       image, stream = self.docker.images.build(fileobj=temp, rm=True, pull=False, tag='bbtest_artifacts-scratch')
@@ -86,26 +108,13 @@ class UnitHelper(object):
 
       tar_name = tempfile.NamedTemporaryFile(delete=True)
       with open(tar_name.name, 'wb') as fd:
-        bits, stat = scratch.get_archive(target)
+        bits, stat = scratch.get_archive(self.binary)
         for chunk in bits:
           fd.write(chunk)
 
       archive = tarfile.TarFile(tar_name.name)
-      archive.extract(os.path.basename(target), os.path.dirname(target))
-
-      (code, result, error) = execute(['dpkg', '-c', target])
-      if code != 0:
-        raise RuntimeError('code: {}, stdout: [{}], stderr: [{}]'.format(code, result, error))
-      else:
-        with open('reports/blackbox-tests/meta/debian.ledger.txt', 'w') as fd:
-          fd.write(result)
-
-        result = [item for item in result.split(os.linesep)]
-        result = [item.rsplit('/', 1)[-1].strip() for item in result if "/lib/systemd/system/ledger" in item]
-        result = [item for item in result if not item.endswith('unit.slice')]
-
-        self.units = result
-
+      archive.extract(os.path.basename(self.binary), os.path.dirname(self.binary))
+      self.install(self.binary)
       scratch.remove()
     except Exception as ex:
       failure = ex
@@ -130,16 +139,20 @@ class UnitHelper(object):
       fd.write(str(os.linesep).join("LEDGER_{!s}={!s}".format(k, v) for (k, v) in options.items()))
 
   def collect_logs(self):
+    cwd = os.path.realpath('{}/../..'.format(os.path.dirname(__file__)))
+
+    os.makedirs('{}/reports/blackbox-tests/logs'.format(cwd), exist_ok=True)
+
     (code, result, error) = execute(['journalctl', '-o', 'cat', '--no-pager'])
     if code == 0:
-      with open('reports/blackbox-tests/logs/journal.log', 'w') as fd:
+      with open('{}/reports/blackbox-tests/logs/journal.log'.format(cwd), 'w') as fd:
         fd.write(result)
 
     for unit in set(self.__get_systemd_units() + self.units):
       (code, result, error) = execute(['journalctl', '-o', 'cat', '-u', unit, '--no-pager'])
       if code != 0 or not result:
         continue
-      with open('reports/blackbox-tests/logs/{}.log'.format(unit), 'w') as fd:
+      with open('{}/reports/blackbox-tests/logs/{}.log'.format(cwd, unit), 'w') as fd:
         fd.write(result)
 
   def teardown(self):
