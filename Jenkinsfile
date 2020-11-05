@@ -353,11 +353,7 @@ pipeline {
             dir("${env.WORKSPACE}/reports") {
                 archiveArtifacts(
                     allowEmptyArchive: true,
-                    artifacts: 'unit-tests/**/*'
-                )
-                archiveArtifacts(
-                    allowEmptyArchive: true,
-                    artifacts: 'blackbox-tests/**/*'
+                    artifacts: 'blackbox-tests/**/*.log'
                 )
             }
             cleanWs()
@@ -366,11 +362,7 @@ pipeline {
             dir("${env.WORKSPACE}/reports") {
                 archiveArtifacts(
                     allowEmptyArchive: true,
-                    artifacts: 'unit-tests/**/*'
-                )
-                archiveArtifacts(
-                    allowEmptyArchive: true,
-                    artifacts: 'blackbox-tests/**/*'
+                    artifacts: 'blackbox-tests/**/*.log'
                 )
             }
             cleanWs()
