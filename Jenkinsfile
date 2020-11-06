@@ -296,11 +296,6 @@ pipeline {
     post {
         always {
             script {
-                if (DOCKER_IMAGE != null) {
-                    sh "docker rmi -f ${DOCKER_IMAGE.id} || :"
-                }
-            }
-            script {
                 publishHTML(target: [
                     alwaysLinkToLastBuild: false,
                     keepAll: true,
