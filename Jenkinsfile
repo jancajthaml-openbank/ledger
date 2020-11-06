@@ -272,17 +272,17 @@ pipeline {
                         "files": [
                             {
                                 "pattern": "${env.WORKSPACE}/packaging/bin/ledger-rest-linux-(*)",
-                                "target": "generic-local/openbank/ledger/linux/{1}/${env.VERSION}/ledger-rest",
+                                "target": "generic-local/openbank/ledger/${env.VERSION}/linux/{1}/ledger-rest",
                                 "recursive": "false"
                             },
                             {
                                 "pattern": "${env.WORKSPACE}/packaging/bin/ledger-unit-linux-(*)",
-                                "target": "generic-local/openbank/ledger/linux/{1}/${env.VERSION}/ledger-unit",
+                                "target": "generic-local/openbank/ledger/${env.VERSION}/linux/{1}/ledger-unit",
                                 "recursive": "false"
                             },
                             {
                                 "pattern": "${env.WORKSPACE}/packaging/bin/ledger_(*)_(*).deb",
-                                "target": "generic-local/openbank/ledger/linux/{2}/{1}/ledger.deb",
+                                "target": "generic-local/openbank/ledger/{1}/linux/{2}/ledger.deb",
                                 "recursive": "false"
                             }
                         ]
