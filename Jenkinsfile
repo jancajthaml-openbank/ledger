@@ -299,15 +299,15 @@ pipeline {
                 publishHTML(target: [
                     alwaysLinkToLastBuild: false,
                     keepAll: true,
-                    reportDir: "${env.WORKSPACE}/reports/unit-tests/ledger-unit",
-                    reportFiles: 'ledger-unit-coverage.html',
+                    reportDir: "${env.WORKSPACE}/reports/unit-tests/ledger-unit-coverage",
+                    reportFiles: '*',
                     reportName: 'Unit Test Coverage (Ledger Unit)'
                 ])
                 publishHTML(target: [
                     alwaysLinkToLastBuild: false,
                     keepAll: true,
-                    reportDir: "${env.WORKSPACE}/reports/unit-tests/ledger-rest",
-                    reportFiles: 'ledger-rest-coverage.html',
+                    reportDir: "${env.WORKSPACE}/reports/unit-tests/ledger-rest-coverage",
+                    reportFiles: '*',
                     reportName: 'Unit Test Coverage (Ledger Rest)'
                 ])
                 cucumber(
