@@ -10,7 +10,7 @@ from helpers.eventually import eventually
 @given('package {package} is {operation}')
 def step_impl(context, package, operation):
   if operation == 'installed':
-    (code, result, error) = execute(["apt-get", "install", "-f", "-qq", "-o=Dpkg::Use-Pty=0", "-o=Dpkg::Options::=--force-confold", "/tmp/packages/{}.deb".format(package)])
+    (code, result, error) = execute(["apt-get", "install", "-f", "-qq", "-o=Dpkg::Use-Pty=0", "-o=Dpkg::Options::=--force-confold", context.unit.binary])
     assert code == 0, "unable to install with code {} and {} {}".format(code, result, error)
     assert os.path.isfile('/etc/ledger/conf.d/init.conf') is True
   elif operation == 'uninstalled':
@@ -101,16 +101,18 @@ def unit_is_configured(context, unit):
 
 @given('tenant {tenant} is offboarded')
 def offboard_unit(context, tenant):
+  logfile = os.path.realpath('{}/../../reports/blackbox-tests/logs/ledger-unit.{}.log'.format(os.path.dirname(__file__), tenant))
+
   (code, result, error) = execute(['journalctl', '-o', 'cat', '-u', 'ledger-unit@{}.service'.format(tenant), '--no-pager'])
   if code == 0 and result:
-    with open('reports/blackbox-tests/logs/ledger-unit.{}.log'.format(tenant), 'w') as f:
+    with open(logfile, 'w') as f:
       f.write(result)
 
   execute(['systemctl', 'stop', 'ledger-unit@{}.service'.format(tenant)])
 
   (code, result, error) = execute(['journalctl', '-o', 'cat', '-u', 'ledger-unit@{}.service'.format(tenant), '--no-pager'])
   if code == 0 and result:
-    with open('reports/blackbox-tests/logs/ledger-unit.{}.log'.format(tenant), 'w') as fd:
+    with open(logfile, 'w') as fd:
       fd.write(result)
 
   execute(['systemctl', 'disable', 'ledger-unit@{}.service'.format(tenant)])
