@@ -2,7 +2,7 @@ def DOCKER_IMAGE
 
 def dockerOptions() {
     String options = "--pull "
-    options += "--label 'org.opencontainers.image.source=${env.GIT_URL}#${env.CHANGE_BRANCH}' "
+    options += "--label 'org.opencontainers.image.source=${env.GIT_URL}#${env.GIT_BRANCH}' "
     options += "--label 'org.opencontainers.image.created=${env.RFC3339_DATETIME}' "
     options += "--label 'org.opencontainers.image.revision=${env.GIT_COMMIT}' "
     options += "--label 'org.opencontainers.image.licenses=${env.LICENSE}' "
@@ -68,6 +68,10 @@ pipeline {
                     ).trim()
                     env.GIT_URL = sh(
                         script: 'git ls-remote --get-url',
+                        returnStdout: true
+                    ).trim()
+                    env.GIT_BRANCH = sh(
+                        script: 'git name-rev --name-only HEAD',
                         returnStdout: true
                     ).trim()
                     env.ARCH = sh(

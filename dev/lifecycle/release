@@ -97,7 +97,7 @@ lifecycle::release::assert_release() {
 PAYLOAD=$(cat <<-END
 {
   "tag_name": "${VERSION}",
-  "target_commitish": "master",
+  "target_commitish": "main",
   "name": "${VERSION}",
   "body": "final ${VERSION} public release",
   "draft": false,
