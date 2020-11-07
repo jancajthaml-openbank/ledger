@@ -157,14 +157,14 @@ pipeline {
                     sh """
                         ${env.WORKSPACE}/dev/lifecycle/test \
                         --source ${env.WORKSPACE}/services/ledger-rest \
-                        --output ${env.WORKSPACE}/reports/unit-tests/ledger-rest
+                        --output ${env.WORKSPACE}/reports/unit-tests
                     """
                 }
                 script {
                     sh """
                         ${env.WORKSPACE}/dev/lifecycle/test \
                         --source ${env.WORKSPACE}/services/ledger-unit \
-                        --output ${env.WORKSPACE}/reports/unit-tests/ledger-unit
+                        --output ${env.WORKSPACE}/reports/unit-tests
                     """
                 }
             }
