@@ -48,7 +48,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
-                    currentBuild.displayName = "#${currentBuild.number} - ${env.CHANGE_BRANCH} (?)"
+                    currentBuild.displayName = "#${currentBuild.number} - ? (?)"
                 }
                 deleteDir()
                 checkout(scm)
@@ -73,7 +73,7 @@ pipeline {
                     env.GIT_BRANCH = sh(
                         script: 'git name-rev --name-only HEAD',
                         returnStdout: true
-                    ).trim()
+                    ).trim() - 'remotes/origin/'
                     env.ARCH = sh(
                         script: 'dpkg --print-architecture',
                         returnStdout: true
@@ -87,7 +87,7 @@ pipeline {
                     env.GOPATH = "${env.WORKSPACE}/go"
                     env.XDG_CACHE_HOME = "${env.GOPATH}/.cache"
 
-                    currentBuild.displayName = "#${currentBuild.number} - ${env.CHANGE_BRANCH} (${env.VERSION})"
+                    currentBuild.displayName = "#${currentBuild.number} - ${env.GIT_BRANCH} (${env.VERSION})"
                 }
             }
         }
