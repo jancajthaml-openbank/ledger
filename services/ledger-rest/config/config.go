@@ -54,7 +54,7 @@ func GetConfig() Configuration {
 		ServerKey:          envString("LEDGER_SERVER_KEY", ""),
 		ServerCert:         envString("LEDGER_SERVER_CERT", ""),
 		LakeHostname:       envString("LEDGER_LAKE_HOSTNAME", "lake"),
-		LogLevel:           strings.ToUpper(envString("LEDGER_LOG_LEVEL", "DEBUG")),
+		LogLevel:           strings.ToUpper(envString("LEDGER_LOG_LEVEL", "INFO")),
 		MetricsRefreshRate: envDuration("LEDGER_METRICS_REFRESHRATE", time.Second),
 		MetricsOutput:      envFilename("LEDGER_METRICS_OUTPUT", "/tmp/ledger-rest-metrics"),
 		MinFreeDiskSpace:   uint64(envInteger("VAULT_STORAGE_THRESHOLD", 0)),
