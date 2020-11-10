@@ -30,6 +30,10 @@ func (prog Program) WaitReady(deadline time.Duration) error {
 
 	var wg sync.WaitGroup
 	waitWithDeadline := func(support utils.Daemon) {
+		if support == nil {
+			wg.Done()
+			return
+		}
 		go func() {
 			err := support.WaitReady(deadline)
 			if err != nil {
@@ -56,15 +60,21 @@ func (prog Program) WaitReady(deadline time.Duration) error {
 
 // GreenLight daemons
 func (prog Program) GreenLight() {
-	for _, daemon := range prog.daemons {
-		daemon.GreenLight()
+	for idx, _ := range prog.daemons {
+		if prog.daemons[idx] == nil {
+			continue
+		}
+		prog.daemons[idx].GreenLight()
 	}
 }
 
 // WaitStop wait for daemons to stop
 func (prog Program) WaitStop() {
-	for _, daemon := range prog.daemons {
-		daemon.WaitStop()
+	for idx, _ := range prog.daemons {
+		if prog.daemons[idx] == nil {
+			continue
+		}
+		prog.daemons[idx].WaitStop()
 	}
 }
 
@@ -80,8 +90,11 @@ func (prog Program) Stop() {
 
 // Start runs the application
 func (prog Program) Start() {
-	for _, daemon := range prog.daemons {
-		go daemon.Start()
+	for idx, _ := range prog.daemons {
+		if prog.daemons[idx] == nil {
+			continue
+		}
+		prog.daemons[idx].Start()
 	}
 
 	if err := prog.WaitReady(5 * time.Second); err != nil {
@@ -95,7 +108,9 @@ func (prog Program) Start() {
 	}
 
 	log.Info().Msg("Program Stopping")
-	utils.NotifyServiceStopping()
+	if err := utils.NotifyServiceStopping() ; err != nil {
+		log.Error().Msg(err.Error())
+	}
 
 	prog.cancel()
 	prog.WaitStop()

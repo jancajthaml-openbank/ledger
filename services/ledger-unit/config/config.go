@@ -14,7 +14,10 @@
 
 package config
 
-import "time"
+import (
+	"time"
+	"strings"
+)
 
 // Configuration of application
 type Configuration struct {
@@ -38,5 +41,13 @@ type Configuration struct {
 
 // GetConfig loads application configuration
 func GetConfig() Configuration {
-	return loadConfFromEnv()
+	return Configuration{
+		Tenant:                           envString("LEDGER_TENANT", ""),
+		LakeHostname:                     envString("LEDGER_LAKE_HOSTNAME", "lake"),
+		RootStorage:                      envString("LEDGER_STORAGE", "/data") + "/" + "t_" + envString("LEDGER_TENANT", ""),
+		LogLevel:                         strings.ToUpper(envString("LEDGER_LOG_LEVEL", "DEBUG")),
+		MetricsRefreshRate:               envDuration("LEDGER_METRICS_REFRESHRATE", time.Second),
+		MetricsOutput:                    envFilename("LEDGER_METRICS_OUTPUT", "/tmp/ledger-unit-metrics"),
+		TransactionIntegrityScanInterval: envDuration("LEDGER_TRANSACTION_INTEGRITY_SCANINTERVAL", 5*time.Minute),
+	}
 }

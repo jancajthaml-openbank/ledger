@@ -22,50 +22,33 @@ import (
 	"time"
 )
 
-func loadConfFromEnv() Configuration {
-	logLevel := strings.ToUpper(getEnvString("LEDGER_LOG_LEVEL", "DEBUG"))
-	serverKey := getEnvString("LEDGER_SERVER_KEY", "")
-	serverCert := getEnvString("LEDGER_SERVER_CERT", "")
-	rootStorage := getEnvString("LEDGER_STORAGE", "/data")
-	lakeHostname := getEnvString("LEDGER_LAKE_HOSTNAME", "")
-	port := getEnvInteger("LEDGER_HTTP_PORT", 4401)
-	minFreeDiskSpace := getEnvInteger("VAULT_STORAGE_THRESHOLD", 0)
-	minFreeMemory := getEnvInteger("VAULT_MEMORY_THRESHOLD", 0)
-	metricsOutput := getEnvFilename("LEDGER_METRICS_OUTPUT", "/tmp")
-	metricsRefreshRate := getEnvDuration("LEDGER_METRICS_REFRESHRATE", time.Second)
-
-	if lakeHostname == "" || serverKey == "" || serverCert == "" || rootStorage == "" {
-		log.Error().Msg("missing required parameter to run")
-		panic("missing required parameter to run")
+func envBoolean(key string, fallback bool) bool {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return fallback
 	}
-
-	return Configuration{
-		RootStorage:        rootStorage,
-		ServerPort:         port,
-		ServerKey:          serverKey,
-		ServerCert:         serverCert,
-		LakeHostname:       lakeHostname,
-		LogLevel:           logLevel,
-		MetricsRefreshRate: metricsRefreshRate,
-		MetricsOutput:      metricsOutput,
-		MinFreeDiskSpace:   uint64(minFreeDiskSpace),
-		MinFreeMemory:      uint64(minFreeMemory),
+	cast, err := strconv.ParseBool(value)
+	if err != nil {
+		log.Error().Msgf("invalid value of variable %s", key)
+		return fallback
 	}
+	return cast
 }
 
-func getEnvFilename(key string, fallback string) string {
+func envFilename(key string, fallback string) string {
 	var value = strings.TrimSpace(os.Getenv(key))
 	if value == "" {
 		return fallback
 	}
 	value = filepath.Clean(value)
 	if os.MkdirAll(value, os.ModePerm) != nil {
+		log.Error().Msgf("invalid value of variable %s", key)
 		return fallback
 	}
 	return value
 }
 
-func getEnvString(key string, fallback string) string {
+func envString(key string, fallback string) string {
 	value := strings.TrimSpace(os.Getenv(key))
 	if value == "" {
 		return fallback
@@ -73,7 +56,7 @@ func getEnvString(key string, fallback string) string {
 	return value
 }
 
-func getEnvInteger(key string, fallback int) int {
+func envInteger(key string, fallback int) int {
 	value := strings.TrimSpace(os.Getenv(key))
 	if value == "" {
 		return fallback
@@ -86,7 +69,7 @@ func getEnvInteger(key string, fallback int) int {
 	return cast
 }
 
-func getEnvDuration(key string, fallback time.Duration) time.Duration {
+func envDuration(key string, fallback time.Duration) time.Duration {
 	value := strings.TrimSpace(os.Getenv(key))
 	if value == "" {
 		return fallback
