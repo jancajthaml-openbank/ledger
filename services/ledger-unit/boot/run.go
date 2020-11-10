@@ -109,7 +109,7 @@ func (prog Program) Start() {
 	}
 
 	log.Info().Msg("Program Stopping")
-	if err := utils.NotifyServiceStopping() ; err != nil {
+	if err := utils.NotifyServiceStopping(); err != nil {
 		log.Error().Msg(err.Error())
 	}
 

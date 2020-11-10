@@ -15,8 +15,8 @@
 package config
 
 import (
-	"time"
 	"strings"
+	"time"
 )
 
 // Configuration of application
