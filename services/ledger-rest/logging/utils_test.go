@@ -6,10 +6,6 @@ import (
   "testing"
 )
 
-func TestMain(m *testing.M) {
-  os.Exit(m.Run())
-}
-
 func TestNew(t *testing.T) {
   logger := New("test-logger")
   logger.Info().Msg("test message")
