@@ -31,8 +31,8 @@ func TestGetConfig(t *testing.T) {
     if config.ServerCert != "" {
       t.Errorf("ServerCert default value is not empty")
     }
-    if config.LakeHostname != "lake" {
-      t.Errorf("LakeHostname default value is not lake")
+    if config.LakeHostname != "127.0.0.1" {
+      t.Errorf("LakeHostname default value is not 127.0.0.1")
     }
     if config.LogLevel != "INFO" {
       t.Errorf("LogLevel default value is not INFO")

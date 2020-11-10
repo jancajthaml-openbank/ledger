@@ -53,7 +53,7 @@ func GetConfig() Configuration {
 		ServerPort:         envInteger("LEDGER_HTTP_PORT", 4401),
 		ServerKey:          envString("LEDGER_SERVER_KEY", ""),
 		ServerCert:         envString("LEDGER_SERVER_CERT", ""),
-		LakeHostname:       envString("LEDGER_LAKE_HOSTNAME", "lake"),
+		LakeHostname:       envString("LEDGER_LAKE_HOSTNAME", "127.0.0.1"),
 		LogLevel:           strings.ToUpper(envString("LEDGER_LOG_LEVEL", "INFO")),
 		MetricsRefreshRate: envDuration("LEDGER_METRICS_REFRESHRATE", time.Second),
 		MetricsOutput:      envFilename("LEDGER_METRICS_OUTPUT", "/tmp/ledger-rest-metrics"),

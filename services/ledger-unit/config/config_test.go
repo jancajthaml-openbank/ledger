@@ -22,8 +22,8 @@ func TestGetConfig(t *testing.T) {
     if config.Tenant != "" {
       t.Errorf("Tenant default value is not empty")
     }
-    if config.LakeHostname != "lake" {
-      t.Errorf("LakeHostname default value is not lake")
+    if config.LakeHostname != "127.0.0.1" {
+      t.Errorf("LakeHostname default value is not 127.0.0.1")
     }
     if config.RootStorage != "/data/t_" {
       t.Errorf("RootStorage default value is not /data/t_")
