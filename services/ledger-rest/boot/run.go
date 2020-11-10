@@ -94,7 +94,7 @@ func (prog Program) Start() {
 		if prog.daemons[idx] == nil {
 			continue
 		}
-		prog.daemons[idx].Start()
+		go prog.daemons[idx].Start()
 	}
 
 	if err := prog.WaitReady(5 * time.Second); err != nil {
