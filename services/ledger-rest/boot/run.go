@@ -46,8 +46,8 @@ func (prog Program) WaitReady(deadline time.Duration) error {
 	}
 
 	wg.Add(len(prog.daemons))
-	for _, daemon := range prog.daemons {
-		waitWithDeadline(daemon)
+	for idx, _ := range prog.daemons {
+		waitWithDeadline(prog.daemons[idx])
 	}
 	wg.Wait()
 
