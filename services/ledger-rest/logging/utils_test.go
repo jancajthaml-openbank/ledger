@@ -2,7 +2,6 @@ package logging
 
 import (
 	"github.com/rs/zerolog"
-	"os"
 	"testing"
 )
 
