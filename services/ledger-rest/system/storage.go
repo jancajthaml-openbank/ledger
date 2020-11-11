@@ -73,11 +73,13 @@ func (monitor *DiskMonitor) CheckDiskSpace() {
 	if monitor == nil {
 		return
 	}
-	defer recover()
-
 	var stat = new(syscall.Statfs_t)
-	syscall.Statfs(monitor.rootStorage, stat)
-
+	err := syscall.Statfs(monitor.rootStorage, stat)
+	if err != nil {
+		log.Warn().Msgf("Unable to obtain storage stats")
+		atomic.StoreInt32(&(monitor.ok), 0)
+		return
+	}
 	free := stat.Bavail * uint64(stat.Bsize)
 	used := (stat.Blocks - stat.Bfree) * uint64(stat.Bsize)
 
@@ -85,7 +87,7 @@ func (monitor *DiskMonitor) CheckDiskSpace() {
 	atomic.StoreUint64(&(monitor.used), used)
 
 	if monitor.limit > 0 && free < monitor.limit {
-		log.Warn().Msgf("Not enough disk space to continue operating")
+		log.Warn().Msg("Not enough disk space to continue operating")
 		atomic.StoreInt32(&(monitor.ok), 0)
 		return
 	}

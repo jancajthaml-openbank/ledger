@@ -72,10 +72,9 @@ func (monitor *MemoryMonitor) CheckMemoryAllocation() {
 	if monitor == nil {
 		return
 	}
-	defer recover()
 
-	var memStat runtime.MemStats
-	runtime.ReadMemStats(&memStat)
+	var memStat = new(runtime.MemStats)
+	runtime.ReadMemStats(memStat)
 
 	var sysStat = new(syscall.Sysinfo_t)
 	err := syscall.Sysinfo(sysStat)
