@@ -27,43 +27,51 @@ import (
 type MemoryMonitor struct {
 	utils.DaemonSupport
 	limit uint64
-	free  *uint64
-	used  *uint64
-	ok    *int32
+	free  uint64
+	used  uint64
+	ok    int32
 }
 
 // NewMemoryMonitor returns new memory monitor fascade
 func NewMemoryMonitor(ctx context.Context, limit uint64) MemoryMonitor {
-	ok := int32(1)
-	free := uint64(0)
-	used := uint64(0)
-
 	return MemoryMonitor{
 		DaemonSupport: utils.NewDaemonSupport(ctx, "memory-check"),
 		limit:         limit,
-		free:          &free,
-		used:          &used,
-		ok:            &ok,
+		free:          0,
+		used:          0,
+		ok:            1,
 	}
 }
 
 // IsHealthy true if storage is healthy
 func (monitor *MemoryMonitor) IsHealthy() bool {
-	return atomic.LoadInt32(monitor.ok) != 0
+	if monitor == nil {
+		return true
+	}
+	return atomic.LoadInt32(&(monitor.ok)) != 0
 }
 
 // GetFreeMemory returns free memory
 func (monitor *MemoryMonitor) GetFreeMemory() uint64 {
-	return atomic.LoadUint64(monitor.free)
+	if monitor == nil {
+		return 0
+	}
+	return atomic.LoadUint64(&(monitor.free))
 }
 
 // GetUsedMemory returns allocated memory
 func (monitor *MemoryMonitor) GetUsedMemory() uint64 {
-	return atomic.LoadUint64(monitor.used)
+	if monitor == nil {
+		return 0
+	}
+	return atomic.LoadUint64(&(monitor.used))
 }
 
 // CheckMemoryAllocation update memory allocation metric and determine if ok to operate
 func (monitor *MemoryMonitor) CheckMemoryAllocation() {
+	if monitor == nil {
+		return
+	}
 	defer recover()
 
 	var memStat runtime.MemStats
@@ -73,26 +81,29 @@ func (monitor *MemoryMonitor) CheckMemoryAllocation() {
 	err := syscall.Sysinfo(sysStat)
 	if err != nil {
 		log.Warn().Msgf("Unable to obtain memory stats")
-		atomic.StoreInt32(monitor.ok, 0)
+		atomic.StoreInt32(&(monitor.ok), 0)
 		return
 	}
 
 	free := uint64(sysStat.Freeram) * uint64(sysStat.Unit)
 
-	atomic.StoreUint64(monitor.free, free)
-	atomic.StoreUint64(monitor.used, memStat.Sys)
+	atomic.StoreUint64(&(monitor.free), free)
+	atomic.StoreUint64(&(monitor.used), memStat.Sys)
 
 	if monitor.limit > 0 && free < monitor.limit {
 		log.Warn().Msgf("Not enough memory to continue operating")
-		atomic.StoreInt32(monitor.ok, 0)
+		atomic.StoreInt32(&(monitor.ok), 0)
 		return
 	}
-	atomic.StoreInt32(monitor.ok, 1)
+	atomic.StoreInt32(&(monitor.ok), 1)
 	return
 }
 
 // Start handles everything needed to start memory daemon
-func (monitor MemoryMonitor) Start() {
+func (monitor *MemoryMonitor) Start() {
+	if monitor == nil {
+		return
+	}
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 
