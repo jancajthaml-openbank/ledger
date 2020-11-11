@@ -31,13 +31,18 @@ type TransactionFinalizer struct {
 	utils.DaemonSupport
 	callback     func(transaction model.Transaction)
 	metrics      *metrics.Metrics
-	storage      *localfs.PlaintextStorage
+	storage      localfs.Storage
 	scanInterval time.Duration
 }
 
 // NewTransactionFinalizer returns snapshot updater fascade
-func NewTransactionFinalizer(ctx context.Context, scanInterval time.Duration, metrics *metrics.Metrics, storage *localfs.PlaintextStorage, callback func(transaction model.Transaction)) TransactionFinalizer {
-	return TransactionFinalizer{
+func NewTransactionFinalizer(ctx context.Context, scanInterval time.Duration, rootStorage string, metrics *metrics.Metrics, callback func(transaction model.Transaction)) *TransactionFinalizer {
+	storage, err := localfs.NewPlaintextStorage(rootStorage)
+	if err != nil {
+		log.Error().Msgf("Failed to ensure storage %+v", err)
+		return nil
+	}
+	return &TransactionFinalizer{
 		DaemonSupport: utils.NewDaemonSupport(ctx, " transaction-finalizer"),
 		callback:      callback,
 		metrics:       metrics,
@@ -46,7 +51,10 @@ func NewTransactionFinalizer(ctx context.Context, scanInterval time.Duration, me
 	}
 }
 
-func (scan TransactionFinalizer) getTransactions() []string {
+func (scan *TransactionFinalizer) getTransactions() []string {
+	if scan == nil {
+		return nil
+	}
 	result, err := scan.storage.ListDirectory(utils.RootPath(), true)
 	if err != nil {
 		return nil
@@ -54,7 +62,10 @@ func (scan TransactionFinalizer) getTransactions() []string {
 	return result
 }
 
-func (scan TransactionFinalizer) finalizeStaleTransactions() {
+func (scan *TransactionFinalizer) finalizeStaleTransactions() {
+	if scan == nil {
+		return
+	}
 	log.Info().Msg("Performing stale transactions scan")
 	transactions := scan.getTransactions()
 	for _, transaction := range transactions {
@@ -67,7 +78,10 @@ func (scan TransactionFinalizer) finalizeStaleTransactions() {
 	}
 }
 
-func (scan TransactionFinalizer) getTransaction(id string) *model.Transaction {
+func (scan *TransactionFinalizer) getTransaction(id string) *model.Transaction {
+	if scan == nil {
+		return nil
+	}
 	modTime, err := scan.storage.LastModification(utils.TransactionPath(id))
 	if err != nil {
 		return nil
@@ -90,7 +104,11 @@ func (scan TransactionFinalizer) getTransaction(id string) *model.Transaction {
 }
 
 // Start handles everything needed to start transaction finalizer daemon
-func (scan TransactionFinalizer) Start() {
+func (scan *TransactionFinalizer) Start() {
+	if scan == nil {
+		return
+	}
+
 	ticker := time.NewTicker(scan.scanInterval)
 	defer ticker.Stop()
 

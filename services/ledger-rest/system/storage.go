@@ -33,8 +33,8 @@ type DiskMonitor struct {
 }
 
 // NewDiskMonitor returns new disk monitor fascade
-func NewDiskMonitor(ctx context.Context, limit uint64, rootStorage string) DiskMonitor {
-	return DiskMonitor{
+func NewDiskMonitor(ctx context.Context, limit uint64, rootStorage string) *DiskMonitor {
+	return &DiskMonitor{
 		DaemonSupport: utils.NewDaemonSupport(ctx, "storage-check"),
 		rootStorage:   rootStorage,
 		limit:         limit,

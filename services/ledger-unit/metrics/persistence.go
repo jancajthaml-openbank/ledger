@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 	"time"
 )
@@ -114,7 +113,7 @@ func (metrics *Metrics) Persist() error {
 	if err != nil {
 		return err
 	}
-	err = os.Chmod(metrics.storage.Root+"/metrics."+metrics.tenant+".json", 0644)
+	err = metrics.storage.Chmod("metrics."+metrics.tenant+".json", 0644)
 	if err != nil {
 		return err
 	}

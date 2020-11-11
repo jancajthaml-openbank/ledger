@@ -26,7 +26,7 @@ import (
 // Metrics holds metrics counters
 type Metrics struct {
 	utils.DaemonSupport
-	storage                         localfs.PlaintextStorage
+	storage                         localfs.Storage
 	tenant                          string
 	refreshRate                     time.Duration
 	promisedTransactions            metrics.Counter
@@ -39,10 +39,15 @@ type Metrics struct {
 }
 
 // NewMetrics returns blank metrics holder
-func NewMetrics(ctx context.Context, output string, tenant string, refreshRate time.Duration) Metrics {
-	return Metrics{
+func NewMetrics(ctx context.Context, output string, tenant string, refreshRate time.Duration) *Metrics {
+	storage, err := localfs.NewPlaintextStorage(output)
+	if err != nil {
+		log.Error().Msgf("Failed to ensure storage %+v", err)
+		return nil
+	}
+	return &Metrics{
 		DaemonSupport:                   utils.NewDaemonSupport(ctx, "metrics"),
-		storage:                         localfs.NewPlaintextStorage(output),
+		storage:                         storage,
 		tenant:                          tenant,
 		refreshRate:                     refreshRate,
 		promisedTransactions:            metrics.NewCounter(),
@@ -57,29 +62,44 @@ func NewMetrics(ctx context.Context, output string, tenant string, refreshRate t
 
 // TimeFinalizeTransactions measures time of finalizeStaleTransactions function run
 func (metrics *Metrics) TimeFinalizeTransactions(f func()) {
+	if metrics == nil {
+		return
+	}
 	metrics.transactionFinalizerCronLatency.Time(f)
 }
 
 // TransactionPromised increments transactions promised by one
 func (metrics *Metrics) TransactionPromised(transfers int) {
+	if metrics == nil {
+		return
+	}
 	metrics.promisedTransactions.Inc(1)
 	metrics.promisedTransfers.Inc(int64(transfers))
 }
 
 // TransactionCommitted increments transactions committed by one
 func (metrics *Metrics) TransactionCommitted(transfers int) {
+	if metrics == nil {
+		return
+	}
 	metrics.committedTransactions.Inc(1)
 	metrics.committedTransfers.Inc(int64(transfers))
 }
 
 // TransactionRollbacked increments transactions rollbacked by one
 func (metrics *Metrics) TransactionRollbacked(transfers int) {
+	if metrics == nil {
+		return
+	}
 	metrics.rollbackedTransactions.Inc(1)
 	metrics.rollbackedTransfers.Inc(int64(transfers))
 }
 
 // Start handles everything needed to start metrics daemon
-func (metrics Metrics) Start() {
+func (metrics *Metrics) Start() {
+	if metrics == nil {
+		return
+	}
 	ticker := time.NewTicker(metrics.refreshRate)
 	defer ticker.Stop()
 
@@ -98,7 +118,7 @@ func (metrics Metrics) Start() {
 		return
 	}
 
-	log.Info().Msgf("Start metrics daemon, update each %v into %v", metrics.refreshRate, metrics.storage.Root)
+	log.Info().Msgf("Start metrics daemon, update file each %v", metrics.refreshRate)
 
 	go func() {
 		for {

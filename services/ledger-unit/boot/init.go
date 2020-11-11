@@ -23,7 +23,6 @@ import (
 	"github.com/jancajthaml-openbank/ledger-unit/metrics"
 	"github.com/jancajthaml-openbank/ledger-unit/model"
 	"github.com/jancajthaml-openbank/ledger-unit/utils"
-	localfs "github.com/jancajthaml-openbank/local-fs"
 	"github.com/rs/xid"
 	"os"
 )
@@ -44,9 +43,6 @@ func Initialize() Program {
 
 	logging.SetupLogger(cfg.LogLevel)
 
-	storage := localfs.NewPlaintextStorage(
-		cfg.RootStorage,
-	)
 	metricsDaemon := metrics.NewMetrics(
 		ctx,
 		cfg.MetricsOutput,
@@ -56,17 +52,17 @@ func Initialize() Program {
 	actorSystemDaemon := actor.NewActorSystem(
 		ctx, cfg.Tenant,
 		cfg.LakeHostname,
-		&metricsDaemon,
-		&storage,
+		cfg.RootStorage,
+		metricsDaemon,
 	)
 	transactionFinalizerDaemon := actor.NewTransactionFinalizer(
 		ctx,
 		cfg.TransactionIntegrityScanInterval,
-		&metricsDaemon,
-		&storage,
+		cfg.RootStorage,
+		metricsDaemon,
 		func(transaction model.Transaction) {
 			name := "transaction/" + xid.New().String()
-			ref, err := actor.NewTransactionActor(&actorSystemDaemon, name)
+			ref, err := actor.NewTransactionActor(actorSystemDaemon, name)
 			if err != nil {
 				return
 			}
@@ -85,9 +81,9 @@ func Initialize() Program {
 	)
 
 	var daemons = make([]utils.Daemon, 0)
-	daemons = append(daemons, &metricsDaemon)
-	daemons = append(daemons, &actorSystemDaemon)
-	daemons = append(daemons, &transactionFinalizerDaemon)
+	daemons = append(daemons, metricsDaemon)
+	daemons = append(daemons, actorSystemDaemon)
+	daemons = append(daemons, transactionFinalizerDaemon)
 
 	return Program{
 		interrupt: make(chan os.Signal, 1),

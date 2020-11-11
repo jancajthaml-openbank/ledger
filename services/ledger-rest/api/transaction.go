@@ -27,7 +27,7 @@ import (
 )
 
 // GetTransaction returns transaction state
-func GetTransaction(storage *localfs.PlaintextStorage) func(c echo.Context) error {
+func GetTransaction(storage localfs.Storage) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 
@@ -63,7 +63,7 @@ func GetTransaction(storage *localfs.PlaintextStorage) func(c echo.Context) erro
 }
 
 // CreateTransaction creates new transaction for given tenant
-func CreateTransaction(storage *localfs.PlaintextStorage, system *actor.System) func(c echo.Context) error {
+func CreateTransaction(storage localfs.Storage, system *actor.System) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 
@@ -121,7 +121,7 @@ func CreateTransaction(storage *localfs.PlaintextStorage, system *actor.System) 
 }
 
 // GetTransactions return existing transactions of given tenant
-func GetTransactions(storage *localfs.PlaintextStorage) func(c echo.Context) error {
+func GetTransactions(storage localfs.Storage) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 

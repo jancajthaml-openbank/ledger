@@ -31,13 +31,13 @@ type Control struct {
 }
 
 // NewSystemControl returns new systemctl fascade
-func NewSystemControl(ctx context.Context) Control {
+func NewSystemControl(ctx context.Context) *Control {
 	conn, err := dbus.New()
 	if err != nil {
-		panic(fmt.Sprintf("Unable to obtain dbus connection because %+v", err))
+		log.Error().Msgf("Unable to obtain dbus connection because %+v", err)
+		return nil
 	}
-
-	return Control{
+	return &Control{
 		DaemonSupport: utils.NewDaemonSupport(ctx, "system-control"),
 		underlying:    conn,
 	}
