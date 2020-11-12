@@ -27,65 +27,79 @@ type DiskMonitor struct {
 	utils.DaemonSupport
 	rootStorage string
 	limit       uint64
-	free        *uint64
-	used        *uint64
-	ok          *int32
+	free        uint64
+	used        uint64
+	ok          int32
 }
 
 // NewDiskMonitor returns new disk monitor fascade
-func NewDiskMonitor(ctx context.Context, limit uint64, rootStorage string) DiskMonitor {
-	ok := int32(1)
-	free := uint64(0)
-	used := uint64(0)
-	return DiskMonitor{
+func NewDiskMonitor(ctx context.Context, limit uint64, rootStorage string) *DiskMonitor {
+	return &DiskMonitor{
 		DaemonSupport: utils.NewDaemonSupport(ctx, "storage-check"),
 		rootStorage:   rootStorage,
 		limit:         limit,
-		free:          &free,
-		used:          &used,
-		ok:            &ok,
+		free:          0,
+		used:          0,
+		ok:            1,
 	}
 }
 
 // IsHealthy true if storage is healthy
 func (monitor *DiskMonitor) IsHealthy() bool {
-	return atomic.LoadInt32(monitor.ok) != 0
+	if monitor == nil {
+		return true
+	}
+	return atomic.LoadInt32(&(monitor.ok)) != 0
 }
 
 // GetFreeDiskSpace returns free disk space
 func (monitor *DiskMonitor) GetFreeDiskSpace() uint64 {
-	return atomic.LoadUint64(monitor.free)
+	if monitor == nil {
+		return 0
+	}
+	return atomic.LoadUint64(&(monitor.free))
 }
 
 // GetUsedDiskSpace returns used disk space
 func (monitor *DiskMonitor) GetUsedDiskSpace() uint64 {
-	return atomic.LoadUint64(monitor.used)
+	if monitor == nil {
+		return 0
+	}
+	return atomic.LoadUint64(&(monitor.used))
 }
 
 // CheckDiskSpace update free disk space metric and determine if ok to operate
 func (monitor *DiskMonitor) CheckDiskSpace() {
-	defer recover()
-
+	if monitor == nil {
+		return
+	}
 	var stat = new(syscall.Statfs_t)
-	syscall.Statfs(monitor.rootStorage, stat)
-
+	err := syscall.Statfs(monitor.rootStorage, stat)
+	if err != nil {
+		log.Warn().Msgf("Unable to obtain storage stats")
+		atomic.StoreInt32(&(monitor.ok), 0)
+		return
+	}
 	free := stat.Bavail * uint64(stat.Bsize)
 	used := (stat.Blocks - stat.Bfree) * uint64(stat.Bsize)
 
-	atomic.StoreUint64(monitor.free, free)
-	atomic.StoreUint64(monitor.used, used)
+	atomic.StoreUint64(&(monitor.free), free)
+	atomic.StoreUint64(&(monitor.used), used)
 
 	if monitor.limit > 0 && free < monitor.limit {
-		log.Warn().Msgf("Not enough disk space to continue operating")
-		atomic.StoreInt32(monitor.ok, 0)
+		log.Warn().Msg("Not enough disk space to continue operating")
+		atomic.StoreInt32(&(monitor.ok), 0)
 		return
 	}
-	atomic.StoreInt32(monitor.ok, 1)
+	atomic.StoreInt32(&(monitor.ok), 1)
 	return
 }
 
 // Start handles everything needed to start storage daemon
-func (monitor DiskMonitor) Start() {
+func (monitor *DiskMonitor) Start() {
+	if monitor == nil {
+		return
+	}
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 

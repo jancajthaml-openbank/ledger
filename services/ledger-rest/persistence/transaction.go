@@ -21,7 +21,7 @@ import (
 )
 
 // LoadTransactionsIDs loads transaction ids from storage
-func LoadTransactionsIDs(storage *localfs.PlaintextStorage, tenant string) ([]string, error) {
+func LoadTransactionsIDs(storage localfs.Storage, tenant string) ([]string, error) {
 	path := utils.TransactionsPath(tenant)
 	ok, err := storage.Exists(path)
 	if err != nil || !ok {
@@ -35,7 +35,7 @@ func LoadTransactionsIDs(storage *localfs.PlaintextStorage, tenant string) ([]st
 }
 
 // LoadTransaction loads transaction storage
-func LoadTransaction(storage *localfs.PlaintextStorage, tenant string, id string) (*model.Transaction, error) {
+func LoadTransaction(storage localfs.Storage, tenant string, id string) (*model.Transaction, error) {
 	path := utils.TransactionPath(tenant, id)
 	ok, err := storage.Exists(path)
 	if err != nil || !ok {

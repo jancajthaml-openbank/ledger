@@ -22,7 +22,7 @@ import (
 )
 
 // LoadTransaction loads transaction from journal
-func LoadTransaction(storage *localfs.PlaintextStorage, id string) (*model.Transaction, error) {
+func LoadTransaction(storage localfs.Storage, id string) (*model.Transaction, error) {
 	transactionPath := utils.TransactionPath(id)
 	data, err := storage.ReadFileFully(transactionPath)
 	if err != nil {
@@ -35,7 +35,7 @@ func LoadTransaction(storage *localfs.PlaintextStorage, id string) (*model.Trans
 }
 
 // LoadTransactionState loads transaction status journal
-func LoadTransactionState(storage *localfs.PlaintextStorage, id string) (string, error) {
+func LoadTransactionState(storage localfs.Storage, id string) (string, error) {
 	transactionPath := utils.TransactionPath(id)
 	data, err := storage.ReadFileFully(transactionPath)
 	if err != nil {
@@ -48,14 +48,14 @@ func LoadTransactionState(storage *localfs.PlaintextStorage, id string) (string,
 }
 
 // CreateTransaction persist transaction entity state to storage
-func CreateTransaction(storage *localfs.PlaintextStorage, entity *model.Transaction) error {
+func CreateTransaction(storage localfs.Storage, entity *model.Transaction) error {
 	transactionPath := utils.TransactionPath(entity.IDTransaction)
 	data := entity.Serialize()
 	return storage.WriteFileExclusive(transactionPath, data)
 }
 
 // UpdateTransaction persist update of transaction to disk
-func UpdateTransaction(storage *localfs.PlaintextStorage, entity *model.Transaction) error {
+func UpdateTransaction(storage localfs.Storage, entity *model.Transaction) error {
 	transactionPath := utils.TransactionPath(entity.IDTransaction)
 	data := entity.Serialize()
 	return storage.WriteFile(transactionPath, data)

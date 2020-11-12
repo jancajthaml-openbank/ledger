@@ -17,48 +17,38 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
 
-func loadConfFromEnv() Configuration {
-	logLevel := strings.ToUpper(getEnvString("LEDGER_LOG_LEVEL", "DEBUG"))
-	storage := getEnvString("LEDGER_STORAGE", "/data")
-	tenant := getEnvString("LEDGER_TENANT", "")
-	lakeHostname := getEnvString("LEDGER_LAKE_HOSTNAME", "")
-	transactionIntegrityScanInterval := getEnvDuration("LEDGER_TRANSACTION_INTEGRITY_SCANINTERVAL", 5*time.Minute)
-	metricsOutput := getEnvFilename("LEDGER_METRICS_OUTPUT", "/tmp")
-	metricsRefreshRate := getEnvDuration("LEDGER_METRICS_REFRESHRATE", time.Second)
-
-	if tenant == "" || lakeHostname == "" || storage == "" {
-		log.Error().Msg("missing required parameter to run")
-		panic("missing required parameter to run")
+func envBoolean(key string, fallback bool) bool {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return fallback
 	}
-
-	return Configuration{
-		Tenant:                           tenant,
-		LakeHostname:                     lakeHostname,
-		RootStorage:                      storage + "/" + "t_" + tenant,
-		LogLevel:                         logLevel,
-		MetricsRefreshRate:               metricsRefreshRate,
-		MetricsOutput:                    metricsOutput,
-		TransactionIntegrityScanInterval: transactionIntegrityScanInterval,
+	cast, err := strconv.ParseBool(value)
+	if err != nil {
+		log.Error().Msgf("invalid value of variable %s", key)
+		return fallback
 	}
+	return cast
 }
 
-func getEnvFilename(key string, fallback string) string {
+func envFilename(key string, fallback string) string {
 	var value = strings.TrimSpace(os.Getenv(key))
 	if value == "" {
 		return fallback
 	}
 	value = filepath.Clean(value)
 	if os.MkdirAll(value, os.ModePerm) != nil {
+		log.Error().Msgf("invalid value of variable %s", key)
 		return fallback
 	}
 	return value
 }
 
-func getEnvString(key string, fallback string) string {
+func envString(key string, fallback string) string {
 	value := strings.TrimSpace(os.Getenv(key))
 	if value == "" {
 		return fallback
@@ -66,7 +56,20 @@ func getEnvString(key string, fallback string) string {
 	return value
 }
 
-func getEnvDuration(key string, fallback time.Duration) time.Duration {
+func envInteger(key string, fallback int) int {
+	value := strings.TrimSpace(os.Getenv(key))
+	if value == "" {
+		return fallback
+	}
+	cast, err := strconv.Atoi(value)
+	if err != nil {
+		log.Error().Msgf("invalid value of variable %s", key)
+		return fallback
+	}
+	return cast
+}
+
+func envDuration(key string, fallback time.Duration) time.Duration {
 	value := strings.TrimSpace(os.Getenv(key))
 	if value == "" {
 		return fallback

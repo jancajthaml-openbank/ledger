@@ -15,34 +15,34 @@
 package utils
 
 import (
+	"fmt"
 	"net"
 	"os"
 )
 
-func systemNotify(state string) {
+func systemNotify(state string) error {
 	socketAddr := &net.UnixAddr{
 		Name: os.Getenv("NOTIFY_SOCKET"),
 		Net:  "unixgram",
 	}
-
 	if socketAddr.Name == "" {
-		return
+		return fmt.Errorf("NOTIFY_SOCKET is not set")
 	}
-
 	conn, err := net.DialUnix(socketAddr.Net, nil, socketAddr)
 	if err != nil {
-		return
+		return err
 	}
 	defer conn.Close()
-	conn.Write([]byte(state))
+	_, err = conn.Write([]byte(state))
+	return err
 }
 
 // NotifyServiceReady notify underlying os that service is ready
-func NotifyServiceReady() {
-	systemNotify("READY=1")
+func NotifyServiceReady() error {
+	return systemNotify("READY=1")
 }
 
 // NotifyServiceStopping notify underlying os that service is stopping
-func NotifyServiceStopping() {
-	systemNotify("STOPPING=1")
+func NotifyServiceStopping() error {
+	return systemNotify("STOPPING=1")
 }

@@ -28,37 +28,55 @@ type System struct {
 }
 
 // NewActorSystem returns actor system fascade
-func NewActorSystem(ctx context.Context, lakeEndpoint string, metrics *metrics.Metrics) System {
-	result := System{
-		System:  system.New(ctx, "LedgerRest", lakeEndpoint),
-		Metrics: metrics,
+func NewActorSystem(ctx context.Context, lakeEndpoint string, metrics *metrics.Metrics) *System {
+	result := new(System)
+	sys, err := system.New(ctx, "LedgerRest", lakeEndpoint)
+	if err != nil {
+		log.Error().Msgf("Failed to register actor system %+v", err)
+		return nil
 	}
-
-	result.System.RegisterOnMessage(ProcessMessage(&result))
+	result.System = sys
+	result.Metrics = metrics
+	result.System.RegisterOnMessage(ProcessMessage(result))
 	return result
 }
 
 // Start daemon noop
-func (system System) Start() {
+func (system *System) Start() {
+	if system == nil {
+		return
+	}
 	system.System.Start()
 }
 
 // Stop daemon noop
-func (system System) Stop() {
+func (system *System) Stop() {
+	if system == nil {
+		return
+	}
 	system.System.Stop()
 }
 
 // WaitStop daemon noop
-func (system System) WaitStop() {
+func (system *System) WaitStop() {
+	if system == nil {
+		return
+	}
 	system.System.WaitStop()
 }
 
 // GreenLight daemon noop
-func (system System) GreenLight() {
+func (system *System) GreenLight() {
+	if system == nil {
+		return
+	}
 	system.System.GreenLight()
 }
 
 // WaitReady wait for system to be ready
-func (system System) WaitReady(deadline time.Duration) error {
+func (system *System) WaitReady(deadline time.Duration) error {
+	if system == nil {
+		return nil
+	}
 	return system.System.WaitReady(deadline)
 }

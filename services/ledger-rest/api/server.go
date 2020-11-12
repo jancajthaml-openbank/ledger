@@ -40,7 +40,13 @@ type tcpKeepAliveListener struct {
 }
 
 // NewServer returns new secure server instance
-func NewServer(ctx context.Context, port int, certPath string, keyPath string, actorSystem *actor.System, systemControl *system.Control, diskMonitor *system.DiskMonitor, memoryMonitor *system.MemoryMonitor, storage *localfs.PlaintextStorage) Server {
+func NewServer(ctx context.Context, port int, certPath string, keyPath string, rootStorage string, actorSystem *actor.System, systemControl *system.Control, diskMonitor *system.DiskMonitor, memoryMonitor *system.MemoryMonitor) *Server {
+	storage, err := localfs.NewPlaintextStorage(rootStorage)
+	if err != nil {
+		log.Error().Msgf("Failed to ensure storage %+v", err)
+		return nil
+	}
+
 	router := echo.New()
 
 	certificate, err := tls.LoadX509KeyPair(certPath, keyPath)
@@ -60,7 +66,7 @@ func NewServer(ctx context.Context, port int, certPath string, keyPath string, a
 	router.POST("/transaction/:tenant", CreateTransaction(storage, actorSystem))
 	router.GET("/transaction/:tenant", GetTransactions(storage))
 
-	return Server{
+	return &Server{
 		DaemonSupport: utils.NewDaemonSupport(ctx, "http-server"),
 		underlying: &http.Server{
 			Addr:         fmt.Sprintf("127.0.0.1:%d", port),

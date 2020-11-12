@@ -27,18 +27,27 @@ import (
 // System represents actor system subroutine
 type System struct {
 	system.System
-	Storage *localfs.PlaintextStorage
+	Storage localfs.Storage
 	Metrics *metrics.Metrics
 }
 
 // NewActorSystem returns actor system fascade
-func NewActorSystem(ctx context.Context, tenant string, lakeEndpoint string, metrics *metrics.Metrics, storage *localfs.PlaintextStorage) System {
-	result := System{
-		System:  system.New(ctx, "LedgerUnit/"+tenant, lakeEndpoint),
-		Storage: storage,
-		Metrics: metrics,
+func NewActorSystem(ctx context.Context, tenant string, lakeEndpoint string, rootStorage string, metrics *metrics.Metrics) *System {
+	storage, err := localfs.NewPlaintextStorage(rootStorage)
+	if err != nil {
+		log.Error().Msgf("Failed to ensure storage %+v", err)
+		return nil
 	}
-	result.System.RegisterOnMessage(ProcessMessage(&result))
+	sys, err := system.New(ctx, "LedgerUnit/"+tenant, lakeEndpoint)
+	if err != nil {
+		log.Error().Msgf("Failed to register actor system %+v", err)
+		return nil
+	}
+	result := new(System)
+	result.System = sys
+	result.Storage = storage
+	result.Metrics = metrics
+	result.System.RegisterOnMessage(ProcessMessage(result))
 	return result
 }
 
