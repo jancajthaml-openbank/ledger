@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMemoryMonitorIsHealthy(t *testing.T) {
+func TestMemoryIsHealthy(t *testing.T) {
 	t.Log("true if caller is nil")
 	{
 		var monitor *MemoryMonitor
@@ -29,7 +29,7 @@ func TestMemoryMonitorIsHealthy(t *testing.T) {
 	}
 }
 
-func TestMemoryMonitorGetFree(t *testing.T) {
+func TestGetMemoryFree(t *testing.T) {
 	t.Log("0 if caller is nil")
 	{
 		var monitor *MemoryMonitor
@@ -50,7 +50,7 @@ func TestMemoryMonitorGetFree(t *testing.T) {
 	}
 }
 
-func TestMemoryMonitorGetUsed(t *testing.T) {
+func TestGetMemoryUsed(t *testing.T) {
 	t.Log("0 if caller is nil")
 	{
 		var monitor *MemoryMonitor
@@ -68,5 +68,13 @@ func TestMemoryMonitorGetUsed(t *testing.T) {
 		monitor := NewMemoryMonitor(context.Background(), ^uint64(0))
 		atomic.StoreUint64(&(monitor.used), 10)
 		assert.Equal(t, uint64(10), monitor.GetUsed())
+	}
+}
+
+func TestCheckMemoryAllocation(t *testing.T) {
+	t.Log("does not panic if caller is nil")
+	{
+		var monitor *MemoryMonitor
+		monitor.CheckMemoryAllocation()
 	}
 }

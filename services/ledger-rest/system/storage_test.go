@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDiskMonitorIsHealthy(t *testing.T) {
+func TestDiskIsHealthy(t *testing.T) {
 	t.Log("true if caller is nil")
 	{
 		var monitor *DiskMonitor
@@ -29,7 +29,7 @@ func TestDiskMonitorIsHealthy(t *testing.T) {
 	}
 }
 
-func TestDiskMonitorGetFree(t *testing.T) {
+func TestGetDiskFree(t *testing.T) {
 	t.Log("0 if caller is nil")
 	{
 		var monitor *DiskMonitor
@@ -50,7 +50,7 @@ func TestDiskMonitorGetFree(t *testing.T) {
 	}
 }
 
-func TestDiskMonitorGetUsed(t *testing.T) {
+func TestGetDiskUsed(t *testing.T) {
 	t.Log("0 if caller is nil")
 	{
 		var monitor *DiskMonitor
@@ -68,5 +68,13 @@ func TestDiskMonitorGetUsed(t *testing.T) {
 		monitor := NewDiskMonitor(context.Background(), ^uint64(0), "/tmp")
 		atomic.StoreUint64(&(monitor.used), 10)
 		assert.Equal(t, uint64(10), monitor.GetUsed())
+	}
+}
+
+func TestCheckDiskSpace(t *testing.T) {
+	t.Log("does not panic if caller is nil")
+	{
+		var monitor *DiskMonitor
+		monitor.CheckDiskSpace()
 	}
 }
