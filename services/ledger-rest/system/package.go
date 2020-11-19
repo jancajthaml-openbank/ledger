@@ -33,7 +33,7 @@ type HealthCheck interface {
 	IsHealthy() bool
 }
 
-// Capacitycheck gives insige into system capacity
+// CapacityCheck gives insige into system capacity
 type CapacityCheck interface {
 	HealthCheck
 	GetFree() uint64
