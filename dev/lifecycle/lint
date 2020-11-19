@@ -35,11 +35,9 @@ lifecycle::go::lint() {
   \
   | sort -u \
   | while read file ; do
-    (gofmt -w ${file} || :)
+    (gofmt -s -w ${file} || :)
     (/go/bin/golint -min_confidence 0.5 ${file} || :)
     (/go/bin/misspell -q -locale US -source=text -w ${file} || :)
-    (/go/bin/prealloc ${file} || :)
-    (/go/bin/gocyclo -over 15 ${file} || :)
     (/go/bin/prealloc ${file} || :)
     (/go/bin/goconst ${file} || :)
     (/go/bin/ineffassign ${file} || :)

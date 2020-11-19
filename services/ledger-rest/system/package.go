@@ -19,3 +19,23 @@ import (
 )
 
 var log = logging.New("system")
+
+// Control represents contract of system control
+type Control interface {
+	ListUnits(prefix string) ([]string, error)
+	GetUnitsProperties(prefix string) (map[string]UnitStatus, error)
+	DisableUnit(name string) error
+	EnableUnit(name string) error
+}
+
+// HealthCheck gives insige into system health
+type HealthCheck interface {
+	IsHealthy() bool
+}
+
+// Capacitycheck gives insige into system capacity
+type CapacityCheck interface {
+	HealthCheck
+	GetFree() uint64
+	GetUsed() uint64
+}

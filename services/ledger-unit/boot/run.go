@@ -47,7 +47,7 @@ func (prog Program) WaitReady(deadline time.Duration) error {
 	}
 
 	wg.Add(len(prog.daemons))
-	for idx, _ := range prog.daemons {
+	for idx := range prog.daemons {
 		waitWithDeadline(prog.daemons[idx])
 	}
 	wg.Wait()
@@ -61,7 +61,7 @@ func (prog Program) WaitReady(deadline time.Duration) error {
 
 // GreenLight daemons
 func (prog Program) GreenLight() {
-	for idx, _ := range prog.daemons {
+	for idx := range prog.daemons {
 		if prog.daemons[idx] == nil {
 			continue
 		}
@@ -71,7 +71,7 @@ func (prog Program) GreenLight() {
 
 // WaitStop wait for daemons to stop
 func (prog Program) WaitStop() {
-	for idx, _ := range prog.daemons {
+	for idx := range prog.daemons {
 		if prog.daemons[idx] == nil {
 			continue
 		}
@@ -91,7 +91,7 @@ func (prog Program) Stop() {
 
 // Start runs the application
 func (prog Program) Start() {
-	for idx, _ := range prog.daemons {
+	for idx := range prog.daemons {
 		if prog.daemons[idx] == nil {
 			continue
 		}

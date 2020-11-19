@@ -22,19 +22,19 @@ import (
 )
 
 // HealtCheck returns 200 OK if service is healthy, 503 otherwise
-func HealtCheck(memoryMonitor *system.MemoryMonitor, diskMonitor *system.DiskMonitor) func(c echo.Context) error {
+func HealtCheck(memoryMonitor system.CapacityCheck, diskMonitor system.CapacityCheck) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 
 		status := system.Status{
-			Memory: system.MemoryStatus{
-				Free:      memoryMonitor.GetFreeMemory(),
-				Used:      memoryMonitor.GetUsedMemory(),
+			Memory: system.CapacityStatus{
+				Free:      memoryMonitor.GetFree(),
+				Used:      memoryMonitor.GetUsed(),
 				IsHealthy: memoryMonitor.IsHealthy(),
 			},
-			Storage: system.StorageStatus{
-				Free:      diskMonitor.GetFreeDiskSpace(),
-				Used:      diskMonitor.GetUsedDiskSpace(),
+			Storage: system.CapacityStatus{
+				Free:      diskMonitor.GetFree(),
+				Used:      diskMonitor.GetUsed(),
 				IsHealthy: diskMonitor.IsHealthy(),
 			},
 		}
@@ -45,10 +45,7 @@ func HealtCheck(memoryMonitor *system.MemoryMonitor, diskMonitor *system.DiskMon
 			c.Response().WriteHeader(http.StatusOK)
 		}
 
-		chunk, err := json.Marshal(status)
-		if err != nil {
-			return err
-		}
+		chunk, _ := json.Marshal(status)
 		c.Response().Write(chunk)
 		c.Response().Flush()
 		return nil
@@ -56,7 +53,7 @@ func HealtCheck(memoryMonitor *system.MemoryMonitor, diskMonitor *system.DiskMon
 }
 
 // HealtCheckPing returns 200 OK if service is healthy, 503 otherwise
-func HealtCheckPing(memoryMonitor *system.MemoryMonitor, diskMonitor *system.DiskMonitor) func(c echo.Context) error {
+func HealtCheckPing(memoryMonitor system.HealthCheck, diskMonitor system.HealthCheck) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		if !memoryMonitor.IsHealthy() || !diskMonitor.IsHealthy() {
 			c.Response().WriteHeader(http.StatusServiceUnavailable)

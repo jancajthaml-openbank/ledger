@@ -17,45 +17,53 @@ package system
 import (
 	"context"
 	"fmt"
-	"github.com/coreos/go-systemd/v22/dbus"
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/coreos/go-systemd/v22/dbus"
+	"github.com/jancajthaml-openbank/ledger-rest/utils"
 )
 
-// Control represents systemctl subroutine
-type Control struct {
+// DbusControl is control implementation using dbus
+type DbusControl struct {
+	Control
 	utils.DaemonSupport
 	underlying *dbus.Conn
 }
 
 // NewSystemControl returns new systemctl fascade
-func NewSystemControl(ctx context.Context) *Control {
+func NewSystemControl(ctx context.Context) *DbusControl {
 	conn, err := dbus.New()
 	if err != nil {
 		log.Error().Msgf("Unable to obtain dbus connection because %+v", err)
 		return nil
 	}
-	return &Control{
+	return &DbusControl{
 		DaemonSupport: utils.NewDaemonSupport(ctx, "system-control"),
 		underlying:    conn,
 	}
 }
 
 // ListUnits returns list of unit names
-func (sys Control) ListUnits(prefix string) ([]string, error) {
+func (sys *DbusControl) ListUnits(prefix string) ([]string, error) {
+	if sys == nil {
+		return nil, fmt.Errorf("cannot call method on nil")
+	}
+
 	units, err := sys.underlying.ListUnits()
 	if err != nil {
 		return nil, err
 	}
 
+	fullPrefix := "ledger-" + prefix
+
 	var result = make([]string, 0)
 	for _, unit := range units {
-		if unit.LoadState == "not-found" || !strings.HasPrefix(unit.Name, prefix) {
+		if unit.LoadState == "not-found" || !strings.HasPrefix(unit.Name, fullPrefix) {
 			continue
 		}
-		result = append(result, strings.TrimSuffix(strings.TrimPrefix(unit.Name, prefix), ".service"))
+		result = append(result, strings.TrimSuffix(strings.TrimPrefix(unit.Name, fullPrefix), ".service"))
 	}
 
 	sort.Slice(result, func(i, j int) bool {
@@ -66,15 +74,21 @@ func (sys Control) ListUnits(prefix string) ([]string, error) {
 }
 
 // GetUnitsProperties return unit properties
-func (sys Control) GetUnitsProperties(prefix string) (map[string]UnitStatus, error) {
+func (sys *DbusControl) GetUnitsProperties(prefix string) (map[string]UnitStatus, error) {
+	if sys == nil {
+		return nil, fmt.Errorf("cannot call method on nil")
+	}
+
 	units, err := sys.underlying.ListUnits()
 	if err != nil {
 		return nil, err
 	}
 
+	fullPrefix := "ledger-" + prefix
+
 	var result = make(map[string]UnitStatus)
 	for _, unit := range units {
-		if !strings.HasPrefix(unit.Name, prefix) {
+		if !strings.HasPrefix(unit.Name, fullPrefix) {
 			continue
 		}
 		properties, err := sys.underlying.GetUnitProperties(unit.Name)
@@ -96,57 +110,69 @@ func (sys Control) GetUnitsProperties(prefix string) (map[string]UnitStatus, err
 }
 
 // DisableUnit disables unit
-func (sys Control) DisableUnit(name string) error {
+func (sys *DbusControl) DisableUnit(name string) error {
+	if sys == nil {
+		return fmt.Errorf("cannot call method on nil")
+	}
+
 	ch := make(chan string)
 
-	if _, err := sys.underlying.StopUnit(name, "replace", ch); err != nil {
-		return fmt.Errorf("unable to stop unit %s because %+v", name, err)
+	fullName := "ledger-" + name
+
+	if _, err := sys.underlying.StopUnit(fullName, "replace", ch); err != nil {
+		return fmt.Errorf("unable to stop unit %s because %+v", fullName, err)
 	}
 
 	select {
 
 	case result := <-ch:
 		if result != "done" {
-			return fmt.Errorf("unable to stop unit %s", name)
+			return fmt.Errorf("unable to stop unit %s", fullName)
 		}
-		log.Info().Msgf("Stopped unit %s", name)
-		log.Info().Msgf("Disabling unit %s", name)
+		log.Info().Msgf("Stopped unit %s", fullName)
+		log.Info().Msgf("Disabling unit %s", fullName)
 
-		if _, err := sys.underlying.DisableUnitFiles([]string{name}, false); err != nil {
-			return fmt.Errorf("unable to disable unit %s because %+v", name, err)
+		if _, err := sys.underlying.DisableUnitFiles([]string{fullName}, false); err != nil {
+			return fmt.Errorf("unable to disable unit %s because %+v", fullName, err)
 		}
 
 		return nil
 
 	case <-time.After(3 * time.Second):
-		return fmt.Errorf("unable to stop unit %s because timeout", name)
+		return fmt.Errorf("unable to stop unit %s because timeout", fullName)
 
 	}
 }
 
 // EnableUnit enables unit
-func (sys Control) EnableUnit(name string) error {
-	if _, _, err := sys.underlying.EnableUnitFiles([]string{name}, false, false); err != nil {
-		return fmt.Errorf("unable to enable unit %s because %+v", name, err)
+func (sys *DbusControl) EnableUnit(name string) error {
+	if sys == nil {
+		return fmt.Errorf("cannot call method on nil")
+	}
+
+	fullName := "ledger-" + name
+
+	if _, _, err := sys.underlying.EnableUnitFiles([]string{fullName}, false, false); err != nil {
+		return fmt.Errorf("unable to enable unit %s because %+v", fullName, err)
 	}
 
 	ch := make(chan string)
 
-	if _, err := sys.underlying.StartUnit(name, "replace", ch); err != nil {
-		return fmt.Errorf("unable to start unit %s because %+v", name, err)
+	if _, err := sys.underlying.StartUnit(fullName, "replace", ch); err != nil {
+		return fmt.Errorf("unable to start unit %s because %+v", fullName, err)
 	}
 
 	select {
 
 	case result := <-ch:
 		if result != "done" {
-			return fmt.Errorf("unable to start unit %s", name)
+			return fmt.Errorf("unable to start unit %s", fullName)
 		}
-		log.Info().Msgf("Started unit %s", name)
+		log.Info().Msgf("Started unit %s", fullName)
 		return nil
 
 	case <-time.After(3 * time.Second):
-		return fmt.Errorf("unable to start unit %s because timeout", name)
+		return fmt.Errorf("unable to start unit %s because timeout", fullName)
 
 	}
 
@@ -154,7 +180,10 @@ func (sys Control) EnableUnit(name string) error {
 }
 
 // Start handles everything needed to start system-control daemon
-func (sys Control) Start() {
+func (sys *DbusControl) Start() {
+	if sys == nil {
+		return
+	}
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
 

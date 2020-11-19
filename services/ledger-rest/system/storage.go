@@ -16,14 +16,16 @@ package system
 
 import (
 	"context"
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
 	"sync/atomic"
 	"syscall"
 	"time"
+
+	"github.com/jancajthaml-openbank/ledger-rest/utils"
 )
 
-// DiskMonitor represents disk monitoring subroutine
+// DiskMonitor monitors capacity of disk
 type DiskMonitor struct {
+	CapacityCheck
 	utils.DaemonSupport
 	rootStorage string
 	limit       uint64
@@ -52,16 +54,16 @@ func (monitor *DiskMonitor) IsHealthy() bool {
 	return atomic.LoadInt32(&(monitor.ok)) != 0
 }
 
-// GetFreeDiskSpace returns free disk space
-func (monitor *DiskMonitor) GetFreeDiskSpace() uint64 {
+// GetFree returns free disk space
+func (monitor *DiskMonitor) GetFree() uint64 {
 	if monitor == nil {
 		return 0
 	}
 	return atomic.LoadUint64(&(monitor.free))
 }
 
-// GetUsedDiskSpace returns used disk space
-func (monitor *DiskMonitor) GetUsedDiskSpace() uint64 {
+// GetUsed returns used disk space
+func (monitor *DiskMonitor) GetUsed() uint64 {
 	if monitor == nil {
 		return 0
 	}
