@@ -1,6 +1,7 @@
 package system
 
 import (
+	"time"
 	"context"
 	"sync/atomic"
 	"testing"
@@ -90,5 +91,56 @@ func TestCheckDiskSpace(t *testing.T) {
 		monitor := NewDiskMonitor(context.Background(), ^uint64(0), "/tmp")
 		monitor.CheckDiskSpace()
 		assert.Equal(t, false, monitor.IsHealthy())
+	}
+}
+
+func TestDiskMonitorDaemonSupport(t *testing.T) {
+
+	t.Log("does not panic if nil")
+	{
+		var monitor *DiskMonitor
+		monitor.Start()
+		// FIXME panics
+		//monitor.Stop()
+	}
+
+	t.Log("parent context canceled before even started")
+	{
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+		cancel()
+
+		monitor := NewDiskMonitor(ctx, uint64(0), "/tmp")
+
+		go monitor.Start()
+		<-monitor.IsReady
+		monitor.GreenLight()
+		monitor.WaitStop()
+	}
+
+	t.Log("parent context canceled while already running")
+	{
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+
+		monitor := NewDiskMonitor(ctx, uint64(0), "/tmp")
+
+		go monitor.Start()
+		<-monitor.IsReady
+		monitor.GreenLight()
+		cancel()
+		monitor.WaitStop()
+	}
+
+	t.Log("manual Start -> Stop")
+	{
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		monitor := NewDiskMonitor(ctx, uint64(0), "/tmp")
+
+		go monitor.Start()
+		<-monitor.IsReady
+		monitor.GreenLight()
+		monitor.Stop()
+		monitor.WaitStop()
 	}
 }
