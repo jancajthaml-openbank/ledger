@@ -7,8 +7,8 @@ import (
   "github.com/stretchr/testify/assert"
 )
 
-func TestTransactionsPath(t *testing.T) {
-  path := TransactionsPath()
+func TestRootPath(t *testing.T) {
+  path := RootPath()
 
   assert.Equal(t, "transaction", path)
 }
@@ -22,11 +22,11 @@ func TestTransactionPath(t *testing.T) {
   assert.Equal(t, expected, path)
 }
 
-func BenchmarkTransactionsPath(b *testing.B) {
+func BenchmarkRootPath(b *testing.B) {
   b.ResetTimer()
   b.ReportAllocs()
   for n := 0; n < b.N; n++ {
-    TransactionsPath()
+    RootPath()
   }
 }
 

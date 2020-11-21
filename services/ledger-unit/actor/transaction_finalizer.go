@@ -55,7 +55,7 @@ func (scan *TransactionFinalizer) getTransactions() []string {
 	if scan == nil {
 		return nil
 	}
-	result, err := scan.storage.ListDirectory(persistence.TransactionsPath(), true)
+	result, err := scan.storage.ListDirectory(persistence.RootPath(), true)
 	if err != nil {
 		return nil
 	}

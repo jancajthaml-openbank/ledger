@@ -14,8 +14,8 @@
 
 package persistence
 
-// TransactionsPath returns filepath for transactions
-func TransactionsPath() string {
+// RootPath returns filepath for transactions
+func RootPath() string {
 	return "transaction"
 }
 
