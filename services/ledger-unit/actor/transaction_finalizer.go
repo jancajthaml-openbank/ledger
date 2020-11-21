@@ -55,7 +55,7 @@ func (scan *TransactionFinalizer) getTransactions() []string {
 	if scan == nil {
 		return nil
 	}
-	result, err := scan.storage.ListDirectory(utils.RootPath(), true)
+	result, err := scan.storage.ListDirectory(persistence.TransactionsPath(), true)
 	if err != nil {
 		return nil
 	}
@@ -82,7 +82,7 @@ func (scan *TransactionFinalizer) getTransaction(id string) *model.Transaction {
 	if scan == nil {
 		return nil
 	}
-	modTime, err := scan.storage.LastModification(utils.TransactionPath(id))
+	modTime, err := scan.storage.LastModification(persistence.TransactionPath(id))
 	if err != nil {
 		return nil
 	}

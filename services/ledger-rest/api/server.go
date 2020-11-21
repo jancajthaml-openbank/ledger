@@ -83,7 +83,7 @@ func NewServer(ctx context.Context, port int, certPath string, keyPath string, r
 					tls.CurveP384,
 					tls.CurveP256,
 				},
-				CipherSuites: utils.CipherSuites,
+				CipherSuites: CipherSuites,
 				Certificates: []tls.Certificate{
 					certificate,
 				},
