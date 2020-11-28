@@ -39,8 +39,8 @@ type Configuration struct {
 	TransactionIntegrityScanInterval time.Duration
 }
 
-// GetConfig loads application configuration
-func GetConfig() Configuration {
+// LoadConfig loads application configuration
+func LoadConfig() Configuration {
 	return Configuration{
 		Tenant:                           envString("LEDGER_TENANT", ""),
 		LakeHostname:                     envString("LEDGER_LAKE_HOSTNAME", "127.0.0.1"),

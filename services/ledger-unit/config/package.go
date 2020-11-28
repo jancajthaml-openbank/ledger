@@ -14,8 +14,6 @@
 
 package config
 
-import (
-	"github.com/jancajthaml-openbank/ledger-unit/logging"
-)
+import "github.com/jancajthaml-openbank/ledger-unit/logging"
 
 var log = logging.New("config")

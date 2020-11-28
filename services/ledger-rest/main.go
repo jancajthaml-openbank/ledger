@@ -21,7 +21,7 @@ import (
 
 func main() {
 	fmt.Println(">>> Start <<<")
-	program := boot.Initialize()
+	program := boot.NewProgram()
 	defer func() {
 		program.Stop()
 		fmt.Println(">>> Stop <<<")

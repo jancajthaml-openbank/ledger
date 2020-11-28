@@ -17,7 +17,7 @@ func TestGetConfig(t *testing.T) {
 
 	t.Log("has defaults for all values")
 	{
-		config := GetConfig()
+		config := LoadConfig()
 
 		if config.RootStorage != "/data" {
 			t.Errorf("RootStorage default value is not /data")

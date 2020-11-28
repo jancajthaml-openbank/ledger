@@ -17,7 +17,7 @@ func TestGetConfig(t *testing.T) {
 
 	t.Log("has defaults for all values")
 	{
-		config := GetConfig()
+		config := LoadConfig()
 
 		if config.Tenant != "" {
 			t.Errorf("Tenant default value is not empty")

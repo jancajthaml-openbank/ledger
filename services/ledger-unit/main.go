@@ -16,13 +16,12 @@ package main
 
 import (
 	"fmt"
-
 	"github.com/jancajthaml-openbank/ledger-unit/boot"
 )
 
 func main() {
 	fmt.Println(">>> Start <<<")
-	program := boot.Initialize()
+	program := boot.NewProgram()
 	defer func() {
 		program.Stop()
 		fmt.Println(">>> Stop <<<")

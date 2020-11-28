@@ -46,8 +46,8 @@ type Configuration struct {
 	MinFreeMemory uint64
 }
 
-// GetConfig loads application configuration
-func GetConfig() Configuration {
+// LoadConfig loads application configuration
+func LoadConfig() Configuration {
 	return Configuration{
 		RootStorage:        envString("LEDGER_STORAGE", "/data"),
 		ServerPort:         envInteger("LEDGER_HTTP_PORT", 4401),

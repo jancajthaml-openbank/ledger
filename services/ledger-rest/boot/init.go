@@ -34,11 +34,11 @@ type Program struct {
 	cancel    context.CancelFunc
 }
 
-// Initialize application
-func Initialize() Program {
+// NewProgram returns new program
+func NewProgram() Program {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	cfg := config.GetConfig()
+	cfg := config.LoadConfig()
 
 	logging.SetupLogger(cfg.LogLevel)
 

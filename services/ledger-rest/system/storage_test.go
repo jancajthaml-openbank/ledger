@@ -1,10 +1,10 @@
 package system
 
 import (
-	"time"
 	"context"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )

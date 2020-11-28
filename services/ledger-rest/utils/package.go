@@ -14,19 +14,6 @@
 
 package utils
 
-import (
-  "time"
-
-  "github.com/jancajthaml-openbank/ledger-rest/logging"
-)
+import "github.com/jancajthaml-openbank/ledger-rest/logging"
 
 var log = logging.New("utils")
-
-// Daemon contract for type using support
-type Daemon interface {
-  Start()
-  Stop()
-  GreenLight()
-  WaitStop()
-  WaitReady(time.Duration) error
-}
