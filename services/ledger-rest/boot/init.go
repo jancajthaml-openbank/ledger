@@ -19,10 +19,10 @@ import (
 	"github.com/jancajthaml-openbank/ledger-rest/actor"
 	"github.com/jancajthaml-openbank/ledger-rest/api"
 	"github.com/jancajthaml-openbank/ledger-rest/config"
-	"github.com/jancajthaml-openbank/ledger-rest/logging"
 	"github.com/jancajthaml-openbank/ledger-rest/metrics"
+	"github.com/jancajthaml-openbank/ledger-rest/support/concurrent"
+	"github.com/jancajthaml-openbank/ledger-rest/support/logging"
 	"github.com/jancajthaml-openbank/ledger-rest/system"
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
 	"os"
 )
 
@@ -30,7 +30,7 @@ import (
 type Program struct {
 	interrupt chan os.Signal
 	cfg       config.Configuration
-	daemons   []utils.Daemon
+	daemons   []concurrent.Daemon
 	cancel    context.CancelFunc
 }
 
@@ -76,7 +76,7 @@ func NewProgram() Program {
 		memoryMonitorDaemon,
 	)
 
-	var daemons = make([]utils.Daemon, 0)
+	var daemons = make([]concurrent.Daemon, 0)
 	daemons = append(daemons, metricsDaemon)
 	daemons = append(daemons, actorSystemDaemon)
 	daemons = append(daemons, restDaemon)

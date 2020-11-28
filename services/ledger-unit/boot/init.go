@@ -19,10 +19,10 @@ import (
 	system "github.com/jancajthaml-openbank/actor-system"
 	"github.com/jancajthaml-openbank/ledger-unit/actor"
 	"github.com/jancajthaml-openbank/ledger-unit/config"
-	"github.com/jancajthaml-openbank/ledger-unit/logging"
 	"github.com/jancajthaml-openbank/ledger-unit/metrics"
 	"github.com/jancajthaml-openbank/ledger-unit/model"
-	"github.com/jancajthaml-openbank/ledger-unit/utils"
+	"github.com/jancajthaml-openbank/ledger-unit/support/concurrent"
+	"github.com/jancajthaml-openbank/ledger-unit/support/logging"
 	"github.com/rs/xid"
 	"os"
 )
@@ -31,7 +31,7 @@ import (
 type Program struct {
 	interrupt chan os.Signal
 	cfg       config.Configuration
-	daemons   []utils.Daemon
+	daemons   []concurrent.Daemon
 	cancel    context.CancelFunc
 }
 
@@ -80,7 +80,7 @@ func NewProgram() Program {
 		},
 	)
 
-	var daemons = make([]utils.Daemon, 0)
+	var daemons = make([]concurrent.Daemon, 0)
 	daemons = append(daemons, metricsDaemon)
 	daemons = append(daemons, actorSystemDaemon)
 	daemons = append(daemons, transactionFinalizerDaemon)

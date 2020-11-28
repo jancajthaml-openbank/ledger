@@ -21,14 +21,14 @@ import (
 	"github.com/jancajthaml-openbank/ledger-unit/metrics"
 	"github.com/jancajthaml-openbank/ledger-unit/model"
 	"github.com/jancajthaml-openbank/ledger-unit/persistence"
-	"github.com/jancajthaml-openbank/ledger-unit/utils"
+	"github.com/jancajthaml-openbank/ledger-unit/support/concurrent"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
 )
 
 // TransactionFinalizer represents journal saturation update subroutine
 type TransactionFinalizer struct {
-	utils.DaemonSupport
+	concurrent.DaemonSupport
 	callback     func(transaction model.Transaction)
 	metrics      *metrics.Metrics
 	storage      localfs.Storage
@@ -43,7 +43,7 @@ func NewTransactionFinalizer(ctx context.Context, scanInterval time.Duration, ro
 		return nil
 	}
 	return &TransactionFinalizer{
-		DaemonSupport: utils.NewDaemonSupport(ctx, " transaction-finalizer"),
+		DaemonSupport: concurrent.NewDaemonSupport(ctx, " transaction-finalizer"),
 		callback:      callback,
 		metrics:       metrics,
 		storage:       storage,

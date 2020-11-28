@@ -14,6 +14,6 @@
 
 package api
 
-import "github.com/jancajthaml-openbank/ledger-rest/logging"
+import "github.com/jancajthaml-openbank/ledger-rest/support/logging"
 
 var log = logging.New("api")

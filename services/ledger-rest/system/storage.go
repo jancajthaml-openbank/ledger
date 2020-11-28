@@ -20,13 +20,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
+	"github.com/jancajthaml-openbank/ledger-rest/support/concurrent"
 )
 
 // DiskMonitor monitors capacity of disk
 type DiskMonitor struct {
 	CapacityCheck
-	utils.DaemonSupport
+	concurrent.DaemonSupport
 	rootStorage string
 	limit       uint64
 	free        uint64
@@ -37,7 +37,7 @@ type DiskMonitor struct {
 // NewDiskMonitor returns new disk monitor fascade
 func NewDiskMonitor(ctx context.Context, limit uint64, rootStorage string) *DiskMonitor {
 	return &DiskMonitor{
-		DaemonSupport: utils.NewDaemonSupport(ctx, "storage-check"),
+		DaemonSupport: concurrent.NewDaemonSupport(ctx, "storage-check"),
 		rootStorage:   rootStorage,
 		limit:         limit,
 		free:          0,

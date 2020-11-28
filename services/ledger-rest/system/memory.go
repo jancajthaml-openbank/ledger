@@ -21,13 +21,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
+	"github.com/jancajthaml-openbank/ledger-rest/support/concurrent"
 )
 
 // MemoryMonitor monitors capacity of memory
 type MemoryMonitor struct {
 	CapacityCheck
-	utils.DaemonSupport
+	concurrent.DaemonSupport
 	limit uint64
 	free  uint64
 	used  uint64
@@ -37,7 +37,7 @@ type MemoryMonitor struct {
 // NewMemoryMonitor returns new memory monitor fascade
 func NewMemoryMonitor(ctx context.Context, limit uint64) *MemoryMonitor {
 	return &MemoryMonitor{
-		DaemonSupport: utils.NewDaemonSupport(ctx, "memory-check"),
+		DaemonSupport: concurrent.NewDaemonSupport(ctx, "memory-check"),
 		limit:         limit,
 		free:          0,
 		used:          0,

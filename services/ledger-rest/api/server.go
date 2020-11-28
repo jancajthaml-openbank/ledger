@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"github.com/jancajthaml-openbank/ledger-rest/actor"
 	"github.com/jancajthaml-openbank/ledger-rest/system"
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
+	"github.com/jancajthaml-openbank/ledger-rest/support/concurrent"
 	localfs "github.com/jancajthaml-openbank/local-fs"
 	"github.com/labstack/echo/v4"
 	"net"
@@ -31,7 +31,7 @@ import (
 // Server is a fascade for http-server following handler api of Gin and
 // lifecycle api of http
 type Server struct {
-	utils.DaemonSupport
+	concurrent.DaemonSupport
 	underlying *http.Server
 }
 
@@ -67,7 +67,7 @@ func NewServer(ctx context.Context, port int, certPath string, keyPath string, r
 	router.GET("/transaction/:tenant", GetTransactions(storage))
 
 	return &Server{
-		DaemonSupport: utils.NewDaemonSupport(ctx, "http-server"),
+		DaemonSupport: concurrent.NewDaemonSupport(ctx, "http-server"),
 		underlying: &http.Server{
 			Addr:         fmt.Sprintf("127.0.0.1:%d", port),
 			ReadTimeout:  15 * time.Second,

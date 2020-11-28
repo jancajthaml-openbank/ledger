@@ -22,13 +22,13 @@ import (
 	"time"
 
 	"github.com/coreos/go-systemd/v22/dbus"
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
+	"github.com/jancajthaml-openbank/ledger-rest/support/concurrent"
 )
 
 // DbusControl is control implementation using dbus
 type DbusControl struct {
 	Control
-	utils.DaemonSupport
+	concurrent.DaemonSupport
 	underlying *dbus.Conn
 }
 
@@ -40,7 +40,7 @@ func NewSystemControl(ctx context.Context) *DbusControl {
 		return nil
 	}
 	return &DbusControl{
-		DaemonSupport: utils.NewDaemonSupport(ctx, "system-control"),
+		DaemonSupport: concurrent.NewDaemonSupport(ctx, "system-control"),
 		underlying:    conn,
 	}
 }
