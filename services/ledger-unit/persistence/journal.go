@@ -16,14 +16,13 @@ package persistence
 
 import (
 	"github.com/jancajthaml-openbank/ledger-unit/model"
-	"github.com/jancajthaml-openbank/ledger-unit/utils"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
 )
 
 // LoadTransaction loads transaction from journal
 func LoadTransaction(storage localfs.Storage, id string) (*model.Transaction, error) {
-	transactionPath := utils.TransactionPath(id)
+	transactionPath := "transaction/" + id
 	data, err := storage.ReadFileFully(transactionPath)
 	if err != nil {
 		return nil, err
@@ -36,7 +35,7 @@ func LoadTransaction(storage localfs.Storage, id string) (*model.Transaction, er
 
 // LoadTransactionState loads transaction status journal
 func LoadTransactionState(storage localfs.Storage, id string) (string, error) {
-	transactionPath := utils.TransactionPath(id)
+	transactionPath := "transaction/" + id
 	data, err := storage.ReadFileFully(transactionPath)
 	if err != nil {
 		return "", err
@@ -49,14 +48,14 @@ func LoadTransactionState(storage localfs.Storage, id string) (string, error) {
 
 // CreateTransaction persist transaction entity state to storage
 func CreateTransaction(storage localfs.Storage, entity *model.Transaction) error {
-	transactionPath := utils.TransactionPath(entity.IDTransaction)
+	transactionPath := "transaction/" + entity.IDTransaction
 	data := entity.Serialize()
 	return storage.WriteFileExclusive(transactionPath, data)
 }
 
 // UpdateTransaction persist update of transaction to disk
 func UpdateTransaction(storage localfs.Storage, entity *model.Transaction) error {
-	transactionPath := utils.TransactionPath(entity.IDTransaction)
+	transactionPath := "transaction/" + entity.IDTransaction
 	data := entity.Serialize()
 	return storage.WriteFile(transactionPath, data)
 }

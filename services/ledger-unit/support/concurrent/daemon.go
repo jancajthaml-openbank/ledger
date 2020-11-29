@@ -12,18 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package concurrent
 
-/*
-import "time"
+import "context"
 
-// Now returns epoch in ms
-func Now() int64 {
-	return int64(time.Now().Unix() / 1000)
+// Worker represents some scheduled task
+type Worker interface {
+	Setup() error
+	Work()
+	Cancel()
+	Done() <-chan interface{}
 }
 
-// Today returns epoch in ms truncated to day start
-func Today() int64 {
-	return int64(86400) * int64(time.Now().Unix()/86400000)
+// Daemon represents background routine
+type Daemon interface {
+	Start(context.Context, context.CancelFunc)
+	Stop()
+	Done() <-chan interface{}
 }
-*/

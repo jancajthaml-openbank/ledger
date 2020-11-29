@@ -15,76 +15,100 @@
 package boot
 
 import (
-	"context"
+	"os"
+	"time"
+
 	"github.com/jancajthaml-openbank/ledger-rest/actor"
 	"github.com/jancajthaml-openbank/ledger-rest/api"
 	"github.com/jancajthaml-openbank/ledger-rest/config"
-	"github.com/jancajthaml-openbank/ledger-rest/logging"
 	"github.com/jancajthaml-openbank/ledger-rest/metrics"
+	"github.com/jancajthaml-openbank/ledger-rest/support/concurrent"
+	"github.com/jancajthaml-openbank/ledger-rest/support/logging"
 	"github.com/jancajthaml-openbank/ledger-rest/system"
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
-	"os"
 )
 
-// Program encapsulate initialized application
+// Program encapsulate program
 type Program struct {
 	interrupt chan os.Signal
 	cfg       config.Configuration
-	daemons   []utils.Daemon
-	cancel    context.CancelFunc
+	pool      concurrent.DaemonPool
 }
 
-// Initialize application
-func Initialize() Program {
-	ctx, cancel := context.WithCancel(context.Background())
-
-	cfg := config.GetConfig()
-
-	logging.SetupLogger(cfg.LogLevel)
-
-	systemControlDaemon := system.NewSystemControl(
-		ctx,
-	)
-	diskMonitorDaemon := system.NewDiskMonitor(
-		ctx,
-		cfg.MinFreeDiskSpace,
-		cfg.RootStorage,
-	)
-	memoryMonitorDaemon := system.NewMemoryMonitor(
-		ctx,
-		cfg.MinFreeMemory,
-	)
-	metricsDaemon := metrics.NewMetrics(
-		ctx,
-		cfg.MetricsOutput,
-		cfg.MetricsRefreshRate,
-	)
-	actorSystemDaemon := actor.NewActorSystem(
-		ctx,
-		cfg.LakeHostname,
-		metricsDaemon,
-	)
-	restDaemon := api.NewServer(
-		ctx,
-		cfg.ServerPort,
-		cfg.ServerCert,
-		cfg.ServerKey,
-		cfg.RootStorage,
-		actorSystemDaemon,
-		systemControlDaemon,
-		diskMonitorDaemon,
-		memoryMonitorDaemon,
-	)
-
-	var daemons = make([]utils.Daemon, 0)
-	daemons = append(daemons, metricsDaemon)
-	daemons = append(daemons, actorSystemDaemon)
-	daemons = append(daemons, restDaemon)
-
+// NewProgram returns new program
+func NewProgram() Program {
 	return Program{
 		interrupt: make(chan os.Signal, 1),
-		cfg:       cfg,
-		daemons:   daemons,
-		cancel:    cancel,
+		cfg:       config.LoadConfig(),
+		pool:      concurrent.NewDaemonPool("program"),
 	}
+}
+
+// Setup setups program
+func (prog *Program) Setup() {
+	if prog == nil {
+		return
+	}
+
+	logging.SetupLogger(prog.cfg.LogLevel)
+
+	systemControl := system.NewSystemControl()
+
+	diskMonitorWorker := system.NewDiskMonitor(
+		prog.cfg.MinFreeDiskSpace,
+		prog.cfg.RootStorage,
+	)
+
+	memoryMonitorWorker := system.NewMemoryMonitor(
+		prog.cfg.MinFreeMemory,
+	)
+
+	metricsWorker := metrics.NewMetrics(
+		prog.cfg.MetricsOutput,
+		prog.cfg.MetricsContinuous,
+	)
+
+	actorSystem := actor.NewActorSystem(
+		prog.cfg.LakeHostname,
+		metricsWorker,
+	)
+
+	restWorker := api.NewServer(
+		prog.cfg.ServerPort,
+		prog.cfg.ServerCert,
+		prog.cfg.ServerKey,
+		prog.cfg.RootStorage,
+		actorSystem,
+		systemControl,
+		diskMonitorWorker,
+		memoryMonitorWorker,
+	)
+
+	prog.pool.Register(concurrent.NewOneShotDaemon(
+		"actor-system",
+		actorSystem,
+	))
+
+	prog.pool.Register(concurrent.NewScheduledDaemon(
+		"disk-monitor",
+		diskMonitorWorker,
+		time.Second,
+	))
+
+	prog.pool.Register(concurrent.NewScheduledDaemon(
+		"memory-monitor",
+		memoryMonitorWorker,
+		time.Second,
+	))
+
+	prog.pool.Register(concurrent.NewScheduledDaemon(
+		"metrics",
+		metricsWorker,
+		prog.cfg.MetricsRefreshRate,
+	))
+
+	prog.pool.Register(concurrent.NewOneShotDaemon(
+		"rest",
+		restWorker,
+	))
+
 }

@@ -29,6 +29,8 @@ type Configuration struct {
 	RootStorage string
 	// LogLevel ignorecase log level
 	LogLevel string
+	// MetricsContinuous determines if metrics should start from last state
+	MetricsContinuous bool
 	// MetricsRefreshRate represents interval in which in memory metrics should be
 	// persisted to disk
 	MetricsRefreshRate time.Duration
@@ -39,13 +41,14 @@ type Configuration struct {
 	TransactionIntegrityScanInterval time.Duration
 }
 
-// GetConfig loads application configuration
-func GetConfig() Configuration {
+// LoadConfig loads application configuration
+func LoadConfig() Configuration {
 	return Configuration{
 		Tenant:                           envString("LEDGER_TENANT", ""),
 		LakeHostname:                     envString("LEDGER_LAKE_HOSTNAME", "127.0.0.1"),
 		RootStorage:                      envString("LEDGER_STORAGE", "/data") + "/" + "t_" + envString("LEDGER_TENANT", ""),
 		LogLevel:                         strings.ToUpper(envString("LEDGER_LOG_LEVEL", "INFO")),
+		MetricsContinuous:                envBoolean("LEDGER_METRICS_CONTINUOUS", true),
 		MetricsRefreshRate:               envDuration("LEDGER_METRICS_REFRESHRATE", time.Second),
 		MetricsOutput:                    envFilename("LEDGER_METRICS_OUTPUT", "/tmp/ledger-unit-metrics"),
 		TransactionIntegrityScanInterval: envDuration("LEDGER_TRANSACTION_INTEGRITY_SCANINTERVAL", 5*time.Minute),

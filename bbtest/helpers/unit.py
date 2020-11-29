@@ -24,6 +24,7 @@ class UnitHelper(object):
       "TRANSACTION_INTEGRITY_SCANINTERVAL": "24h",
       "MEMORY_THRESHOLD": 0,
       "STORAGE_THRESHOLD": 0,
+      "METRICS_CONTINUOUS": True,
       "METRICS_REFRESHRATE": "1s",
       "METRICS_OUTPUT": os.path.realpath('{}/../../reports/blackbox-tests/metrics'.format(os.path.dirname(__file__))),
       "STORAGE": "/data",

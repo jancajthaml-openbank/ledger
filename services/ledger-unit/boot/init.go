@@ -15,80 +15,93 @@
 package boot
 
 import (
-	"context"
-	system "github.com/jancajthaml-openbank/actor-system"
-	"github.com/jancajthaml-openbank/ledger-unit/actor"
-	"github.com/jancajthaml-openbank/ledger-unit/config"
-	"github.com/jancajthaml-openbank/ledger-unit/logging"
-	"github.com/jancajthaml-openbank/ledger-unit/metrics"
-	"github.com/jancajthaml-openbank/ledger-unit/model"
-	"github.com/jancajthaml-openbank/ledger-unit/utils"
 	"github.com/rs/xid"
 	"os"
+
+	"github.com/jancajthaml-openbank/ledger-unit/actor"
+	"github.com/jancajthaml-openbank/ledger-unit/config"
+	"github.com/jancajthaml-openbank/ledger-unit/metrics"
+	"github.com/jancajthaml-openbank/ledger-unit/model"
+	"github.com/jancajthaml-openbank/ledger-unit/support/concurrent"
+	"github.com/jancajthaml-openbank/ledger-unit/support/logging"
+
+	system "github.com/jancajthaml-openbank/actor-system"
 )
 
-// Program encapsulate initialized application
+// Program encapsulate program
 type Program struct {
 	interrupt chan os.Signal
 	cfg       config.Configuration
-	daemons   []utils.Daemon
-	cancel    context.CancelFunc
+	pool      concurrent.DaemonPool
 }
 
-// Initialize application
-func Initialize() Program {
-	ctx, cancel := context.WithCancel(context.Background())
+// NewProgram returns new program
+func NewProgram() Program {
+	return Program{
+		interrupt: make(chan os.Signal, 1),
+		cfg:       config.LoadConfig(),
+		pool:      concurrent.NewDaemonPool("program"),
+	}
+}
 
-	cfg := config.GetConfig()
+// Setup setups program
+func (prog *Program) Setup() {
+	if prog == nil {
+		return
+	}
 
-	logging.SetupLogger(cfg.LogLevel)
+	logging.SetupLogger(prog.cfg.LogLevel)
 
-	metricsDaemon := metrics.NewMetrics(
-		ctx,
-		cfg.MetricsOutput,
-		cfg.Tenant,
-		cfg.MetricsRefreshRate,
+	metricsWorker := metrics.NewMetrics(
+		prog.cfg.MetricsOutput,
+		prog.cfg.MetricsContinuous,
+		prog.cfg.Tenant,
 	)
-	actorSystemDaemon := actor.NewActorSystem(
-		ctx, cfg.Tenant,
-		cfg.LakeHostname,
-		cfg.RootStorage,
-		metricsDaemon,
+
+	actorSystem := actor.NewActorSystem(
+		prog.cfg.Tenant,
+		prog.cfg.LakeHostname,
+		prog.cfg.RootStorage,
+		metricsWorker,
 	)
-	transactionFinalizerDaemon := actor.NewTransactionFinalizer(
-		ctx,
-		cfg.TransactionIntegrityScanInterval,
-		cfg.RootStorage,
-		metricsDaemon,
+
+	transactionFinalizerWorker := actor.NewTransactionFinalizer(
+		prog.cfg.RootStorage,
+		metricsWorker,
 		func(transaction model.Transaction) {
 			name := "transaction/" + xid.New().String()
-			ref, err := actor.NewTransactionActor(actorSystemDaemon, name)
+			ref, err := actor.NewTransactionActor(actorSystem, name)
 			if err != nil {
 				return
 			}
 			ref.Tell(
 				transaction,
 				system.Coordinates{
-					Region: actorSystemDaemon.Name,
+					Region: actorSystem.Name,
 					Name:   name,
 				},
 				system.Coordinates{
-					Region: actorSystemDaemon.Name,
+					Region: actorSystem.Name,
 					Name:   "transaction_finalizer_cron",
 				},
 			)
 		},
 	)
 
-	var daemons = make([]utils.Daemon, 0)
-	daemons = append(daemons, metricsDaemon)
-	daemons = append(daemons, actorSystemDaemon)
-	daemons = append(daemons, transactionFinalizerDaemon)
+	prog.pool.Register(concurrent.NewOneShotDaemon(
+		"actor-system",
+		actorSystem,
+	))
 
-	return Program{
-		interrupt: make(chan os.Signal, 1),
-		cfg:       cfg,
-		daemons:   daemons,
-		cancel:    cancel,
-	}
+	prog.pool.Register(concurrent.NewScheduledDaemon(
+		"metrics",
+		metricsWorker,
+		prog.cfg.MetricsRefreshRate,
+	))
+
+	prog.pool.Register(concurrent.NewScheduledDaemon(
+		"transaction-finalizer",
+		transactionFinalizerWorker,
+		prog.cfg.TransactionIntegrityScanInterval,
+	))
 }

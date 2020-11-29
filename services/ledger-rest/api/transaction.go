@@ -16,7 +16,6 @@ package api
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/jancajthaml-openbank/ledger-rest/actor"
 	"github.com/jancajthaml-openbank/ledger-rest/model"
 	"github.com/jancajthaml-openbank/ledger-rest/persistence"
@@ -33,11 +32,13 @@ func GetTransaction(storage localfs.Storage) func(c echo.Context) error {
 
 		tenant := c.Param("tenant")
 		if tenant == "" {
-			return fmt.Errorf("missing tenant")
+			c.Response().WriteHeader(http.StatusNotFound)
+			return nil
 		}
 		id := c.Param("id")
 		if id == "" {
-			return fmt.Errorf("missing id")
+			c.Response().WriteHeader(http.StatusNotFound)
+			return nil
 		}
 
 		transaction, err := persistence.LoadTransaction(storage, tenant, id)
@@ -69,7 +70,8 @@ func CreateTransaction(storage localfs.Storage, system *actor.System) func(c ech
 
 		tenant := c.Param("tenant")
 		if tenant == "" {
-			return fmt.Errorf("missing tenant")
+			c.Response().WriteHeader(http.StatusNotFound)
+			return nil
 		}
 
 		b, err := ioutil.ReadAll(c.Request().Body)
@@ -127,7 +129,8 @@ func GetTransactions(storage localfs.Storage) func(c echo.Context) error {
 
 		tenant := c.Param("tenant")
 		if tenant == "" {
-			return fmt.Errorf("missing tenant")
+			c.Response().WriteHeader(http.StatusNotFound)
+			return nil
 		}
 
 		transactions, err := persistence.LoadTransactionsIDs(storage, tenant)

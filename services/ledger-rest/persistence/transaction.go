@@ -16,13 +16,13 @@ package persistence
 
 import (
 	"github.com/jancajthaml-openbank/ledger-rest/model"
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
+
 	localfs "github.com/jancajthaml-openbank/local-fs"
 )
 
 // LoadTransactionsIDs loads transaction ids from storage
 func LoadTransactionsIDs(storage localfs.Storage, tenant string) ([]string, error) {
-	path := utils.TransactionsPath(tenant)
+	path := "t_" + tenant + "/transaction"
 	ok, err := storage.Exists(path)
 	if err != nil || !ok {
 		return make([]string, 0), nil
@@ -36,7 +36,7 @@ func LoadTransactionsIDs(storage localfs.Storage, tenant string) ([]string, erro
 
 // LoadTransaction loads transaction storage
 func LoadTransaction(storage localfs.Storage, tenant string, id string) (*model.Transaction, error) {
-	path := utils.TransactionPath(tenant, id)
+	path := "t_" + tenant + "/transaction/" + id
 	ok, err := storage.Exists(path)
 	if err != nil || !ok {
 		return nil, nil

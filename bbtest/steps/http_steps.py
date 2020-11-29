@@ -4,6 +4,8 @@
 from behave import *
 import ssl
 import urllib.request
+import socket
+import http
 import json
 import time
 import decimal
@@ -28,6 +30,8 @@ def create_transfer(context, tenant):
     assert response.code in [200, 201]
     response = response.read().decode('utf-8')
     context.last_transaction_id = response or None
+  except (http.client.RemoteDisconnected, socket.timeout):
+    raise AssertionError('timeout')
   except urllib.error.HTTPError as err:
     assert err.code == 417, 'missing transaction id with {}'.format(ex)
     context.last_transaction_id = None
@@ -127,6 +131,10 @@ def perform_http_request(context, uri):
     context.http_response['status'] = str(response.status)
     context.http_response['body'] = response.read().decode('utf-8')
     context.http_response['content-type'] = response.info().get_content_type()
+  except (http.client.RemoteDisconnected, socket.timeout):
+    context.http_response['status'] = '504'
+    context.http_response['body'] = ""
+    context.http_response['content-type'] = 'text-plain'
   except urllib.error.HTTPError as err:
     context.http_response['status'] = str(err.code)
     context.http_response['body'] = err.read().decode('utf-8')

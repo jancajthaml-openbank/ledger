@@ -15,17 +15,22 @@
 package main
 
 import (
+	"context"
 	"fmt"
-
 	"github.com/jancajthaml-openbank/ledger-unit/boot"
 )
 
 func main() {
 	fmt.Println(">>> Start <<<")
-	program := boot.Initialize()
+
+	program := boot.NewProgram()
+	program.Setup()
+
 	defer func() {
 		program.Stop()
 		fmt.Println(">>> Stop <<<")
 	}()
-	program.Start()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	program.Start(ctx, cancel)
 }

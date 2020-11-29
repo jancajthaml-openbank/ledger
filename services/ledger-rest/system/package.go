@@ -14,8 +14,18 @@
 
 package system
 
-import (
-	"github.com/jancajthaml-openbank/ledger-rest/logging"
-)
+import "github.com/jancajthaml-openbank/ledger-rest/support/logging"
 
 var log = logging.New("system")
+
+// HealthCheck gives insige into system health
+type HealthCheck interface {
+	IsHealthy() bool
+}
+
+// CapacityCheck gives insige into system capacity
+type CapacityCheck interface {
+	HealthCheck
+	GetFree() uint64
+	GetUsed() uint64
+}

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import time
+import os
 from behave import *
 from helpers.shell import execute
-import os
 from helpers.eventually import eventually
 
 
@@ -13,7 +14,9 @@ def step_impl(context, package, operation):
     (code, result, error) = execute(["apt-get", "install", "-f", "-qq", "-o=Dpkg::Use-Pty=0", "-o=Dpkg::Options::=--force-confold", context.unit.binary])
     assert code == 0, "unable to install with code {} and {} {}".format(code, result, error)
     assert os.path.isfile('/etc/ledger/conf.d/init.conf') is True
+    execute(['systemctl', 'start', package])
   elif operation == 'uninstalled':
+    execute(['systemctl', 'stop', package])
     (code, result, error) = execute(["apt-get", "-y", "remove", package])
     assert code == 0, "unable to uninstall with code {} and {} {}".format(code, result, error)
     assert os.path.isfile('/etc/ledger/conf.d/init.conf') is False
@@ -64,13 +67,16 @@ def unit_running(context, unit):
 
   wait_for_unit_state_change()
 
+  # fixme instead of 500ms fixed sleep try lake handshake
+  time.sleep(0.5) # fixme better
+
 
 @given('unit "{unit}" is not running')
 @then('unit "{unit}" is not running')
 def unit_not_running(context, unit):
   (code, result, error) = execute(["systemctl", "show", "-p", "SubState", unit])
   assert code == 0, str(result) + ' ' + str(error)
-  assert 'SubState=dead' in result, str(result) + ' ' + str(error)
+  assert 'SubState=running' not in result, str(result) + ' ' + str(error)
 
 
 @given('{operation} unit "{unit}"')

@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -10,10 +9,7 @@ import (
 )
 
 func TestMetrics(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	entity := NewMetrics(ctx, "/tmp", time.Hour)
+	entity := NewMetrics("/tmp", false)
 	delay := 1e8
 	delta := 1e8
 

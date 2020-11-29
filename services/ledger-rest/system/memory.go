@@ -15,17 +15,13 @@
 package system
 
 import (
-	"context"
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
 	"runtime"
 	"sync/atomic"
 	"syscall"
-	"time"
 )
 
-// MemoryMonitor represents memory monitoring subroutine
+// MemoryMonitor monitors capacity of memory
 type MemoryMonitor struct {
-	utils.DaemonSupport
 	limit uint64
 	free  uint64
 	used  uint64
@@ -33,13 +29,12 @@ type MemoryMonitor struct {
 }
 
 // NewMemoryMonitor returns new memory monitor fascade
-func NewMemoryMonitor(ctx context.Context, limit uint64) *MemoryMonitor {
+func NewMemoryMonitor(limit uint64) *MemoryMonitor {
 	return &MemoryMonitor{
-		DaemonSupport: utils.NewDaemonSupport(ctx, "memory-check"),
-		limit:         limit,
-		free:          0,
-		used:          0,
-		ok:            1,
+		limit: limit,
+		free:  0,
+		used:  0,
+		ok:    1,
 	}
 }
 
@@ -51,16 +46,16 @@ func (monitor *MemoryMonitor) IsHealthy() bool {
 	return atomic.LoadInt32(&(monitor.ok)) != 0
 }
 
-// GetFreeMemory returns free memory
-func (monitor *MemoryMonitor) GetFreeMemory() uint64 {
+// GetFree returns free memory
+func (monitor *MemoryMonitor) GetFree() uint64 {
 	if monitor == nil {
 		return 0
 	}
 	return atomic.LoadUint64(&(monitor.free))
 }
 
-// GetUsedMemory returns allocated memory
-func (monitor *MemoryMonitor) GetUsedMemory() uint64 {
+// GetUsed returns allocated memory
+func (monitor *MemoryMonitor) GetUsed() uint64 {
 	if monitor == nil {
 		return 0
 	}
@@ -98,39 +93,23 @@ func (monitor *MemoryMonitor) CheckMemoryAllocation() {
 	return
 }
 
-// Start handles everything needed to start memory daemon
-func (monitor *MemoryMonitor) Start() {
-	if monitor == nil {
-		return
-	}
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
+// Setup does nothing
+func (monitor *MemoryMonitor) Setup() error {
+	return nil
+}
 
+// Done always returns done
+func (monitor *MemoryMonitor) Done() <-chan interface{} {
+	done := make(chan interface{})
+	close(done)
+	return done
+}
+
+// Cancel does nothing
+func (monitor *MemoryMonitor) Cancel() {
+}
+
+// Work checks memory allocation
+func (monitor *MemoryMonitor) Work() {
 	monitor.CheckMemoryAllocation()
-	monitor.MarkReady()
-
-	select {
-	case <-monitor.CanStart:
-		break
-	case <-monitor.Done():
-		monitor.MarkDone()
-		return
-	}
-
-	log.Info().Msg("Start memory-monitor daemon")
-
-	go func() {
-		for {
-			select {
-			case <-monitor.Done():
-				monitor.MarkDone()
-				return
-			case <-ticker.C:
-				monitor.CheckMemoryAllocation()
-			}
-		}
-	}()
-
-	monitor.WaitStop()
-	log.Info().Msg("Stop memory-monitor daemon")
 }

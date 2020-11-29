@@ -14,8 +14,6 @@
 
 package metrics
 
-import (
-	"github.com/jancajthaml-openbank/ledger-unit/logging"
-)
+import "github.com/jancajthaml-openbank/ledger-unit/support/logging"
 
 var log = logging.New("metrics")

@@ -38,7 +38,7 @@ class ZMQHelper(threading.Thread):
         data = self.__pull.recv(zmq.NOBLOCK)
         self.__pub.send(data)
         self.__process_next_message(data)
-        if len(data) and data[-1] != 93:
+        if len(data):
           self.backlog.append(data)
       except zmq.error.Again as ex:
         if ex.errno != 11:

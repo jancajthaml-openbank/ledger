@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package concurrent
 
-// TransactionsPath returns filepath for transactions
-func TransactionsPath(tenant string) string {
-	return "t_" + tenant + "/transaction"
-}
+import "github.com/jancajthaml-openbank/ledger-rest/support/logging"
 
-// TransactionPath returns filepath for single transaction
-func TransactionPath(tenant string, id string) string {
-	return "t_" + tenant + "/transaction/" + id
-}
+var log = logging.New("concurrent")

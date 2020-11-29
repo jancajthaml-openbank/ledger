@@ -15,16 +15,12 @@
 package system
 
 import (
-	"context"
-	"github.com/jancajthaml-openbank/ledger-rest/utils"
 	"sync/atomic"
 	"syscall"
-	"time"
 )
 
-// DiskMonitor represents disk monitoring subroutine
+// DiskMonitor monitors capacity of disk
 type DiskMonitor struct {
-	utils.DaemonSupport
 	rootStorage string
 	limit       uint64
 	free        uint64
@@ -33,14 +29,13 @@ type DiskMonitor struct {
 }
 
 // NewDiskMonitor returns new disk monitor fascade
-func NewDiskMonitor(ctx context.Context, limit uint64, rootStorage string) *DiskMonitor {
+func NewDiskMonitor(limit uint64, rootStorage string) *DiskMonitor {
 	return &DiskMonitor{
-		DaemonSupport: utils.NewDaemonSupport(ctx, "storage-check"),
-		rootStorage:   rootStorage,
-		limit:         limit,
-		free:          0,
-		used:          0,
-		ok:            1,
+		rootStorage: rootStorage,
+		limit:       limit,
+		free:        0,
+		used:        0,
+		ok:          1,
 	}
 }
 
@@ -52,16 +47,16 @@ func (monitor *DiskMonitor) IsHealthy() bool {
 	return atomic.LoadInt32(&(monitor.ok)) != 0
 }
 
-// GetFreeDiskSpace returns free disk space
-func (monitor *DiskMonitor) GetFreeDiskSpace() uint64 {
+// GetFree returns free disk space
+func (monitor *DiskMonitor) GetFree() uint64 {
 	if monitor == nil {
 		return 0
 	}
 	return atomic.LoadUint64(&(monitor.free))
 }
 
-// GetUsedDiskSpace returns used disk space
-func (monitor *DiskMonitor) GetUsedDiskSpace() uint64 {
+// GetUsed returns used disk space
+func (monitor *DiskMonitor) GetUsed() uint64 {
 	if monitor == nil {
 		return 0
 	}
@@ -95,39 +90,23 @@ func (monitor *DiskMonitor) CheckDiskSpace() {
 	return
 }
 
-// Start handles everything needed to start storage daemon
-func (monitor *DiskMonitor) Start() {
-	if monitor == nil {
-		return
-	}
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
+// Setup does nothing
+func (monitor *DiskMonitor) Setup() error {
+	return nil
+}
 
+// Done always returns done
+func (monitor *DiskMonitor) Done() <-chan interface{} {
+	done := make(chan interface{})
+	close(done)
+	return done
+}
+
+// Cancel does nothing
+func (monitor *DiskMonitor) Cancel() {
+}
+
+// Work checks disk space
+func (monitor *DiskMonitor) Work() {
 	monitor.CheckDiskSpace()
-	monitor.MarkReady()
-
-	select {
-	case <-monitor.CanStart:
-		break
-	case <-monitor.Done():
-		monitor.MarkDone()
-		return
-	}
-
-	log.Info().Msg("Start disk space monitor daemon")
-
-	go func() {
-		for {
-			select {
-			case <-monitor.Done():
-				monitor.MarkDone()
-				return
-			case <-ticker.C:
-				monitor.CheckDiskSpace()
-			}
-		}
-	}()
-
-	monitor.WaitStop()
-	log.Info().Msg("Stop disk space monitor daemon")
 }

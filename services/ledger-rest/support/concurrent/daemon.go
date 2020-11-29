@@ -12,14 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package concurrent
 
-// RootPath returns filepath for accounts
-func RootPath() string {
-	return "transaction"
+import "context"
+
+// Worker represents some scheduled task
+type Worker interface {
+	Setup() error
+	Work()
+	Cancel()
+	Done() <-chan interface{}
 }
 
-// TransactionPath returns path for transaction file
-func TransactionPath(id string) string {
-	return "transaction/" + id
+// Daemon represents background routine
+type Daemon interface {
+	Start(context.Context, context.CancelFunc)
+	Stop()
+	Done() <-chan interface{}
 }
