@@ -1,5 +1,6 @@
 .git
 .github
 .circleci
+.jenkins
 packaging/debian/target
 **/*/vendor

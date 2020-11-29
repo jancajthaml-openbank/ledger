@@ -14,96 +14,17 @@
 
 package concurrent
 
-import (
-	"context"
-	"fmt"
-	"sync"
-	"time"
-)
+import "context"
 
-// Daemon contract for program sub routines
+type Worker interface {
+	Setup() error
+	Work()
+	Cancel()
+	Done() <-chan interface{}
+}
+
 type Daemon interface {
-	Start()
+	Start(context.Context, context.CancelFunc)
 	Stop()
-	GreenLight()
-	WaitStop()
-	WaitReady(time.Duration) error
-}
-
-// DaemonSupport provides support for graceful shutdown
-type DaemonSupport struct {
-	Daemon
-	name              string
-	ctx               context.Context
-	cancel            context.CancelFunc
-	done              chan interface{}
-	doneOnce          sync.Once
-	ExitSignal        chan struct{}
-	IsReady           chan interface{}
-	CanStart          chan interface{}
-	closeCanStartOnce sync.Once
-}
-
-// NewDaemonSupport constructs new daemon support
-func NewDaemonSupport(parentCtx context.Context, name string) DaemonSupport {
-	ctx, cancel := context.WithCancel(parentCtx)
-	return DaemonSupport{
-		name:     name,
-		ctx:      ctx,
-		cancel:   cancel,
-		done:     make(chan interface{}),
-		IsReady:  make(chan interface{}),
-		CanStart: make(chan interface{}),
-	}
-}
-
-// WaitReady wait for daemon to be ready within given deadline
-func (daemon DaemonSupport) WaitReady(deadline time.Duration) error {
-	ticker := time.NewTicker(deadline)
-	select {
-	case <-daemon.IsReady:
-		ticker.Stop()
-		return nil
-	case <-ticker.C:
-		return fmt.Errorf("%s-daemon was not ready within %v seconds", daemon.name, deadline)
-	}
-}
-
-// WaitStop cancels context
-func (daemon DaemonSupport) WaitStop() {
-	<-daemon.done
-}
-
-// GreenLight signals daemon to start work
-func (daemon DaemonSupport) GreenLight() {
-	daemon.closeCanStartOnce.Do(func() {
-		close(daemon.CanStart)
-	})
-}
-
-// MarkDone signals daemon is finished
-func (daemon DaemonSupport) MarkDone() {
-	daemon.doneOnce.Do(func() {
-		close(daemon.done)
-	})
-}
-
-// IsCanceled returns if daemon is done
-func (daemon DaemonSupport) IsCanceled() bool {
-	return daemon.ctx.Err() != nil
-}
-
-// MarkReady signals daemon is ready
-func (daemon DaemonSupport) MarkReady() {
-	daemon.IsReady <- nil
-}
-
-// Done cancel channel
-func (daemon DaemonSupport) Done() <-chan struct{} {
-	return daemon.ctx.Done()
-}
-
-// Stop cancels context
-func (daemon DaemonSupport) Stop() {
-	daemon.cancel()
+	Done() <-chan interface{}
 }

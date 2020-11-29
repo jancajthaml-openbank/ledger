@@ -15,18 +15,12 @@
 package system
 
 import (
-	"context"
 	"sync/atomic"
 	"syscall"
-	"time"
-
-	"github.com/jancajthaml-openbank/ledger-rest/support/concurrent"
 )
 
 // DiskMonitor monitors capacity of disk
 type DiskMonitor struct {
-	CapacityCheck
-	concurrent.DaemonSupport
 	rootStorage string
 	limit       uint64
 	free        uint64
@@ -35,14 +29,13 @@ type DiskMonitor struct {
 }
 
 // NewDiskMonitor returns new disk monitor fascade
-func NewDiskMonitor(ctx context.Context, limit uint64, rootStorage string) *DiskMonitor {
+func NewDiskMonitor(limit uint64, rootStorage string) *DiskMonitor {
 	return &DiskMonitor{
-		DaemonSupport: concurrent.NewDaemonSupport(ctx, "storage-check"),
-		rootStorage:   rootStorage,
-		limit:         limit,
-		free:          0,
-		used:          0,
-		ok:            1,
+		rootStorage: rootStorage,
+		limit:       limit,
+		free:        0,
+		used:        0,
+		ok:          1,
 	}
 }
 
@@ -97,39 +90,19 @@ func (monitor *DiskMonitor) CheckDiskSpace() {
 	return
 }
 
-// Start handles everything needed to start storage daemon
-func (monitor *DiskMonitor) Start() {
-	if monitor == nil {
-		return
-	}
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
+func (monitor *DiskMonitor) Setup() error {
+	return nil
+}
 
+func (monitor *DiskMonitor) Done() <-chan interface{} {
+	done := make(chan interface{})
+	close(done)
+	return done
+}
+
+func (monitor *DiskMonitor) Cancel() {
+}
+
+func (monitor *DiskMonitor) Work() {
 	monitor.CheckDiskSpace()
-	monitor.MarkReady()
-
-	select {
-	case <-monitor.CanStart:
-		break
-	case <-monitor.Done():
-		monitor.MarkDone()
-		return
-	}
-
-	log.Info().Msg("Start disk space monitor daemon")
-
-	go func() {
-		for {
-			select {
-			case <-monitor.Done():
-				monitor.MarkDone()
-				return
-			case <-ticker.C:
-				monitor.CheckDiskSpace()
-			}
-		}
-	}()
-
-	monitor.WaitStop()
-	log.Info().Msg("Stop disk space monitor daemon")
 }

@@ -37,6 +37,9 @@ func TestGetConfig(t *testing.T) {
 		if config.LogLevel != "INFO" {
 			t.Errorf("LogLevel default value is not INFO")
 		}
+		if config.MetricsContinuous != true {
+			t.Errorf("MetricsContinuous default value is not true")
+		}
 		if config.MetricsRefreshRate != time.Second {
 			t.Errorf("MetricsRefreshRate default value is not 1s")
 		}

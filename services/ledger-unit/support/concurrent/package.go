@@ -12,25 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package concurrent
 
-import (
-	"context"
-	"fmt"
-	"github.com/jancajthaml-openbank/ledger-rest/boot"
-)
+import "github.com/jancajthaml-openbank/ledger-unit/support/logging"
 
-func main() {
-	fmt.Println(">>> Start <<<")
-
-	program := boot.NewProgram()
-	program.Setup()
-
-	defer func() {
-		program.Stop()
-		fmt.Println(">>> Stop <<<")
-	}()
-
-	ctx, cancel := context.WithCancel(context.Background())
-	program.Start(ctx, cancel)
-}
+var log = logging.New("concurrent")

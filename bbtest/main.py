@@ -32,6 +32,7 @@ if __name__ == "__main__":
 
   for path in [
     '/data',
+    '{}/../reports/blackbox-tests/metrics'.format(cwd),
     '{}/../reports/blackbox-tests/logs'.format(cwd),
     '{}/../reports/blackbox-tests/meta'.format(cwd),
     '{}/../reports/blackbox-tests/behave'.format(cwd),

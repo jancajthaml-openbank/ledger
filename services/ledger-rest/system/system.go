@@ -15,33 +15,36 @@
 package system
 
 import (
-	"context"
 	"fmt"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/coreos/go-systemd/v22/dbus"
-	"github.com/jancajthaml-openbank/ledger-rest/support/concurrent"
 )
+
+// Control represents contract of system control
+type Control interface {
+	ListUnits(prefix string) ([]string, error)
+	GetUnitsProperties(prefix string) (map[string]UnitStatus, error)
+	DisableUnit(name string) error
+	EnableUnit(name string) error
+}
 
 // DbusControl is control implementation using dbus
 type DbusControl struct {
-	Control
-	concurrent.DaemonSupport
 	underlying *dbus.Conn
 }
 
 // NewSystemControl returns new systemctl fascade
-func NewSystemControl(ctx context.Context) *DbusControl {
-	conn, err := dbus.New()
+func NewSystemControl() Control {
+	connection, err := dbus.New()
 	if err != nil {
 		log.Error().Msgf("Unable to obtain dbus connection because %+v", err)
 		return nil
 	}
 	return &DbusControl{
-		DaemonSupport: concurrent.NewDaemonSupport(ctx, "system-control"),
-		underlying:    conn,
+		underlying: connection,
 	}
 }
 
@@ -130,15 +133,16 @@ func (sys *DbusControl) DisableUnit(name string) error {
 			return fmt.Errorf("unable to stop unit %s", fullName)
 		}
 		log.Info().Msgf("Stopped unit %s", fullName)
-		log.Info().Msgf("Disabling unit %s", fullName)
 
 		if _, err := sys.underlying.DisableUnitFiles([]string{fullName}, false); err != nil {
 			return fmt.Errorf("unable to disable unit %s because %+v", fullName, err)
 		}
 
+		log.Info().Msgf("Disabled unit %s", fullName)
+
 		return nil
 
-	case <-time.After(3 * time.Second):
+	case <-time.After(5 * time.Second):
 		return fmt.Errorf("unable to stop unit %s because timeout", fullName)
 
 	}
@@ -171,44 +175,10 @@ func (sys *DbusControl) EnableUnit(name string) error {
 		log.Info().Msgf("Started unit %s", fullName)
 		return nil
 
-	case <-time.After(3 * time.Second):
+	case <-time.After(5 * time.Second):
 		return fmt.Errorf("unable to start unit %s because timeout", fullName)
 
 	}
 
 	return nil
-}
-
-// Start handles everything needed to start system-control daemon
-func (sys *DbusControl) Start() {
-	if sys == nil {
-		return
-	}
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
-
-	sys.MarkReady()
-
-	select {
-	case <-sys.CanStart:
-		break
-	case <-sys.Done():
-		sys.MarkDone()
-		return
-	}
-
-	log.Info().Msg("Start system-control daemon")
-
-	go func() {
-		for {
-			select {
-			case <-sys.Done():
-				sys.MarkDone()
-				return
-			}
-		}
-	}()
-
-	sys.WaitStop()
-	log.Info().Msg("Stop system-control daemon")
 }

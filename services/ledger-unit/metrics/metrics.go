@@ -15,20 +15,15 @@
 package metrics
 
 import (
-	"context"
-	"time"
-
-	"github.com/jancajthaml-openbank/ledger-unit/support/concurrent"
 	localfs "github.com/jancajthaml-openbank/local-fs"
 	metrics "github.com/rcrowley/go-metrics"
 )
 
 // Metrics holds metrics counters
 type Metrics struct {
-	concurrent.DaemonSupport
 	storage                         localfs.Storage
 	tenant                          string
-	refreshRate                     time.Duration
+	continuous                      bool
 	promisedTransactions            metrics.Counter
 	promisedTransfers               metrics.Counter
 	committedTransactions           metrics.Counter
@@ -39,17 +34,16 @@ type Metrics struct {
 }
 
 // NewMetrics returns blank metrics holder
-func NewMetrics(ctx context.Context, output string, tenant string, refreshRate time.Duration) *Metrics {
+func NewMetrics(output string, continuous bool, tenant string) *Metrics {
 	storage, err := localfs.NewPlaintextStorage(output)
 	if err != nil {
 		log.Error().Msgf("Failed to ensure storage %+v", err)
 		return nil
 	}
 	return &Metrics{
-		DaemonSupport:                   concurrent.NewDaemonSupport(ctx, "metrics"),
+		continuous:                      continuous,
 		storage:                         storage,
 		tenant:                          tenant,
-		refreshRate:                     refreshRate,
 		promisedTransactions:            metrics.NewCounter(),
 		promisedTransfers:               metrics.NewCounter(),
 		committedTransactions:           metrics.NewCounter(),
@@ -63,6 +57,7 @@ func NewMetrics(ctx context.Context, output string, tenant string, refreshRate t
 // TimeFinalizeTransactions measures time of finalizeStaleTransactions function run
 func (metrics *Metrics) TimeFinalizeTransactions(f func()) {
 	if metrics == nil {
+		f()
 		return
 	}
 	metrics.transactionFinalizerCronLatency.Time(f)
@@ -95,44 +90,29 @@ func (metrics *Metrics) TransactionRollbacked(transfers int) {
 	metrics.rollbackedTransfers.Inc(int64(transfers))
 }
 
-// Start handles everything needed to start metrics daemon
-func (metrics *Metrics) Start() {
+// Setup hydrates metrics from storage
+func (metrics *Metrics) Setup() error {
 	if metrics == nil {
-		return
+		return nil
 	}
-	ticker := time.NewTicker(metrics.refreshRate)
-	defer ticker.Stop()
-
-	if err := metrics.Hydrate(); err != nil {
-		log.Warn().Msg(err.Error())
+	if metrics.continuous {
+		metrics.Hydrate()
 	}
+	return nil
+}
 
+// Done returns always finished
+func (metrics *Metrics) Done() <-chan interface{} {
+	done := make(chan interface{})
+	close(done)
+	return done
+}
+
+// Cancel does nothing
+func (metrics *Metrics) Cancel() {
+}
+
+// Work represents metrics worker work
+func (metrics *Metrics) Work() {
 	metrics.Persist()
-	metrics.MarkReady()
-
-	select {
-	case <-metrics.CanStart:
-		break
-	case <-metrics.Done():
-		metrics.MarkDone()
-		return
-	}
-
-	log.Info().Msgf("Start metrics daemon, update file each %v", metrics.refreshRate)
-
-	go func() {
-		for {
-			select {
-			case <-metrics.Done():
-				metrics.Persist()
-				metrics.MarkDone()
-				return
-			case <-ticker.C:
-				metrics.Persist()
-			}
-		}
-	}()
-
-	metrics.WaitStop()
-	log.Info().Msg("Stop metrics daemon")
 }

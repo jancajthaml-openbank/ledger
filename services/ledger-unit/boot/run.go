@@ -15,105 +15,55 @@
 package boot
 
 import (
-	"fmt"
+	"context"
+	"github.com/jancajthaml-openbank/ledger-unit/support/concurrent"
+	"github.com/jancajthaml-openbank/ledger-unit/support/host"
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
-
-	"github.com/jancajthaml-openbank/ledger-unit/support/concurrent"
-	"github.com/jancajthaml-openbank/ledger-unit/support/host"
 )
 
-// WaitReady wait for daemons to be ready
-func (prog Program) WaitReady(deadline time.Duration) error {
-	errors := make([]error, 0)
-	mux := new(sync.Mutex)
-
+// Done retutrns signal when all daemons are done
+func (prog Program) Done() <-chan interface{} {
+	out := make(chan interface{})
 	var wg sync.WaitGroup
-	waitWithDeadline := func(support concurrent.Daemon) {
-		if support == nil {
-			wg.Done()
-			return
-		}
-		go func() {
-			err := support.WaitReady(deadline)
-			if err != nil {
-				mux.Lock()
-				errors = append(errors, err)
-				mux.Unlock()
-			}
-			wg.Done()
-		}()
-	}
-
 	wg.Add(len(prog.daemons))
 	for idx := range prog.daemons {
-		waitWithDeadline(prog.daemons[idx])
+		go func(c concurrent.Daemon) {
+			for v := range c.Done() {
+				out <- v
+			}
+			wg.Done()
+		}(prog.daemons[idx])
 	}
-	wg.Wait()
-
-	if len(errors) > 0 {
-		return fmt.Errorf("%+v", errors)
-	}
-
-	return nil
+	go func() {
+		wg.Wait()
+		close(out)
+	}()
+	return out
 }
 
-// GreenLight daemons
-func (prog Program) GreenLight() {
-	for idx := range prog.daemons {
-		if prog.daemons[idx] == nil {
-			continue
-		}
-		prog.daemons[idx].GreenLight()
-	}
-}
-
-// WaitStop wait for daemons to stop
-func (prog Program) WaitStop() {
-	for idx := range prog.daemons {
-		if prog.daemons[idx] == nil {
-			continue
-		}
-		prog.daemons[idx].WaitStop()
-	}
-}
-
-// WaitInterrupt wait for signal
-func (prog Program) WaitInterrupt() {
-	<-prog.interrupt
-}
-
-// Stop stops the application
+// Stop stops all daemons
 func (prog Program) Stop() {
+	for idx := range prog.daemons {
+		prog.daemons[idx].Stop()
+	}
 	close(prog.interrupt)
 }
 
-// Start runs the application
-func (prog Program) Start() {
+// Start starts all daemons and blocks until INT or TERM signal is received
+func (prog Program) Start(parentContext context.Context, cancelFunction context.CancelFunc) {
 	for idx := range prog.daemons {
-		if prog.daemons[idx] == nil {
-			continue
-		}
-		go prog.daemons[idx].Start()
+		go prog.daemons[idx].Start(parentContext, cancelFunction)
 	}
-
-	if err := prog.WaitReady(5 * time.Second); err != nil {
-		log.Error().Msgf("Error when starting daemons: %+v", err)
-	} else {
-		host.NotifyServiceReady()
-		prog.GreenLight()
-		log.Info().Msg("Program Started")
-		signal.Notify(prog.interrupt, syscall.SIGINT, syscall.SIGTERM)
-		prog.WaitInterrupt()
-	}
-
+	host.NotifyServiceReady()
+	log.Info().Msg("Program Started")
+	signal.Notify(prog.interrupt, syscall.SIGINT, syscall.SIGTERM)
+	<-prog.interrupt
 	log.Info().Msg("Program Stopping")
 	if err := host.NotifyServiceStopping(); err != nil {
 		log.Error().Msg(err.Error())
 	}
-
-	prog.cancel()
-	prog.WaitStop()
+	cancelFunction()
+	<-prog.Done()
 }

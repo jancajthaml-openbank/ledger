@@ -15,19 +15,13 @@
 package system
 
 import (
-	"context"
 	"runtime"
 	"sync/atomic"
 	"syscall"
-	"time"
-
-	"github.com/jancajthaml-openbank/ledger-rest/support/concurrent"
 )
 
 // MemoryMonitor monitors capacity of memory
 type MemoryMonitor struct {
-	CapacityCheck
-	concurrent.DaemonSupport
 	limit uint64
 	free  uint64
 	used  uint64
@@ -35,13 +29,12 @@ type MemoryMonitor struct {
 }
 
 // NewMemoryMonitor returns new memory monitor fascade
-func NewMemoryMonitor(ctx context.Context, limit uint64) *MemoryMonitor {
+func NewMemoryMonitor(limit uint64) *MemoryMonitor {
 	return &MemoryMonitor{
-		DaemonSupport: concurrent.NewDaemonSupport(ctx, "memory-check"),
-		limit:         limit,
-		free:          0,
-		used:          0,
-		ok:            1,
+		limit: limit,
+		free:  0,
+		used:  0,
+		ok:    1,
 	}
 }
 
@@ -100,39 +93,19 @@ func (monitor *MemoryMonitor) CheckMemoryAllocation() {
 	return
 }
 
-// Start handles everything needed to start memory daemon
-func (monitor *MemoryMonitor) Start() {
-	if monitor == nil {
-		return
-	}
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
+func (monitor *MemoryMonitor) Setup() error {
+	return nil
+}
 
+func (monitor *MemoryMonitor) Done() <-chan interface{} {
+	done := make(chan interface{})
+	close(done)
+	return done
+}
+
+func (monitor *MemoryMonitor) Cancel() {
+}
+
+func (monitor *MemoryMonitor) Work() {
 	monitor.CheckMemoryAllocation()
-	monitor.MarkReady()
-
-	select {
-	case <-monitor.CanStart:
-		break
-	case <-monitor.Done():
-		monitor.MarkDone()
-		return
-	}
-
-	log.Info().Msg("Start memory-monitor daemon")
-
-	go func() {
-		for {
-			select {
-			case <-monitor.Done():
-				monitor.MarkDone()
-				return
-			case <-ticker.C:
-				monitor.CheckMemoryAllocation()
-			}
-		}
-	}()
-
-	monitor.WaitStop()
-	log.Info().Msg("Stop memory-monitor daemon")
 }

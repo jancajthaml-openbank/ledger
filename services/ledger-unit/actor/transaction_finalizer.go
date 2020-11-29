@@ -15,39 +15,33 @@
 package actor
 
 import (
-	"context"
 	"time"
 
 	"github.com/jancajthaml-openbank/ledger-unit/metrics"
 	"github.com/jancajthaml-openbank/ledger-unit/model"
 	"github.com/jancajthaml-openbank/ledger-unit/persistence"
-	"github.com/jancajthaml-openbank/ledger-unit/support/concurrent"
 
 	localfs "github.com/jancajthaml-openbank/local-fs"
 )
 
 // TransactionFinalizer represents journal saturation update subroutine
 type TransactionFinalizer struct {
-	concurrent.DaemonSupport
-	callback     func(transaction model.Transaction)
-	metrics      *metrics.Metrics
-	storage      localfs.Storage
-	scanInterval time.Duration
+	callback func(transaction model.Transaction)
+	metrics  *metrics.Metrics
+	storage  localfs.Storage
 }
 
 // NewTransactionFinalizer returns snapshot updater fascade
-func NewTransactionFinalizer(ctx context.Context, scanInterval time.Duration, rootStorage string, metrics *metrics.Metrics, callback func(transaction model.Transaction)) *TransactionFinalizer {
+func NewTransactionFinalizer(rootStorage string, metrics *metrics.Metrics, callback func(transaction model.Transaction)) *TransactionFinalizer {
 	storage, err := localfs.NewPlaintextStorage(rootStorage)
 	if err != nil {
 		log.Error().Msgf("Failed to ensure storage %+v", err)
 		return nil
 	}
 	return &TransactionFinalizer{
-		DaemonSupport: concurrent.NewDaemonSupport(ctx, " transaction-finalizer"),
-		callback:      callback,
-		metrics:       metrics,
-		storage:       storage,
-		scanInterval:  scanInterval,
+		callback: callback,
+		metrics:  metrics,
+		storage:  storage,
 	}
 }
 
@@ -55,7 +49,7 @@ func (scan *TransactionFinalizer) getTransactions() []string {
 	if scan == nil {
 		return nil
 	}
-	result, err := scan.storage.ListDirectory(persistence.RootPath(), true)
+	result, err := scan.storage.ListDirectory("transaction", true)
 	if err != nil {
 		return nil
 	}
@@ -82,11 +76,11 @@ func (scan *TransactionFinalizer) getTransaction(id string) *model.Transaction {
 	if scan == nil {
 		return nil
 	}
-	modTime, err := scan.storage.LastModification(persistence.TransactionPath(id))
+	modTime, err := scan.storage.LastModification("transaction/" + id)
 	if err != nil {
 		return nil
 	}
-	if time.Now().Sub(modTime).Seconds() < 120 {
+	if time.Now().Sub(modTime).Seconds() < 120 {	// FIXME configurable
 		return nil
 	}
 	state, err := persistence.LoadTransactionState(scan.storage, id)
@@ -103,41 +97,28 @@ func (scan *TransactionFinalizer) getTransaction(id string) *model.Transaction {
 	return transaction
 }
 
-// Start handles everything needed to start transaction finalizer daemon
-func (scan *TransactionFinalizer) Start() {
+func (scan *TransactionFinalizer) Setup() error {
+	return nil
+}
+
+func (scan *TransactionFinalizer) Work() {
 	if scan == nil {
 		return
 	}
+	scan.metrics.TimeFinalizeTransactions(func() {
+		scan.finalizeStaleTransactions()
+	})
+}
 
-	ticker := time.NewTicker(scan.scanInterval)
-	defer ticker.Stop()
-
-	scan.MarkReady()
-
-	select {
-	case <-scan.CanStart:
-		break
-	case <-scan.Done():
-		scan.MarkDone()
+func (scan *TransactionFinalizer) Cancel() {
+	if scan == nil {
 		return
 	}
-
-	log.Info().Msgf("Start transaction-finalizer check daemon, scan each %v", scan.scanInterval)
-
-	go func() {
-		for {
-			select {
-			case <-scan.Done():
-				scan.MarkDone()
-				return
-			case <-ticker.C:
-				scan.metrics.TimeFinalizeTransactions(func() {
-					scan.finalizeStaleTransactions()
-				})
-			}
-		}
-	}()
-
-	scan.WaitStop()
-	log.Info().Msg("Stop transaction-finalizer daemon")
 }
+
+func (scan *TransactionFinalizer) Done() <-chan interface{} {
+	done := make(chan interface{})
+	close(done)
+	return done
+}
+

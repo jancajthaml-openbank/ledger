@@ -12,14 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package persistence
+package concurrent
 
-// RootPath returns filepath for transactions
-func RootPath() string {
-	return "transaction"
-}
+import "github.com/jancajthaml-openbank/ledger-rest/support/logging"
 
-// TransactionPath returns path for transaction file
-func TransactionPath(id string) string {
-	return "transaction/" + id
-}
+var log = logging.New("concurrent")
