@@ -93,19 +93,23 @@ func (monitor *MemoryMonitor) CheckMemoryAllocation() {
 	return
 }
 
+// Setup does nothing
 func (monitor *MemoryMonitor) Setup() error {
 	return nil
 }
 
+// Done always returns done
 func (monitor *MemoryMonitor) Done() <-chan interface{} {
 	done := make(chan interface{})
 	close(done)
 	return done
 }
 
+// Cancel does nothing
 func (monitor *MemoryMonitor) Cancel() {
 }
 
+// Work checks memory allocation
 func (monitor *MemoryMonitor) Work() {
 	monitor.CheckMemoryAllocation()
 }

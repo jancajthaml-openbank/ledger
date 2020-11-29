@@ -70,6 +70,6 @@ func (daemon ScheduledDaemon) Start(parentContext context.Context, cancelFunctio
 		}
 	}
 	daemon.Work()
-	daemon.Cancel()
+	daemon.Stop()
 	log.Info().Msgf("Stop daemon %s", daemon.name)
 }

@@ -40,10 +40,12 @@ func NewActorSystem(endpoint string, metrics *metrics.Metrics) *System {
 	return result
 }
 
+// Setup does nothing
 func (system *System) Setup() error {
 	return nil
 }
 
+// Work starts actor system
 func (system *System) Work() {
 	if system == nil {
 		return
@@ -51,6 +53,7 @@ func (system *System) Work() {
 	system.System.Start()
 }
 
+// Cancel does nothing
 func (system *System) Cancel() {
 	if system == nil {
 		return
@@ -58,7 +61,8 @@ func (system *System) Cancel() {
 	system.System.Stop()
 }
 
-func (system *System) Done() <- chan interface{} {
+// Done always returns done
+func (system *System) Done() <-chan interface{} {
 	done := make(chan interface{})
 	close(done)
 	return done

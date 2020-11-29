@@ -90,19 +90,23 @@ func (monitor *DiskMonitor) CheckDiskSpace() {
 	return
 }
 
+// Setup does nothing
 func (monitor *DiskMonitor) Setup() error {
 	return nil
 }
 
+// Done always returns done
 func (monitor *DiskMonitor) Done() <-chan interface{} {
 	done := make(chan interface{})
 	close(done)
 	return done
 }
 
+// Cancel does nothing
 func (monitor *DiskMonitor) Cancel() {
 }
 
+// Work checks disk space
 func (monitor *DiskMonitor) Work() {
 	monitor.CheckDiskSpace()
 }

@@ -29,8 +29,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-const READ_TIMEOUT = 5 * time.Second
-const WRITE_TIMEOUT = 5 * time.Second
+const connectionReadTimeout = 5 * time.Second
+const connectionWriteTimeout = 5 * time.Second
 
 // Server is a fascade for http-server following handler api of Gin and
 // lifecycle api of http
@@ -73,8 +73,8 @@ func NewServer(port int, certPath string, keyPath string, rootStorage string, ac
 	return &Server{
 		underlying: &http.Server{
 			Addr:         fmt.Sprintf("127.0.0.1:%d", port),
-			ReadTimeout:  READ_TIMEOUT,
-			WriteTimeout: WRITE_TIMEOUT,
+			ReadTimeout:  connectionReadTimeout,
+			WriteTimeout: connectionWriteTimeout,
 			Handler:      router,
 			TLSConfig: &tls.Config{
 				MinVersion:               tls.VersionTLS12,
@@ -97,6 +97,7 @@ func NewServer(port int, certPath string, keyPath string, rootStorage string, ac
 	}
 }
 
+// Setup initializes TCP listener
 func (server *Server) Setup() error {
 	if server == nil {
 		return fmt.Errorf("nil pointer")
@@ -109,21 +110,24 @@ func (server *Server) Setup() error {
 	return nil
 }
 
+// Done always returns done
 func (server *Server) Done() <-chan interface{} {
 	done := make(chan interface{})
 	close(done)
 	return done
 }
 
+// Cancel shuts down http server
 func (server *Server) Cancel() {
 	if server == nil {
 		return
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), WRITE_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), connectionWriteTimeout)
 	defer cancel()
 	server.underlying.Shutdown(ctx)
 }
 
+// Work starts http server
 func (server *Server) Work() {
 	if server == nil {
 		return

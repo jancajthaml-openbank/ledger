@@ -54,13 +54,8 @@ func (daemon OneShotDaemon) Start(parentContext context.Context, cancelFunction 
 		return
 	}
 	go func() {
-		for {
-			select {
-			case <-parentContext.Done():
-				daemon.Cancel()
-				return
-			}
-		}
+		<-parentContext.Done()
+		daemon.Stop()
 	}()
 	log.Info().Msgf("Start daemon %s run once", daemon.name)
 	daemon.Work()

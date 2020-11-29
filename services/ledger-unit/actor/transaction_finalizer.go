@@ -80,7 +80,7 @@ func (scan *TransactionFinalizer) getTransaction(id string) *model.Transaction {
 	if err != nil {
 		return nil
 	}
-	if time.Now().Sub(modTime).Seconds() < 120 {	// FIXME configurable
+	if time.Now().Sub(modTime).Seconds() < 120 { // FIXME configurable
 		return nil
 	}
 	state, err := persistence.LoadTransactionState(scan.storage, id)
@@ -97,10 +97,12 @@ func (scan *TransactionFinalizer) getTransaction(id string) *model.Transaction {
 	return transaction
 }
 
+// Setup does nothing
 func (scan *TransactionFinalizer) Setup() error {
 	return nil
 }
 
+// Work finalizes stale transactions
 func (scan *TransactionFinalizer) Work() {
 	if scan == nil {
 		return
@@ -110,15 +112,16 @@ func (scan *TransactionFinalizer) Work() {
 	})
 }
 
+// Cancel does nothing
 func (scan *TransactionFinalizer) Cancel() {
 	if scan == nil {
 		return
 	}
 }
 
+// Done always returns done
 func (scan *TransactionFinalizer) Done() <-chan interface{} {
 	done := make(chan interface{})
 	close(done)
 	return done
 }
-
