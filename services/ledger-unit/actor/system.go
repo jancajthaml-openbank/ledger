@@ -25,12 +25,12 @@ import (
 type System struct {
 	system.System
 	Storage              localfs.Storage
-	Metrics              *metrics.Metrics
+	Metrics              metrics.Metrics
 	EventCounterTreshold int64
 }
 
 // NewActorSystem returns actor system fascade
-func NewActorSystem(tenant string, endpoint string, rootStorage string, metrics *metrics.Metrics) *System {
+func NewActorSystem(tenant string, endpoint string, rootStorage string, metrics metrics.Metrics) *System {
 	storage, err := localfs.NewPlaintextStorage(rootStorage)
 	if err != nil {
 		log.Error().Msgf("Failed to ensure storage %+v", err)

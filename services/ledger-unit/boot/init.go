@@ -17,6 +17,7 @@ package boot
 import (
 	"github.com/rs/xid"
 	"os"
+	"time"
 
 	"github.com/jancajthaml-openbank/ledger-unit/actor"
 	"github.com/jancajthaml-openbank/ledger-unit/config"
@@ -53,9 +54,8 @@ func (prog *Program) Setup() {
 	logging.SetupLogger(prog.cfg.LogLevel)
 
 	metricsWorker := metrics.NewMetrics(
-		prog.cfg.MetricsOutput,
-		prog.cfg.MetricsContinuous,
 		prog.cfg.Tenant,
+		prog.cfg.MetricsStastdEndpoint,
 	)
 
 	actorSystem := actor.NewActorSystem(
@@ -67,7 +67,6 @@ func (prog *Program) Setup() {
 
 	transactionFinalizerWorker := actor.NewTransactionFinalizer(
 		prog.cfg.RootStorage,
-		metricsWorker,
 		func(transaction model.Transaction) {
 			name := "transaction/" + xid.New().String()
 			ref, err := actor.NewTransactionActor(actorSystem, name)
@@ -96,7 +95,7 @@ func (prog *Program) Setup() {
 	prog.pool.Register(concurrent.NewScheduledDaemon(
 		"metrics",
 		metricsWorker,
-		prog.cfg.MetricsRefreshRate,
+		time.Second,
 	))
 
 	prog.pool.Register(concurrent.NewScheduledDaemon(

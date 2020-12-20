@@ -14,10 +14,7 @@
 
 package config
 
-import (
-	"strings"
-	"time"
-)
+import "strings"
 
 // Configuration of application
 type Configuration struct {
@@ -33,13 +30,6 @@ type Configuration struct {
 	LakeHostname string
 	// LogLevel ignorecase log level
 	LogLevel string
-	// MetricsContinuous determines if metrics should start from last state
-	MetricsContinuous bool
-	// MetricsRefreshRate represents interval in which in memory metrics should be
-	// persisted to disk
-	MetricsRefreshRate time.Duration
-	// MetricsOutput represents output file for metrics persistence
-	MetricsOutput string
 	// MinFreeDiskSpace respresents threshold for minimum disk free space to
 	// be possible operating
 	MinFreeDiskSpace uint64
@@ -51,16 +41,13 @@ type Configuration struct {
 // LoadConfig loads application configuration
 func LoadConfig() Configuration {
 	return Configuration{
-		RootStorage:        envString("LEDGER_STORAGE", "/data"),
-		ServerPort:         envInteger("LEDGER_HTTP_PORT", 4401),
-		ServerKey:          envString("LEDGER_SERVER_KEY", ""),
-		ServerCert:         envString("LEDGER_SERVER_CERT", ""),
-		LakeHostname:       envString("LEDGER_LAKE_HOSTNAME", "127.0.0.1"),
-		LogLevel:           strings.ToUpper(envString("LEDGER_LOG_LEVEL", "INFO")),
-		MetricsContinuous:  envBoolean("LEDGER_METRICS_CONTINUOUS", true),
-		MetricsRefreshRate: envDuration("LEDGER_METRICS_REFRESHRATE", time.Second),
-		MetricsOutput:      envFilename("LEDGER_METRICS_OUTPUT", "/tmp/ledger-rest-metrics"),
-		MinFreeDiskSpace:   uint64(envInteger("VAULT_STORAGE_THRESHOLD", 0)),
-		MinFreeMemory:      uint64(envInteger("VAULT_MEMORY_THRESHOLD", 0)),
+		RootStorage:      envString("LEDGER_STORAGE", "/data"),
+		ServerPort:       envInteger("LEDGER_HTTP_PORT", 4401),
+		ServerKey:        envString("LEDGER_SERVER_KEY", ""),
+		ServerCert:       envString("LEDGER_SERVER_CERT", ""),
+		LakeHostname:     envString("LEDGER_LAKE_HOSTNAME", "127.0.0.1"),
+		LogLevel:         strings.ToUpper(envString("LEDGER_LOG_LEVEL", "INFO")),
+		MinFreeDiskSpace: uint64(envInteger("VAULT_STORAGE_THRESHOLD", 0)),
+		MinFreeMemory:    uint64(envInteger("VAULT_MEMORY_THRESHOLD", 0)),
 	}
 }
