@@ -27,30 +27,32 @@ type Metrics interface {
 }
 
 type metrics struct {
-	client *statsd.Client
-	promisedTransactions            int64
-	promisedTransfers               int64
-	committedTransactions           int64
-	committedTransfers              int64
-	rollbackedTransactions          int64
-	rollbackedTransfers             int64
+	client                 *statsd.Client
+	tenant                 string
+	promisedTransactions   int64
+	promisedTransfers      int64
+	committedTransactions  int64
+	committedTransfers     int64
+	rollbackedTransactions int64
+	rollbackedTransfers    int64
 }
 
 // NewMetrics returns blank metrics holder
-func NewMetrics(endpoint string) *metrics {
+func NewMetrics(tenant string, endpoint string) *metrics {
 	client, err := statsd.New(endpoint)
 	if err != nil {
 		log.Error().Msgf("Failed to ensure statsd client %+v", err)
 		return nil
 	}
 	return &metrics{
-		client: client,
+		client:                 client,
+		tenant:                 tenant,
 		promisedTransactions:   int64(0),
-		promisedTransfers:   int64(0),
-		committedTransactions:   int64(0),
-		committedTransfers:   int64(0),
-		rollbackedTransactions:   int64(0),
-		rollbackedTransfers:   int64(0),
+		promisedTransfers:      int64(0),
+		committedTransactions:  int64(0),
+		committedTransfers:     int64(0),
+		rollbackedTransactions: int64(0),
+		rollbackedTransfers:    int64(0),
 	}
 }
 
@@ -117,10 +119,10 @@ func (instance *metrics) Work() {
 	atomic.AddInt64(&(instance.rollbackedTransactions), -rollbackedTransactions)
 	atomic.AddInt64(&(instance.rollbackedTransfers), -rollbackedTransfers)
 
-	instance.client.Count("openbank.ledger.transaction.promised", promisedTransactions, nil, 1)
-	instance.client.Count("openbank.ledger.transfer.promised", promisedTransfers, nil, 1)
-	instance.client.Count("openbank.ledger.transaction.committed", committedTransactions, nil, 1)
-	instance.client.Count("openbank.ledger.transfer.committed", committedTransfers, nil, 1)
-	instance.client.Count("openbank.ledger.transaction.rollbacked", rollbackedTransactions, nil, 1)
-	instance.client.Count("openbank.ledger.transfer.rollbacked", rollbackedTransfers, nil, 1)
+	instance.client.Count("openbank.ledger."+instance.tenant+".transaction.promised", promisedTransactions, nil, 1)
+	instance.client.Count("openbank.ledger."+instance.tenant+".transfer.promised", promisedTransfers, nil, 1)
+	instance.client.Count("openbank.ledger."+instance.tenant+".transaction.committed", committedTransactions, nil, 1)
+	instance.client.Count("openbank.ledger."+instance.tenant+".transfer.committed", committedTransfers, nil, 1)
+	instance.client.Count("openbank.ledger."+instance.tenant+".transaction.rollbacked", rollbackedTransactions, nil, 1)
+	instance.client.Count("openbank.ledger."+instance.tenant+".transfer.rollbacked", rollbackedTransfers, nil, 1)
 }

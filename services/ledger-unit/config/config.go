@@ -44,6 +44,6 @@ func LoadConfig() Configuration {
 		RootStorage:                      envString("LEDGER_STORAGE", "/data") + "/" + "t_" + envString("LEDGER_TENANT", ""),
 		LogLevel:                         strings.ToUpper(envString("LEDGER_LOG_LEVEL", "INFO")),
 		TransactionIntegrityScanInterval: envDuration("LEDGER_TRANSACTION_INTEGRITY_SCANINTERVAL", 5*time.Minute),
-		MetricsStastdEndpoint: envString("LEDGER_STATSD_ENDPOINT", "127.0.0.1:8125"),
+		MetricsStastdEndpoint:            envString("LEDGER_STATSD_ENDPOINT", "127.0.0.1:8125"),
 	}
 }

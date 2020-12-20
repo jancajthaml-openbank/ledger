@@ -1,6 +1,7 @@
 features/install.feature
 features/configuration.feature
 features/management.feature
+features/metrics.feature
 features/journal.feature
 features/messaging.feature
 features/api.feature

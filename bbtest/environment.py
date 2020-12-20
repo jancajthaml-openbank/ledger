@@ -5,6 +5,7 @@ import os
 from helpers.unit import UnitHelper
 from helpers.zmq import ZMQHelper
 from helpers.vault import VaultHelper
+from helpers.statsd import StatsdHelper
 
 
 def after_feature(context, feature):
@@ -15,6 +16,8 @@ def before_all(context):
   context.unit = UnitHelper(context)
   context.zmq = ZMQHelper(context)
   context.vault = VaultHelper(context)
+  context.statsd = StatsdHelper()
+  context.statsd.start()
   context.zmq.start()
   context.unit.configure()
   context.unit.download()
@@ -23,3 +26,4 @@ def before_all(context):
 def after_all(context):
   context.unit.teardown()
   context.zmq.stop()
+  context.statsd.stop()
