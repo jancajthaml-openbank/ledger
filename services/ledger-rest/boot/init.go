@@ -21,7 +21,6 @@ import (
 	"github.com/jancajthaml-openbank/ledger-rest/actor"
 	"github.com/jancajthaml-openbank/ledger-rest/api"
 	"github.com/jancajthaml-openbank/ledger-rest/config"
-	"github.com/jancajthaml-openbank/ledger-rest/metrics"
 	"github.com/jancajthaml-openbank/ledger-rest/support/concurrent"
 	"github.com/jancajthaml-openbank/ledger-rest/support/logging"
 	"github.com/jancajthaml-openbank/ledger-rest/system"
@@ -62,14 +61,8 @@ func (prog *Program) Setup() {
 		prog.cfg.MinFreeMemory,
 	)
 
-	metricsWorker := metrics.NewMetrics(
-		prog.cfg.MetricsOutput,
-		prog.cfg.MetricsContinuous,
-	)
-
 	actorSystem := actor.NewActorSystem(
 		prog.cfg.LakeHostname,
-		metricsWorker,
 	)
 
 	restWorker := api.NewServer(
@@ -98,12 +91,6 @@ func (prog *Program) Setup() {
 		"memory-monitor",
 		memoryMonitorWorker,
 		time.Second,
-	))
-
-	prog.pool.Register(concurrent.NewScheduledDaemon(
-		"metrics",
-		metricsWorker,
-		prog.cfg.MetricsRefreshRate,
 	))
 
 	prog.pool.Register(concurrent.NewOneShotDaemon(

@@ -17,7 +17,6 @@ package actor
 import (
 	"time"
 
-	"github.com/jancajthaml-openbank/ledger-unit/metrics"
 	"github.com/jancajthaml-openbank/ledger-unit/model"
 	"github.com/jancajthaml-openbank/ledger-unit/persistence"
 
@@ -27,12 +26,11 @@ import (
 // TransactionFinalizer represents journal saturation update subroutine
 type TransactionFinalizer struct {
 	callback func(transaction model.Transaction)
-	metrics  *metrics.Metrics
 	storage  localfs.Storage
 }
 
 // NewTransactionFinalizer returns snapshot updater fascade
-func NewTransactionFinalizer(rootStorage string, metrics *metrics.Metrics, callback func(transaction model.Transaction)) *TransactionFinalizer {
+func NewTransactionFinalizer(rootStorage string, callback func(transaction model.Transaction)) *TransactionFinalizer {
 	storage, err := localfs.NewPlaintextStorage(rootStorage)
 	if err != nil {
 		log.Error().Msgf("Failed to ensure storage %+v", err)
@@ -40,7 +38,6 @@ func NewTransactionFinalizer(rootStorage string, metrics *metrics.Metrics, callb
 	}
 	return &TransactionFinalizer{
 		callback: callback,
-		metrics:  metrics,
 		storage:  storage,
 	}
 }
@@ -107,9 +104,7 @@ func (scan *TransactionFinalizer) Work() {
 	if scan == nil {
 		return
 	}
-	scan.metrics.TimeFinalizeTransactions(func() {
-		scan.finalizeStaleTransactions()
-	})
+	scan.finalizeStaleTransactions()
 }
 
 // Cancel does nothing

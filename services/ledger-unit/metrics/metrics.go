@@ -15,104 +15,112 @@
 package metrics
 
 import (
-	localfs "github.com/jancajthaml-openbank/local-fs"
-	metrics "github.com/rcrowley/go-metrics"
+	"sync/atomic"
+
+	"github.com/DataDog/datadog-go/statsd"
 )
 
-// Metrics holds metrics counters
-type Metrics struct {
-	storage                         localfs.Storage
-	tenant                          string
-	continuous                      bool
-	promisedTransactions            metrics.Counter
-	promisedTransfers               metrics.Counter
-	committedTransactions           metrics.Counter
-	committedTransfers              metrics.Counter
-	rollbackedTransactions          metrics.Counter
-	rollbackedTransfers             metrics.Counter
-	transactionFinalizerCronLatency metrics.Timer
+type Metrics interface {
+	TransactionPromised(transfers int)
+	TransactionCommitted(transfers int)
+	TransactionRollbacked(transfers int)
+}
+
+type metrics struct {
+	client *statsd.Client
+	promisedTransactions            int64
+	promisedTransfers               int64
+	committedTransactions           int64
+	committedTransfers              int64
+	rollbackedTransactions          int64
+	rollbackedTransfers             int64
 }
 
 // NewMetrics returns blank metrics holder
-func NewMetrics(output string, continuous bool, tenant string) *Metrics {
-	storage, err := localfs.NewPlaintextStorage(output)
+func NewMetrics(endpoint string) *metrics {
+	client, err := statsd.New(endpoint)
 	if err != nil {
-		log.Error().Msgf("Failed to ensure storage %+v", err)
+		log.Error().Msgf("Failed to ensure statsd client %+v", err)
 		return nil
 	}
-	return &Metrics{
-		continuous:                      continuous,
-		storage:                         storage,
-		tenant:                          tenant,
-		promisedTransactions:            metrics.NewCounter(),
-		promisedTransfers:               metrics.NewCounter(),
-		committedTransactions:           metrics.NewCounter(),
-		committedTransfers:              metrics.NewCounter(),
-		rollbackedTransactions:          metrics.NewCounter(),
-		rollbackedTransfers:             metrics.NewCounter(),
-		transactionFinalizerCronLatency: metrics.NewTimer(),
+	return &metrics{
+		client: client,
+		promisedTransactions:   int64(0),
+		promisedTransfers:   int64(0),
+		committedTransactions:   int64(0),
+		committedTransfers:   int64(0),
+		rollbackedTransactions:   int64(0),
+		rollbackedTransfers:   int64(0),
 	}
-}
-
-// TimeFinalizeTransactions measures time of finalizeStaleTransactions function run
-func (metrics *Metrics) TimeFinalizeTransactions(f func()) {
-	if metrics == nil {
-		f()
-		return
-	}
-	metrics.transactionFinalizerCronLatency.Time(f)
 }
 
 // TransactionPromised increments transactions promised by one
-func (metrics *Metrics) TransactionPromised(transfers int) {
-	if metrics == nil {
+func (instance *metrics) TransactionPromised(transfers int) {
+	if instance == nil {
 		return
 	}
-	metrics.promisedTransactions.Inc(1)
-	metrics.promisedTransfers.Inc(int64(transfers))
+	atomic.AddInt64(&(instance.promisedTransactions), 1)
+	atomic.AddInt64(&(instance.promisedTransfers), int64(transfers))
 }
 
 // TransactionCommitted increments transactions committed by one
-func (metrics *Metrics) TransactionCommitted(transfers int) {
-	if metrics == nil {
+func (instance *metrics) TransactionCommitted(transfers int) {
+	if instance == nil {
 		return
 	}
-	metrics.committedTransactions.Inc(1)
-	metrics.committedTransfers.Inc(int64(transfers))
+	atomic.AddInt64(&(instance.committedTransactions), 1)
+	atomic.AddInt64(&(instance.committedTransfers), int64(transfers))
 }
 
 // TransactionRollbacked increments transactions rollbacked by one
-func (metrics *Metrics) TransactionRollbacked(transfers int) {
-	if metrics == nil {
+func (instance *metrics) TransactionRollbacked(transfers int) {
+	if instance == nil {
 		return
 	}
-	metrics.rollbackedTransactions.Inc(1)
-	metrics.rollbackedTransfers.Inc(int64(transfers))
+	atomic.AddInt64(&(instance.rollbackedTransactions), 1)
+	atomic.AddInt64(&(instance.rollbackedTransfers), int64(transfers))
 }
 
-// Setup hydrates metrics from storage
-func (metrics *Metrics) Setup() error {
-	if metrics == nil {
-		return nil
-	}
-	if metrics.continuous {
-		metrics.Hydrate()
-	}
+// Setup does nothing
+func (_ *metrics) Setup() error {
 	return nil
 }
 
 // Done returns always finished
-func (metrics *Metrics) Done() <-chan interface{} {
+func (_ *metrics) Done() <-chan interface{} {
 	done := make(chan interface{})
 	close(done)
 	return done
 }
 
 // Cancel does nothing
-func (metrics *Metrics) Cancel() {
+func (_ *metrics) Cancel() {
 }
 
 // Work represents metrics worker work
-func (metrics *Metrics) Work() {
-	metrics.Persist()
+func (instance *metrics) Work() {
+	if instance == nil {
+		return
+	}
+
+	promisedTransactions := instance.promisedTransactions
+	promisedTransfers := instance.promisedTransfers
+	committedTransactions := instance.committedTransactions
+	committedTransfers := instance.committedTransfers
+	rollbackedTransactions := instance.rollbackedTransactions
+	rollbackedTransfers := instance.rollbackedTransfers
+
+	atomic.AddInt64(&(instance.promisedTransactions), -promisedTransactions)
+	atomic.AddInt64(&(instance.promisedTransfers), -promisedTransfers)
+	atomic.AddInt64(&(instance.committedTransactions), -committedTransactions)
+	atomic.AddInt64(&(instance.committedTransfers), -committedTransfers)
+	atomic.AddInt64(&(instance.rollbackedTransactions), -rollbackedTransactions)
+	atomic.AddInt64(&(instance.rollbackedTransfers), -rollbackedTransfers)
+
+	instance.client.Count("openbank.ledger.transaction.promised", promisedTransactions, nil, 1)
+	instance.client.Count("openbank.ledger.transfer.promised", promisedTransfers, nil, 1)
+	instance.client.Count("openbank.ledger.transaction.committed", committedTransactions, nil, 1)
+	instance.client.Count("openbank.ledger.transfer.committed", committedTransfers, nil, 1)
+	instance.client.Count("openbank.ledger.transaction.rollbacked", rollbackedTransactions, nil, 1)
+	instance.client.Count("openbank.ledger.transfer.rollbacked", rollbackedTransfers, nil, 1)
 }

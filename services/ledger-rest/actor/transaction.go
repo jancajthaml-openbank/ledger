@@ -23,46 +23,44 @@ import (
 
 // CreateTransaction creates new transaction
 func CreateTransaction(sys *System, tenant string, transaction model.Transaction) (result interface{}) {
-	sys.Metrics.TimeCreateTransaction(func() {
-		defer func() {
-			if r := recover(); r != nil {
-				log.Error().Msgf("CreateTransaction recovered in %+v", r)
-				result = nil
-			}
-		}()
-
-		ch := make(chan interface{})
-		defer close(ch)
-
-		envelope := system.NewActor("transaction/"+xid.New().String(), nil)
-		defer sys.UnregisterActor(envelope.Name)
-
-		sys.RegisterActor(envelope, func(state interface{}, context system.Context) {
-			ch <- context.Data
-		})
-
-		sys.SendMessage(
-			CreateTransactionMessage(transaction),
-			system.Coordinates{
-				Region: "LedgerUnit/" + tenant,
-				Name:   envelope.Name,
-			},
-			system.Coordinates{
-				Region: "LedgerRest",
-				Name:   envelope.Name,
-			},
-		)
-
-		select {
-
-		case result = <-ch:
-			return
-
-		case <-time.After(25 * time.Second):
-			log.Warn().Msgf("Create transaction %s/%s timeout", tenant, transaction.IDTransaction)
-			result = new(ReplyTimeout)
-			return
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error().Msgf("CreateTransaction recovered in %+v", r)
+			result = nil
 		}
+	}()
+
+	ch := make(chan interface{})
+	defer close(ch)
+
+	envelope := system.NewActor("transaction/"+xid.New().String(), nil)
+	defer sys.UnregisterActor(envelope.Name)
+
+	sys.RegisterActor(envelope, func(state interface{}, context system.Context) {
+		ch <- context.Data
 	})
+
+	sys.SendMessage(
+		CreateTransactionMessage(transaction),
+		system.Coordinates{
+			Region: "LedgerUnit/" + tenant,
+			Name:   envelope.Name,
+		},
+		system.Coordinates{
+			Region: "LedgerRest",
+			Name:   envelope.Name,
+		},
+	)
+
+	select {
+
+	case result = <-ch:
+		return
+
+	case <-time.After(25 * time.Second):
+		log.Warn().Msgf("Create transaction %s/%s timeout", tenant, transaction.IDTransaction)
+		result = new(ReplyTimeout)
+		return
+	}
 	return
 }

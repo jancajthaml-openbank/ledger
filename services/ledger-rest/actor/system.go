@@ -15,19 +15,16 @@
 package actor
 
 import (
-	"github.com/jancajthaml-openbank/ledger-rest/metrics"
-
 	system "github.com/jancajthaml-openbank/actor-system"
 )
 
 // System represents actor system subroutine
 type System struct {
 	system.System
-	Metrics *metrics.Metrics
 }
 
 // NewActorSystem returns actor system fascade
-func NewActorSystem(endpoint string, metrics *metrics.Metrics) *System {
+func NewActorSystem(endpoint string) *System {
 	sys, err := system.New("LedgerRest", endpoint)
 	if err != nil {
 		log.Error().Msgf("Failed to register actor system %+v", err)
@@ -35,7 +32,6 @@ func NewActorSystem(endpoint string, metrics *metrics.Metrics) *System {
 	}
 	result := new(System)
 	result.System = sys
-	result.Metrics = metrics
 	result.System.RegisterOnMessage(ProcessMessage(result))
 	return result
 }
