@@ -122,7 +122,7 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 			log.Debug().Msgf("%s/Promise Bounced for %v", state.Transaction.IDTransaction, accountRetry)
 
 			for account, task := range state.Negotiation {
-				if accountRetry != account {
+				if !(accountRetry.Tenant == account.Tenant && accountRetry.Name != account.Name) {
 					continue
 				}
 				s.SendMessage(
