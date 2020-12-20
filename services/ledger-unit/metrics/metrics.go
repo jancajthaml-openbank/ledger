@@ -39,7 +39,7 @@ type metrics struct {
 
 // NewMetrics returns blank metrics holder
 func NewMetrics(tenant string, endpoint string) *metrics {
-	client, err := statsd.New(endpoint)
+	client, err := statsd.New(endpoint, statsd.WithClientSideAggregation(), statsd.WithoutTelemetry())
 	if err != nil {
 		log.Error().Msgf("Failed to ensure statsd client %+v", err)
 		return nil
@@ -119,10 +119,12 @@ func (instance *metrics) Work() {
 	atomic.AddInt64(&(instance.rollbackedTransactions), -rollbackedTransactions)
 	atomic.AddInt64(&(instance.rollbackedTransfers), -rollbackedTransfers)
 
-	instance.client.Count("openbank.ledger."+instance.tenant+".transaction.promised", promisedTransactions, nil, 1)
-	instance.client.Count("openbank.ledger."+instance.tenant+".transfer.promised", promisedTransfers, nil, 1)
-	instance.client.Count("openbank.ledger."+instance.tenant+".transaction.committed", committedTransactions, nil, 1)
-	instance.client.Count("openbank.ledger."+instance.tenant+".transfer.committed", committedTransfers, nil, 1)
-	instance.client.Count("openbank.ledger."+instance.tenant+".transaction.rollbacked", rollbackedTransactions, nil, 1)
-	instance.client.Count("openbank.ledger."+instance.tenant+".transfer.rollbacked", rollbackedTransfers, nil, 1)
+	tags := []string{"tenant:" +instance.tenant}
+
+	instance.client.Count("openbank.ledger.transaction.promised", promisedTransactions, tags, 1)
+	instance.client.Count("openbank.ledger.transfer.promised", promisedTransfers, tags, 1)
+	instance.client.Count("openbank.ledger.transaction.committed", committedTransactions, tags, 1)
+	instance.client.Count("openbank.ledger.transfer.committed", committedTransfers, tags, 1)
+	instance.client.Count("openbank.ledger.transaction.rollbacked", rollbackedTransactions, tags, 1)
+	instance.client.Count("openbank.ledger.transfer.rollbacked", rollbackedTransfers, tags, 1)
 }

@@ -14,7 +14,7 @@ def step_impl(context):
   def wait_for_metrics_update():
     actual = context.statsd.get()
     for row in context.table:
-      key = row['key'] + '.' + row['type']
+      key = row['key'] + '.' + row['type'] + '#' + row['tags']
       assert key in actual, 'key {} not found in metrics'.format(key)
       if not len(row['value']):
         continue

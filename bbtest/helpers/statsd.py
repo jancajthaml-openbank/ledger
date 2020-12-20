@@ -43,22 +43,20 @@ class StatsdHelper(threading.Thread):
       mtype = rest.pop(0)
 
       if (mtype == 'ms'):
-        key = key + '.timer'
+        key = key + '.timer' + ','.join(rest)
         if not key in self.__backlog:
           self.__backlog[key] = 0
         self.__backlog[key] = int(value)
       elif (mtype == 'g'):
-        key = key + '.gauce'
+        key = key + '.gauce' + ','.join(rest)
         if not key in self.__backlog:
           self.__backlog[key] = 0
         self.__backlog[key] = int(value)
       elif (mtype == 'c'):
-        key = key + '.count'
+        key = key + '.count' + ','.join(rest)
         if not key in self.__backlog:
           self.__backlog[key] = 0
         self.__backlog[key] += int(value)
-      else:
-        continue
 
   def stop(self):
     if self.__cancel.is_set():
