@@ -44,7 +44,7 @@ func NewTransactionState() TransactionState {
 // Mark update negotiation state based on value
 func (state *TransactionState) Mark(value interface{}) *model.Account {
 	if state == nil {
-		return
+		return nil
 	}
 
 	switch msg := value.(type) {
