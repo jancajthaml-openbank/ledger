@@ -42,7 +42,7 @@ func NewTransactionState() TransactionState {
 }
 
 // Mark update negotiation state based on value
-func (state *TransactionState) Mark(value interface{}) {
+func (state *TransactionState) Mark(value interface{}) *model.Account {
 	if state == nil {
 		return
 	}
@@ -54,42 +54,58 @@ func (state *TransactionState) Mark(value interface{}) {
 			delete(state.WaitFor, msg.Account)
 			state.OkResponses++
 		}
-
-	case CommitWasAccepted:
-		if _, exists := state.WaitFor[msg.Account]; exists {
-			delete(state.WaitFor, msg.Account)
-			state.OkResponses++
-		}
-
-	case RollbackWasAccepted:
-		if _, exists := state.WaitFor[msg.Account]; exists {
-			delete(state.WaitFor, msg.Account)
-			state.OkResponses++
-		}
+		return nil
 
 	case PromiseWasRejected:
 		if _, exists := state.WaitFor[msg.Account]; exists {
 			delete(state.WaitFor, msg.Account)
 			state.FailedResponses++
 		}
+		return nil
+
+	case PromiseWasBounced:
+		if _, exists := state.WaitFor[msg.Account]; exists {
+			return &msg.Amount
+		}
+		return nil
+
+	case CommitWasAccepted:
+		if _, exists := state.WaitFor[msg.Account]; exists {
+			delete(state.WaitFor, msg.Account)
+			state.OkResponses++
+		}
+		return nil
 
 	case CommitWasRejected:
 		if _, exists := state.WaitFor[msg.Account]; exists {
 			delete(state.WaitFor, msg.Account)
 			state.FailedResponses++
 		}
+		return nil
+
+	case RollbackWasAccepted:
+		if _, exists := state.WaitFor[msg.Account]; exists {
+			delete(state.WaitFor, msg.Account)
+			state.OkResponses++
+		}
+		return nil
 
 	case RollbackWasRejected:
 		if _, exists := state.WaitFor[msg.Account]; exists {
 			delete(state.WaitFor, msg.Account)
 			state.FailedResponses++
 		}
+		return nil
 
 	case FatalErrored:
 		if _, exists := state.WaitFor[msg.Account]; exists {
 			delete(state.WaitFor, msg.Account)
 			state.FailedResponses++
 		}
+		return nil
+
+	default:
+		return nil
 
 	}
 }
