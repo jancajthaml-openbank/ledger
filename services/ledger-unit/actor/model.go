@@ -28,6 +28,11 @@ type PromiseWasAccepted struct {
 	Account model.Account
 }
 
+// PromiseWasBounced is inbound message that promise was bounced
+type PromiseWasBounced struct {
+	Account model.Account
+}
+
 // PromiseWasRejected is inbound message that promise was rejected
 type PromiseWasRejected struct {
 	Account model.Account

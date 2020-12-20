@@ -115,7 +115,28 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 func PromisingTransaction(s *System) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(TransactionState)
-		state.Mark(context.Data)
+
+		accountRetry := state.Mark(context.Data)
+
+		if accountRetry != nil {
+			log.Debug().Msgf("%s/Promise Bounced for %v", state.Transaction.IDTransaction, accountRetry)
+
+			for account, task := range state.Negotiation {
+				if !(accountRetry.Tenant == account.Tenant && accountRetry.Name != account.Name) {
+					continue
+				}
+				s.SendMessage(
+					CommitOrder+" "+task,
+					system.Coordinates{
+						Region: "VaultUnit/" + account.Tenant,
+						Name:   account.Name,
+					},
+					context.Receiver,
+				)
+			}
+			return
+		}
+
 		if !state.IsNegotiationFinished() {
 			context.Self.Become(state, PromisingTransaction(s))
 			return
