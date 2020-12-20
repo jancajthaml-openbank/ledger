@@ -65,7 +65,7 @@ func (state *TransactionState) Mark(value interface{}) *model.Account {
 
 	case PromiseWasBounced:
 		if _, exists := state.WaitFor[msg.Account]; exists {
-			return &msg.Amount
+			return &msg.Account
 		}
 		return nil
 
