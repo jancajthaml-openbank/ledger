@@ -119,7 +119,7 @@ func (instance *metrics) Work() {
 	atomic.AddInt64(&(instance.rollbackedTransactions), -rollbackedTransactions)
 	atomic.AddInt64(&(instance.rollbackedTransfers), -rollbackedTransfers)
 
-	tags := []string{"tenant:" +instance.tenant}
+	tags := []string{"tenant:" + instance.tenant}
 
 	instance.client.Count("openbank.ledger.transaction.promised", promisedTransactions, tags, 1)
 	instance.client.Count("openbank.ledger.transfer.promised", promisedTransfers, tags, 1)
