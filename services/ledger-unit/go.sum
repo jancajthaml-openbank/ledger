@@ -3,8 +3,8 @@ github.com/DataDog/datadog-go v4.2.0+incompatible/go.mod h1:LButxg5PwREeZtORoXG3
 github.com/coreos/go-systemd v0.0.0-20190321100706-95778dfbb74e/go.mod h1:F5haX7vjVVG0kc13fIWeqUViNPyEJxv/OmvnBo0Yme4=
 github.com/davecgh/go-spew v1.1.0 h1:ZDRjVQ15GmhC3fiQ8ni8+OwkZQO4DARzQgrnXU1Liz8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/jancajthaml-openbank/actor-system v1.3.0 h1:VNy0R+TZoaCJ3RNRXvV36iDtomvfLqV6UYpNz1Pcd60=
-github.com/jancajthaml-openbank/actor-system v1.3.0/go.mod h1:oK/rjws+M9WgUs19dvQkOXluhbRe26LstR6GanIriNU=
+github.com/jancajthaml-openbank/actor-system v1.3.1 h1:2cBo8aYIXMq4PpumPobdkfi9CJhA6g0xN519Z3YaJ2U=
+github.com/jancajthaml-openbank/actor-system v1.3.1/go.mod h1:oK/rjws+M9WgUs19dvQkOXluhbRe26LstR6GanIriNU=
 github.com/jancajthaml-openbank/local-fs v1.2.0 h1:E4QI82ag6P7hyeblGIbJGgRxeJHnHlHoN5va1LojUfo=
 github.com/jancajthaml-openbank/local-fs v1.2.0/go.mod h1:1NbSlgcIJspEkr5PqtPZp7iixDUtHbt59jBtc+PNsGE=
 github.com/pebbe/zmq4 v1.2.1 h1:jrXQW3mD8Si2mcSY/8VBs2nNkK/sKCOEM0rHAfxyc8c=
