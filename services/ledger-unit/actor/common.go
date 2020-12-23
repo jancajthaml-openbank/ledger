@@ -20,7 +20,6 @@ import (
 	"github.com/jancajthaml-openbank/ledger-unit/model"
 
 	system "github.com/jancajthaml-openbank/actor-system"
-	money "gopkg.in/inf.v0"
 )
 
 func parseTransfer(chunk string) (*model.Transfer, error) {
@@ -43,8 +42,8 @@ func parseTransfer(chunk string) (*model.Transfer, error) {
 		parts[idx] = chunk[start:]
 	}
 
-	amount, ok := new(money.Dec).SetString(parts[5])
-	if !ok {
+	amount := new(model.Dec)
+	if !amount.SetString(parts[5]) {
 		return nil, fmt.Errorf("invalid amount %s", parts[5])
 	}
 

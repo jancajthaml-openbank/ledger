@@ -14,10 +14,6 @@
 
 package model
 
-import (
-	money "gopkg.in/inf.v0"
-)
-
 type negotiatonChunk struct {
 	Currency string
 	Key      Account
@@ -80,7 +76,7 @@ func (entity *Transaction) PrepareRemoteNegotiation() map[Account]string {
 
 	var result = make(map[Account]string)
 
-	chunks := make(map[negotiatonChunk][]*money.Dec)
+	chunks := make(map[negotiatonChunk][]*Dec)
 
 	for _, transfer := range entity.Transfers {
 		keyDebit := negotiatonChunk{
@@ -93,15 +89,18 @@ func (entity *Transaction) PrepareRemoteNegotiation() map[Account]string {
 			Key:      transfer.Credit,
 		}
 
+		debitAmount := new(Dec)
+		debitAmount.Sub(transfer.Amount)
+
 		chunks[keyCredit] = append(chunks[keyCredit], transfer.Amount)
-		chunks[keyDebit] = append(chunks[keyDebit], new(money.Dec).Neg(transfer.Amount))
+		chunks[keyDebit] = append(chunks[keyDebit], debitAmount)
 	}
 
 	for chunk, amounts := range chunks {
-		var acc *money.Dec = new(money.Dec)
+		var acc *Dec = new(Dec)
 
 		for _, amount := range amounts {
-			acc = new(money.Dec).Add(acc, amount)
+			acc.Add(amount)
 		}
 
 		result[chunk.Key] = entity.IDTransaction + " " + acc.String() + " " + chunk.Currency
