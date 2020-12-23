@@ -17,8 +17,6 @@ package model
 import (
 	"bytes"
 	"strings"
-
-	money "gopkg.in/inf.v0"
 )
 
 // Transfer represents ingress/egress message of transfer
@@ -27,7 +25,7 @@ type Transfer struct {
 	Credit     Account
 	Debit      Account
 	ValueDate  string
-	Amount     *money.Dec
+	Amount     *Dec
 	Currency   string
 }
 
@@ -98,7 +96,8 @@ parse:
 	if len(transfer) != 8 {
 		return
 	}
-	amount, _ := new(money.Dec).SetString(transfer[6])
+	amount := new(Dec)
+	amount.SetString(transfer[6])
 
 	entity.Transfers = append(entity.Transfers, Transfer{
 		IDTransfer: transfer[0],

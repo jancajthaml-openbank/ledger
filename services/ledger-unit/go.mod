@@ -8,6 +8,5 @@ require (
 	github.com/jancajthaml-openbank/local-fs v1.2.0
 	github.com/rs/xid v1.2.1
 	github.com/rs/zerolog v1.20.0
-	github.com/stretchr/testify v1.6.1 // indirect
-	gopkg.in/inf.v0 v0.9.1
+	github.com/stretchr/testify v1.6.1
 )
