@@ -216,7 +216,7 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Update FULL_VERSION + SHORT_VERSION
+          name: Update VERSION + META
           command: |
             if [ -z ${CIRCLE_TAG} ] ; then
               tags=$(git tag --sort=-v:refname | head -1)
@@ -226,17 +226,17 @@ jobs:
                 VERSION=${tags}
               fi
               META=$(echo -e ${CIRCLE_BRANCH} | sed 's:.*/::')
-              echo -e "${VERSION#v}" > /mnt/ramdisk/SHORT_VERSION
-              echo -e "${VERSION}-${META}" > /mnt/ramdisk/FULL_VERSION
+              echo -e "${VERSION#v}" > /mnt/ramdisk/VERSION
+              echo -e "${META}" > /mnt/ramdisk/META
             else
-              echo -e "${CIRCLE_TAG#v}" > /mnt/ramdisk/SHORT_VERSION
-              echo -e "${CIRCLE_TAG}-main" > /mnt/ramdisk/FULL_VERSION
+              echo -e "${CIRCLE_TAG#v}" > /mnt/ramdisk/VERSION
+              echo -e "main" > /mnt/ramdisk/META
             fi
       - save_cache:
           key: versions-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
-            - /mnt/ramdisk/SHORT_VERSION
-            - /mnt/ramdisk/FULL_VERSION
+            - /mnt/ramdisk/VERSION
+            - /mnt/ramdisk/META
 
   # -------------------------------------------------------------------------- #
 
@@ -397,7 +397,7 @@ jobs:
       - run:
           name: Package for debian
           command: |
-            VERSION=$(cat /mnt/ramdisk/SHORT_VERSION)
+            VERSION=$(cat /mnt/ramdisk/VERSION)
             /mnt/ramdisk/dev/lifecycle/debian \
               --arch amd64 \
               --pkg ledger \
@@ -424,7 +424,7 @@ jobs:
       - run:
           name: Package for debian
           command: |
-            VERSION=$(cat /mnt/ramdisk/SHORT_VERSION)
+            VERSION=$(cat /mnt/ramdisk/VERSION)
             /mnt/ramdisk/dev/lifecycle/debian \
               --arch armhf \
               --pkg ledger \
@@ -451,7 +451,7 @@ jobs:
       - run:
           name: Package for debian
           command: |
-            VERSION=$(cat /mnt/ramdisk/SHORT_VERSION)
+            VERSION=$(cat /mnt/ramdisk/VERSION)
             /mnt/ramdisk/dev/lifecycle/debian \
               --arch arm64 \
               --pkg ledger \
@@ -491,26 +491,27 @@ jobs:
       - run:
           name: Package for docker
           command: |
-            FULL_VERSION=$(cat /mnt/ramdisk/FULL_VERSION)
-            SHORT_VERSION=$(cat /mnt/ramdisk/SHORT_VERSION)
+            META=$(cat /mnt/ramdisk/META)
+            VERSION=$(cat /mnt/ramdisk/VERSION)
 
-            docker build -t docker.io/openbank/ledger:${FULL_VERSION} .
-            docker build -t docker.pkg.github.com/jancajthaml-openbank/ledger/ledger:${SHORT_VERSION} .
+            docker build -t docker.io/openbank/ledger:${VERSION}-${META} .
+            docker build -t docker.pkg.github.com/jancajthaml-openbank/ledger/ledger:${VERSION} .
       - run:
           name: Publish to docker.io
           command: |
             echo ${DOCKER_PASSWORD} \
               | docker login -u ${DOCKER_USER} --password-stdin
-            VERSION=$(cat /mnt/ramdisk/FULL_VERSION)
+            META=$(cat /mnt/ramdisk/META)
+            VERSION=$(cat /mnt/ramdisk/VERSION)
             docker push \
-              docker.io/openbank/ledger:${VERSION}
+              docker.io/openbank/ledger:${VERSION}-${META}
             rm -f /root/.docker/config.json
       - run:
           name: Publish to docker.pkg.github.com
           command: |
             echo ${GITHUB_RELEASE_TOKEN} \
               | docker login docker.pkg.github.com -u jancajthaml --password-stdin
-            VERSION=$(cat /mnt/ramdisk/SHORT_VERSION)
+            VERSION=$(cat /mnt/ramdisk/VERSION)
             docker push \
               docker.pkg.github.com/jancajthaml-openbank/ledger/ledger:${VERSION}
             rm -f /root/.docker/config.json
@@ -524,7 +525,7 @@ jobs:
       - checkout
       - run: docker pull docker.io/jancajthaml/bbtest:amd64
       - run:
-          name: Update FULL_VERSION + SHORT_VERSION
+          name: Update VERSION + META
           command: |
             if [ -z ${CIRCLE_TAG} ] ; then
               tags=$(git tag --sort=-v:refname | head -1)
@@ -534,17 +535,17 @@ jobs:
                 VERSION=${tags}
               fi
               META=$(echo -e ${CIRCLE_BRANCH} | sed 's:.*/::')
-              echo -e "${VERSION#v}" > /home/circleci/project/SHORT_VERSION
-              echo -e "${VERSION}-${META}" > /home/circleci/project/FULL_VERSION
+              echo -e "${VERSION#v}" > /home/circleci/project/VERSION
+              echo -e "${META}" > /home/circleci/project/META
             else
-              echo -e "${CIRCLE_TAG#v}" > /home/circleci/project/SHORT_VERSION
-              echo -e "${CIRCLE_TAG}-main" > /home/circleci/project/FULL_VERSION
+              echo -e "${CIRCLE_TAG#v}" > /home/circleci/project/VERSION
+              echo -e "main" > /home/circleci/project/META
             fi
       - run:
           name: Run blackbox tests
           command: |
-            export IMAGE_VERSION=$(cat /home/circleci/project/FULL_VERSION)
-            export UNIT_VERSION=$(cat /home/circleci/project/SHORT_VERSION)
+            export VERSION=$(cat /home/circleci/project/VERSION)
+            export META=$(cat /home/circleci/project/META)
 
             docker-compose up -d bbtest
             docker exec -t $(docker-compose ps -q bbtest) python3 /opt/app/bbtest/main.py
