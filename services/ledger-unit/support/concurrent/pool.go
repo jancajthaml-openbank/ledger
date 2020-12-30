@@ -23,6 +23,7 @@ import (
 type DaemonPool struct {
 	name    string
 	daemons []Daemon
+	done chan interface{}
 }
 
 // NewDaemonPool returns new pool
@@ -30,6 +31,7 @@ func NewDaemonPool(name string) DaemonPool {
 	return DaemonPool{
 		name:    name,
 		daemons: make([]Daemon, 0),
+		done:    make(chan interface{}),
 	}
 }
 
@@ -42,7 +44,7 @@ func (pool *DaemonPool) Register(daemon Daemon) {
 }
 
 // Done aggregates all done signals of daemons into one
-func (pool DaemonPool) Done() <-chan interface{} {
+func (pool *DaemonPool) Done() <-chan interface{} {
 	out := make(chan interface{})
 	var wg sync.WaitGroup
 	wg.Add(len(pool.daemons))
@@ -54,13 +56,17 @@ func (pool DaemonPool) Done() <-chan interface{} {
 	}
 	go func() {
 		wg.Wait()
+		<-pool.done
 		close(out)
 	}()
 	return out
 }
 
 // Stop stops all daemons inside pool
-func (pool DaemonPool) Stop() {
+func (pool *DaemonPool) Stop() {
+	if pool == nil {
+		return
+	}
 	var wg sync.WaitGroup
 	wg.Add(len(pool.daemons))
 	for idx := range pool.daemons {
@@ -73,14 +79,19 @@ func (pool DaemonPool) Stop() {
 }
 
 // Start starts all daemon in order they were registered
-func (pool DaemonPool) Start(parentContext context.Context, cancelFunction context.CancelFunc) {
+func (pool *DaemonPool) Start(parentContext context.Context, cancelFunction context.CancelFunc) {
 	defer cancelFunction()
+	if pool == nil {
+		return
+	}
 	go func() {
 		<-parentContext.Done()
 		pool.Stop()
 	}()
 
 	log.Info().Msgf("Start pool %s", pool.name)
+	defer log.Info().Msgf("Stop pool %s", pool.name)
+
 	var wg sync.WaitGroup
 	wg.Add(len(pool.daemons))
 	for idx := range pool.daemons {
@@ -90,5 +101,5 @@ func (pool DaemonPool) Start(parentContext context.Context, cancelFunction conte
 		}(pool.daemons[idx])
 	}
 	wg.Wait()
-	log.Info().Msgf("Stop pool %s", pool.name)
+	close(pool.done)
 }

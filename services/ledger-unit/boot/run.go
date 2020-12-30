@@ -29,6 +29,7 @@ func (prog Program) Stop() {
 
 // Start starts all daemons and blocks until INT or TERM signal is received
 func (prog Program) Start(parentContext context.Context, cancelFunction context.CancelFunc) {
+	log.Info().Msg("Program Starting")
 	go prog.pool.Start(parentContext, cancelFunction)
 	host.NotifyServiceReady()
 	log.Info().Msg("Program Started")
@@ -38,6 +39,7 @@ func (prog Program) Start(parentContext context.Context, cancelFunction context.
 	if err := host.NotifyServiceStopping(); err != nil {
 		log.Error().Msg(err.Error())
 	}
-	cancelFunction()
+	prog.pool.Stop()
 	<-prog.pool.Done()
+	log.Info().Msg("Program Stopped")
 }
