@@ -16,60 +16,87 @@ package concurrent
 
 import (
 	"context"
+	"sync"
 	"time"
 )
 
 // ScheduledDaemon represent work happening repeatedly in given interval
 type ScheduledDaemon struct {
 	Worker
-	name     string
-	interval time.Duration
+	name     	 string
+	interval 	 time.Duration
+	ticker 		 *time.Ticker
+	cancelOnce sync.Once
+	done 			 chan interface{}
 }
 
 // NewScheduledDaemon returns new daemon with given name for periodic work
 func NewScheduledDaemon(name string, worker Worker, interval time.Duration) Daemon {
-	return ScheduledDaemon{
-		Worker:   worker,
-		name:     name,
-		interval: interval,
+	return &ScheduledDaemon{
+		Worker:     worker,
+		name:       name,
+		interval:   interval,
+		ticker:     time.NewTicker(interval),
+		cancelOnce: sync.Once{},
+		done: 		  make(chan interface{}),
 	}
 }
 
 // Done returns signal when worker has finished work
-func (daemon ScheduledDaemon) Done() <-chan interface{} {
-	return daemon.Worker.Done()
+func (daemon *ScheduledDaemon) Done() <-chan interface{} {
+	if daemon == nil {
+		done := make(chan interface{})
+		close(done)
+		return done
+	}
+	<-daemon.Worker.Done()
+	return daemon.done
 }
 
 // Setup prepares worker for work
-func (daemon ScheduledDaemon) Setup() error {
+func (daemon *ScheduledDaemon) Setup() error {
+	if daemon == nil {
+		return nil
+	}
 	return daemon.Worker.Setup()
 }
 
 // Stop cancels worker's work
-func (daemon ScheduledDaemon) Stop() {
-	daemon.Worker.Cancel()
+func (daemon *ScheduledDaemon) Stop() {
+	if daemon == nil {
+		return
+	}
+	daemon.cancelOnce.Do(func() {
+		daemon.ticker.Stop()
+		daemon.Worker.Cancel()
+		close(daemon.done)
+	})
 }
 
 // Start starts worker's work in given interval and on termination
-func (daemon ScheduledDaemon) Start(parentContext context.Context, cancelFunction context.CancelFunc) {
+func (daemon *ScheduledDaemon) Start(parentContext context.Context, cancelFunction context.CancelFunc) {
 	defer cancelFunction()
-	ticker := time.NewTicker(daemon.interval)
-	defer ticker.Stop()
+	if daemon == nil {
+		return
+	}
 	err := daemon.Setup()
 	if err != nil {
 		log.Error().Msgf("Setup daemon %s error %+v", daemon.name, err.Error())
 		return
 	}
+
 	log.Info().Msgf("Start daemon %s run each %v", daemon.name, daemon.interval)
+	defer log.Info().Msgf("Stop daemon %s", daemon.name)
+
 	for {
 		select {
 		case <-parentContext.Done():
-			break
-		case <-ticker.C:
+			daemon.Stop()
+			return
+		case <-daemon.ticker.C:
 			daemon.Work()
+		case <-daemon.Done():
+			return
 		}
 	}
-	daemon.Work()
-	daemon.Stop()
-	log.Info().Msgf("Stop daemon %s", daemon.name)
 }
