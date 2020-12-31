@@ -88,8 +88,6 @@ def unit_not_running(context, unit):
 def operation_unit(context, operation, unit):
   (code, result, error) = execute(["systemctl", operation, unit])
   assert code == 0, str(result) + ' ' + str(error)
-  #if operation == 'restart':
-    #unit_running(context, unit)
 
 
 @given('{unit} is configured with')
@@ -98,13 +96,6 @@ def unit_is_configured(context, unit):
   for row in context.table:
     params[row['property']] = row['value'].strip()
   context.unit.configure(params)
-
-  #(code, result, error) = execute(["systemctl", "list-units", "--no-legend", "--state=active"])
-  #result = [item.split(' ')[0].strip() for item in result.split(os.linesep)]
-  #result = [item for item in result if ("{}-".format(unit) in item and ".service" in item)]
-
-  #for unit in result:
-    #operation_unit(context, 'restart', unit)
 
 
 @then('tenant {tenant} is offboarded')
