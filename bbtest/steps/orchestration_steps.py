@@ -16,8 +16,10 @@ def step_impl(context, package, operation):
     assert os.path.isfile('/etc/ledger/conf.d/init.conf') is True
     execute(['systemctl', 'start', package])
   elif operation == 'uninstalled':
-    (code, result, error) = execute(["apt-get", "-y", "purge", package])
+    (code, result, error) = execute(["apt-get", "-y", "remove", package])
     assert code == 0, "unable to uninstall with code {} and {} {}".format(code, result, error)
+    (code, result, error) = execute(["apt-get", "-y", "purge", package])
+    assert code == 0, "unable to purge with code {} and {} {}".format(code, result, error)
     assert os.path.isfile('/etc/ledger/conf.d/init.conf') is False, 'config file still exists'
   else:
     assert False, 'unknown operation {}'.format(operation)
@@ -62,7 +64,7 @@ def unit_running(context, unit):
   def wait_for_unit_state_change():
     (code, result, error) = execute(["systemctl", "show", "-p", "SubState", unit])
     assert code == 0, str(result) + ' ' + str(error)
-    assert 'SubState=running' in result, result
+    assert 'SubState=running' in result, str(result) + ' ' + str(error)
 
   wait_for_unit_state_change()
   # fixme instead of 500ms fixed sleep try lake handshake
@@ -86,8 +88,8 @@ def unit_not_running(context, unit):
 def operation_unit(context, operation, unit):
   (code, result, error) = execute(["systemctl", operation, unit])
   assert code == 0, str(result) + ' ' + str(error)
-  if operation == 'restart':
-    unit_running(context, unit)
+  #if operation == 'restart':
+    #unit_running(context, unit)
 
 
 @given('{unit} is configured with')
@@ -97,12 +99,12 @@ def unit_is_configured(context, unit):
     params[row['property']] = row['value'].strip()
   context.unit.configure(params)
 
-  (code, result, error) = execute(["systemctl", "list-units", "--no-legend", "--state=active"])
-  result = [item.split(' ')[0].strip() for item in result.split(os.linesep)]
-  result = [item for item in result if ("{}-".format(unit) in item and ".service" in item)]
+  #(code, result, error) = execute(["systemctl", "list-units", "--no-legend", "--state=active"])
+  #result = [item.split(' ')[0].strip() for item in result.split(os.linesep)]
+  #result = [item for item in result if ("{}-".format(unit) in item and ".service" in item)]
 
-  for unit in result:
-    operation_unit(context, 'restart', unit)
+  #for unit in result:
+    #operation_unit(context, 'restart', unit)
 
 
 @then('tenant {tenant} is offboarded')

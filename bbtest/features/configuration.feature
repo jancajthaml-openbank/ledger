@@ -1,10 +1,10 @@
 Feature: Service can be configured
 
   Scenario: configure log level to ERROR
-    Given tenant CONFIGURATION_ERROR is onboarded
-    And   ledger is configured with
+    Given ledger is configured with
       | property  | value |
       | LOG_LEVEL | ERROR |
+    And tenant CONFIGURATION_ERROR is onboarded
 
     Then journalctl of "ledger-unit@CONFIGURATION_ERROR.service" contains following
     """
@@ -13,10 +13,10 @@ Feature: Service can be configured
     And tenant CONFIGURATION_ERROR is offboarded
 
   Scenario: configure log level to DEBUG
-    Given tenant CONFIGURATION_DEBUG is onboarded
-    And   ledger is configured with
+    Given ledger is configured with
       | property  | value |
       | LOG_LEVEL | DEBUG |
+    And tenant CONFIGURATION_DEBUG is onboarded
 
     Then journalctl of "ledger-unit@CONFIGURATION_DEBUG.service" contains following
     """
@@ -25,10 +25,10 @@ Feature: Service can be configured
     And tenant CONFIGURATION_DEBUG is offboarded
 
   Scenario: configure log level to INFO
-    Given tenant CONFIGURATION_INFO is onboarded
-    And   ledger is configured with
+    Given ledger is configured with
       | property  | value |
       | LOG_LEVEL | INFO  |
+    And tenant CONFIGURATION_INFO is onboarded
 
     Then journalctl of "ledger-unit@CONFIGURATION_INFO.service" contains following
     """
@@ -37,10 +37,10 @@ Feature: Service can be configured
     And tenant CONFIGURATION_INFO is offboarded
 
   Scenario: configure log level to INVALID
-    Given tenant CONFIGURATION_INVALID is onboarded
-    And   ledger is configured with
+    Given ledger is configured with
       | property  | value   |
       | LOG_LEVEL | INVALID |
+    And tenant CONFIGURATION_INVALID is onboarded
 
     Then journalctl of "ledger-unit@CONFIGURATION_INVALID.service" contains following
     """
