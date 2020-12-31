@@ -47,5 +47,5 @@ def check_transaction_state(context, tenant, transaction):
     })
 
   for row in context.table:
-    assert row['key'] in actual
-    assert actual[row['key']] == row['value']
+    assert row['key'] in actual, 'key {} not found in {}'.format(row['key'], actual)
+    assert actual[row['key']] == row['value'], 'extected {} got {} instead'.format(row['key'], actual)

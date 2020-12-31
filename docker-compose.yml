@@ -89,11 +89,14 @@ services:
 
   bbtest:
     image: jancajthaml/bbtest:amd64
+    tty: true
     environment:
-      IMAGE_VERSION: ${IMAGE_VERSION:-}
-      UNIT_VERSION: ${UNIT_VERSION:-}
+      IMAGE_VERSION: ${VERSION:-latest}-${META:-main}
+      UNIT_VERSION: ${VERSION:-latest}
       UNIT_ARCH: amd64
       CI: ${CI:-false}
+    tmpfs:
+      - /tmp
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:rw
       - /var/lib/docker/containers:/var/lib/docker/containers:rw
