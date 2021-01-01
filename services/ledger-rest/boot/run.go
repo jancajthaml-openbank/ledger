@@ -33,7 +33,7 @@ func (prog Program) Start(parentContext context.Context, cancelFunction context.
 	go prog.pool.Start(parentContext, cancelFunction)
 	host.NotifyServiceReady()
 	log.Info().Msg("Program Started")
-	signal.Notify(prog.interrupt, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(prog.interrupt, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
 	<-prog.interrupt
 	log.Info().Msg("Program Stopping")
 	if err := host.NotifyServiceStopping(); err != nil {

@@ -5,6 +5,11 @@ from behave import *
 from helpers.eventually import eventually
 
 
+@given('lake is not running')
+def lake_is_not_running(context):
+  context.zmq.silence()
+
+
 @when('lake recieves "{data}"')
 def lake_recieves(context, data):
   context.zmq.send(data)

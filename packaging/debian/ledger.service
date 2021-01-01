@@ -7,6 +7,7 @@ ConditionPathExists=/etc/ledger/conf.d/init.conf
 Type=oneshot
 ExecStart=/bin/echo start ledger namespace
 RemainAfterExit=yes
+KillMode=control-group
 
 [Install]
 WantedBy=multi-user.target

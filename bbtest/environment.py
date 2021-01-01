@@ -10,6 +10,7 @@ from helpers.statsd import StatsdHelper
 
 def after_feature(context, feature):
   context.unit.collect_logs()
+  context.zmq.clear()
 
 
 def before_all(context):
