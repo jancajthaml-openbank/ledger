@@ -2,10 +2,10 @@
 set -e
 
 #DEBHELPER#
-if [ "$1" = remove -o "$1" = purge ] && [ -f /etc/ledger/conf.d/init.conf ] ; then
+if [ "$1" = purge ] && [ -f /etc/ledger/conf.d/init.conf ] ; then
   rm /etc/ledger/conf.d/init.conf
 fi
 
-if [ "$1" = remove -o "$1" = purge ] && [ -d /etc/ledger/secrets ] ; then
+if [ "$1" = purge ] && [ -d /etc/ledger/secrets ] ; then
   find /etc/ledger/secrets -type f -print0 | xargs --no-run-if-empty -0 rm
 fi

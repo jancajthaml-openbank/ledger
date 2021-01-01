@@ -16,6 +16,13 @@ class ZMQHelper(threading.Thread):
     self.backlog = []
     self.context = context
     self.vault_unit_message = re.compile(r'^VaultUnit\/([^\s]{1,100}) LedgerUnit\/([^\s]{1,100}) ([^\s]{1,100}) ([^\s]{1,100}) ([^\s]{1,100}) ([^\s]{1,100}) (-?\d{1,100}\.\d{1,100}|-?\d{1,100}) ([A-Z]{3})$')
+    self.working = True
+
+  def clear(self):
+    self.working = True
+
+  def silence(self):
+    self.working = False
 
   def start(self):
     ctx = zmq.Context.instance()
@@ -36,10 +43,11 @@ class ZMQHelper(threading.Thread):
     while not self.__cancel.is_set():
       try:
         data = self.__pull.recv(zmq.NOBLOCK)
+        if not (data and self.working):
+          continue
         self.__pub.send(data)
         self.__process_next_message(data)
-        if len(data):
-          self.backlog.append(data)
+        self.backlog.append(data)
       except zmq.error.Again as ex:
         if ex.errno != 11:
           return
