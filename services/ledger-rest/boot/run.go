@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2020, Jan Cajthaml <jan.cajthaml@gmail.com>
+// Copyright (c) 2016-2021, Jan Cajthaml <jan.cajthaml@gmail.com>
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import (
 // Stop stops all daemons
 func (prog Program) Stop() {
 	prog.pool.Stop()
-	close(prog.interrupt)
 }
 
 // Start starts all daemons and blocks until INT or TERM signal is received
