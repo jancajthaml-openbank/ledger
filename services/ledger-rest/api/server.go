@@ -55,7 +55,7 @@ func NewServer(port int, certPath string, keyPath string, rootStorage string, ac
 
 	certificate, err := tls.LoadX509KeyPair(certPath, keyPath)
 	if err != nil {
-		log.Error().Msgf("Invalid cert %s and key %s", certPath, keyPath)
+		log.Error().Msg("Invalid cert and key")
 		return nil
 	}
 

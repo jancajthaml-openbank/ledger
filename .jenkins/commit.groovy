@@ -9,6 +9,7 @@ def dockerOptions() {
     options += "--label 'org.opencontainers.image.authors=${env.PROJECT_AUTHOR}' "
     options += "--label 'org.opencontainers.image.title=${env.PROJECT_NAME}' "
     options += "--label 'org.opencontainers.image.description=${env.PROJECT_DESCRIPTION}' "
+    options += "-f packaging/docker/Dockerfile "
     options += "."
     return options
 }
