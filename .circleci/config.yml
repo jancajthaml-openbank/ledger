@@ -494,8 +494,14 @@ jobs:
             META=$(cat /mnt/ramdisk/META)
             VERSION=$(cat /mnt/ramdisk/VERSION)
 
-            docker build -t docker.io/openbank/ledger:${VERSION}-${META} .
-            docker build -t docker.pkg.github.com/jancajthaml-openbank/ledger/ledger:${VERSION} .
+            docker build \
+              -t docker.io/openbank/ledger:${VERSION}-${META} \
+              -f packaging/docker/Dockerfile \
+              .
+            docker build \
+              -t docker.pkg.github.com/jancajthaml-openbank/ledger/ledger:${VERSION} \
+              -f packaging/docker/Dockerfile \
+              .
       - run:
           name: Publish to docker.io
           command: |
