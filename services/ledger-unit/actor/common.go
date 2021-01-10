@@ -185,7 +185,6 @@ func parseMessage(msg string, from system.Coordinates) (interface{}, error) {
 func ProcessMessage(s *System) system.ProcessMessage {
 	return func(msg string, to system.Coordinates, from system.Coordinates) {
 		if to.Name == "" {
-			log.Warn().Msgf("deadletter [remote %v -> local %v]", from, to)
 			return
 		}
 		message, err := parseMessage(msg, from)
