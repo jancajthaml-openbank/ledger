@@ -81,7 +81,7 @@ func (prog *Program) Setup() {
 				},
 				system.Coordinates{
 					Region: actorSystem.Name,
-					Name:   "transaction_finalizer_cron",
+					Name:   "",
 				},
 			)
 		},
