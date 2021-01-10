@@ -550,7 +550,7 @@ jobs:
       - run:
           name: Run blackbox tests
           command: |
-            export VERSION=$(cat /home/circleci/project/VERSION)
+            export VERSION=v$(cat /home/circleci/project/VERSION)
             export META=$(cat /home/circleci/project/META)
 
             docker-compose up -d bbtest
