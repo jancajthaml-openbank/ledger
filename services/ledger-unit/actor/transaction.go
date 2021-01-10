@@ -53,10 +53,7 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 				return
 			}
 
-			switch current.State {
-
-			case persistence.StatusCommitted, persistence.StatusRollbacked:
-
+			if current.State == persistence.StatusCommitted || current.State == persistence.StatusRollbacked {
 				if state.Transaction.IsSameAs(current) {
 					if current.State == persistence.StatusCommitted {
 						s.SendMessage(
@@ -78,17 +75,9 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 						context.Receiver,
 					)
 				}
-
-			default:
-				s.SendMessage(
-					RespTransactionRace+" "+state.Transaction.IDTransaction,
-					state.ReplyTo,
-					context.Receiver,
-				)
-
+				return
 			}
 
-			return
 		}
 
 		s.Metrics.TransactionPromised(len(state.Transaction.Transfers))

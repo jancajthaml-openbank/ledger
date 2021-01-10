@@ -22,9 +22,9 @@ import (
 // OneShotDaemon represent work happening only once
 type OneShotDaemon struct {
 	Worker
-	name string
+	name       string
 	cancelOnce sync.Once
-	done 			 chan interface{}
+	done       chan interface{}
 }
 
 // NewOneShotDaemon returns new daemon with given name for single work
@@ -33,7 +33,7 @@ func NewOneShotDaemon(name string, worker Worker) Daemon {
 		Worker:     worker,
 		name:       name,
 		cancelOnce: sync.Once{},
-		done: 		  make(chan interface{}),
+		done:       make(chan interface{}),
 	}
 }
 

@@ -84,19 +84,19 @@ func (instance *metrics) TransactionRollbacked(transfers int) {
 }
 
 // Setup does nothing
-func (_ *metrics) Setup() error {
+func (*metrics) Setup() error {
 	return nil
 }
 
 // Done returns always finished
-func (_ *metrics) Done() <-chan interface{} {
+func (*metrics) Done() <-chan interface{} {
 	done := make(chan interface{})
 	close(done)
 	return done
 }
 
 // Cancel does nothing
-func (_ *metrics) Cancel() {
+func (*metrics) Cancel() {
 }
 
 // Work represents metrics worker work
