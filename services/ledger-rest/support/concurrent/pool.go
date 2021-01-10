@@ -23,7 +23,7 @@ import (
 type DaemonPool struct {
 	name    string
 	daemons []Daemon
-	done chan interface{}
+	done    chan interface{}
 }
 
 // NewDaemonPool returns new pool

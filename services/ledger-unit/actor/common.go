@@ -184,6 +184,9 @@ func parseMessage(msg string, from system.Coordinates) (interface{}, error) {
 // ProcessMessage processing of remote message to this wall
 func ProcessMessage(s *System) system.ProcessMessage {
 	return func(msg string, to system.Coordinates, from system.Coordinates) {
+		if to.Name == "" {
+			return
+		}
 		message, err := parseMessage(msg, from)
 		if err != nil {
 			log.Warn().Msgf("%s [remote %v -> local %v]", err, from, to)

@@ -34,10 +34,10 @@ func (prog Program) Start(parentContext context.Context, cancelFunction context.
 	log.Info().Msg("Program Started")
 	signal.Notify(prog.interrupt, syscall.SIGHUP, syscall.SIGINT, syscall.SIGQUIT, syscall.SIGTERM)
 	select {
-		case <-prog.interrupt:
-			break
-		case <-prog.pool.Done():
-			break
+	case <-prog.interrupt:
+		break
+	case <-prog.pool.Done():
+		break
 	}
 	log.Info().Msg("Program Stopping")
 	if err := host.NotifyServiceStopping(); err != nil {

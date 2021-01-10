@@ -495,7 +495,7 @@ jobs:
             VERSION=$(cat /mnt/ramdisk/VERSION)
 
             docker build \
-              -t docker.io/openbank/ledger:${VERSION}-${META} \
+              -t docker.io/openbank/ledger:v${VERSION}-${META} \
               -f packaging/docker/Dockerfile \
               .
             docker build \
@@ -510,7 +510,7 @@ jobs:
             META=$(cat /mnt/ramdisk/META)
             VERSION=$(cat /mnt/ramdisk/VERSION)
             docker push \
-              docker.io/openbank/ledger:${VERSION}-${META}
+              docker.io/openbank/ledger:v${VERSION}-${META}
             rm -f /root/.docker/config.json
       - run:
           name: Publish to docker.pkg.github.com
@@ -550,7 +550,7 @@ jobs:
       - run:
           name: Run blackbox tests
           command: |
-            export VERSION=$(cat /home/circleci/project/VERSION)
+            export VERSION=v$(cat /home/circleci/project/VERSION)
             export META=$(cat /home/circleci/project/META)
 
             docker-compose up -d bbtest

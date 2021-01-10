@@ -23,11 +23,11 @@ import (
 // ScheduledDaemon represent work happening repeatedly in given interval
 type ScheduledDaemon struct {
 	Worker
-	name     	 string
-	interval 	 time.Duration
-	ticker 		 *time.Ticker
+	name       string
+	interval   time.Duration
+	ticker     *time.Ticker
 	cancelOnce sync.Once
-	done 			 chan interface{}
+	done       chan interface{}
 }
 
 // NewScheduledDaemon returns new daemon with given name for periodic work
@@ -38,7 +38,7 @@ func NewScheduledDaemon(name string, worker Worker, interval time.Duration) Daem
 		interval:   interval,
 		ticker:     time.NewTicker(interval),
 		cancelOnce: sync.Once{},
-		done: 		  make(chan interface{}),
+		done:       make(chan interface{}),
 	}
 }
 
