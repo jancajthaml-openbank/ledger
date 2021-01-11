@@ -47,6 +47,8 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 
 		err := persistence.CreateTransaction(s.Storage, &state.Transaction)
 		if err != nil {
+			log.Warn().Msgf("%s/Initial transaction conflict", state.Transaction.IDTransaction)
+
 			current, err := persistence.LoadTransaction(s.Storage, state.Transaction.IDTransaction)
 			if err != nil {
 				s.SendMessage(FatalError, state.ReplyTo, context.Receiver)
@@ -80,6 +82,8 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 
 		}
 
+		log.Debug().Msgf("%s/Initial Negotiating Promise", state.Transaction.IDTransaction)
+
 		s.Metrics.TransactionPromised(len(state.Transaction.Transfers))
 
 		for account, task := range state.Negotiation {
@@ -93,10 +97,10 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 			)
 		}
 
+		log.Debug().Msgf("%s/Initial -> %s/Promise", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
+
 		state.ResetMarks()
 		context.Self.Become(state, PromisingTransaction(s))
-
-		log.Debug().Msgf("%s/Initial -> %s/Promise", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
 	}
 }
 
@@ -158,10 +162,8 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 
 		if state.FailedResponses > 0 {
 			log.Debug().Msgf("%s/Promise Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
-			log.Debug().Msgf("%s/Promise -> %s/Rollback", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
 
-			state.ResetMarks()
-			context.Self.Become(state, RollbackingTransaction(s))
+			log.Debug().Msgf("%s/Promise Negotiating Rollback", state.Transaction.IDTransaction)
 
 			for account, task := range state.Negotiation {
 				s.SendMessage(
@@ -173,6 +175,11 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 					context.Receiver,
 				)
 			}
+
+			log.Debug().Msgf("%s/Promise -> %s/Rollback", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
+
+			state.ResetMarks()
+			context.Self.Become(state, RollbackingTransaction(s))
 
 			return
 		}
@@ -195,6 +202,8 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 			return
 		}
 
+		log.Debug().Msgf("%s/Promise Negotiating Commit", state.Transaction.IDTransaction)
+
 		for account, task := range state.Negotiation {
 			s.SendMessage(
 				CommitOrder+" "+task,
@@ -206,9 +215,11 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 			)
 		}
 
+		log.Debug().Msgf("%s/Promise -> %s/Commit", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
+
 		state.ResetMarks()
 		context.Self.Become(state, CommitingTransaction(s))
-		log.Debug().Msgf("%s/Promise -> %s/Commit", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
+
 		return
 	}
 }
@@ -240,6 +251,8 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 				return
 			}
 
+			log.Debug().Msgf("%s/Commit Negotiating Rollback", state.Transaction.IDTransaction)
+
 			for account, task := range state.Negotiation {
 				s.SendMessage(
 					RollbackOrder+" "+task,
@@ -251,10 +264,10 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 				)
 			}
 
+			log.Debug().Msgf("%s/Commit -> %s/Rollback", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
+
 			state.ResetMarks()
 			context.Self.Become(state, RollbackingTransaction(s))
-
-			log.Debug().Msgf("%s/Commit -> %s/Rollback", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
 
 			return
 		}
@@ -264,6 +277,7 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 		state.Transaction.State = persistence.StatusCommitted
 
 		err := persistence.UpdateTransaction(s.Storage, &state.Transaction)
+
 		// FIXME log error
 		if err != nil {
 			s.SendMessage(
@@ -284,6 +298,7 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 		}
 
 		s.Metrics.TransactionCommitted(len(state.Transaction.Transfers))
+
 		s.SendMessage(
 			RespCreateTransaction+" "+state.Transaction.IDTransaction,
 			state.ReplyTo,
