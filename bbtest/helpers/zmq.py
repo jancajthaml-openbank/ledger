@@ -40,17 +40,15 @@ class ZMQHelper(threading.Thread):
     threading.Thread.start(self)
 
   def run(self):
-    last_data = None
     while not self.__cancel.is_set():
       try:
         data = self.__pull.recv(zmq.NOBLOCK)
         if not (data and self.working):
           continue
-        if data != last_data:
-          self.__pub.send(data)
-          self.__process_next_message(data)
-          self.backlog.append(data)
-        last_data = data
+        self.__pub.send(data)
+        self.__pub.send(data)
+        self.__process_next_message(data)
+        self.backlog.append(data)
       except zmq.error.Again as ex:
         if ex.errno != 11:
           return
