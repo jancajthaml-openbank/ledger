@@ -47,16 +47,18 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 
 		err := persistence.CreateTransaction(s.Storage, &state.Transaction)
 		if err != nil {
-			log.Warn().Msgf("%s/Initial transaction conflict", state.Transaction.IDTransaction)
 
 			current, err := persistence.LoadTransaction(s.Storage, state.Transaction.IDTransaction)
 			if err != nil {
+				// FIXME bounce try again
+				log.Warn().Msgf("%s/Initial Conflict Does not exist", state.Transaction.IDTransaction)
 				s.SendMessage(FatalError, state.ReplyTo, context.Receiver)
 				return
 			}
 
 			if current.State == persistence.StatusCommitted || current.State == persistence.StatusRollbacked {
 				if state.Transaction.IsSameAs(current) {
+					log.Debug().Msgf("%s/Initial Conflict already done", state.Transaction.IDTransaction)
 					if current.State == persistence.StatusCommitted {
 						s.SendMessage(
 							RespCreateTransaction+" "+state.Transaction.IDTransaction,
@@ -71,6 +73,10 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 						)
 					}
 				} else {
+					log.Debug().Msgf("%s/Initial Conflict duplicate transaction id", state.Transaction.IDTransaction)
+
+					log.Warn().Msgf("%s/Initial Conflict original %+v requested %+v", state.Transaction.IDTransaction, current, state.Transaction)
+
 					s.SendMessage(
 						RespTransactionDuplicate+" "+state.Transaction.IDTransaction,
 						state.ReplyTo,
@@ -229,6 +235,7 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(TransactionState)
 		state.Mark(context.Data)
+
 		if !state.IsNegotiationFinished() {
 			context.Self.Become(state, CommitingTransaction(s))
 			return
