@@ -32,10 +32,8 @@ func CreateTransaction(sys *System, tenant string, transaction model.Transaction
 		ch <- context.Data
 	})
 
-	message := CreateTransactionMessage(transaction)
-
 	sys.SendMessage(
-		message,
+		CreateTransactionMessage(transaction),
 		system.Coordinates{
 			Region: "LedgerUnit/" + tenant,
 			Name:   envelope.Name,
