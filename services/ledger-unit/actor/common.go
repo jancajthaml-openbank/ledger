@@ -194,19 +194,26 @@ func ProcessMessage(s *System) system.ProcessMessage {
 			return
 		}
 		var ref *system.Actor
+
 		switch message.(type) {
+
 		case model.Transaction:
 			if ref, err = NewTransactionActor(s, to.Name); err != nil {
 				log.Warn().Msgf("%s [remote %v -> local %v]", err, from, to)
 				s.SendMessage(FatalError, from, to)
 				return
 			}
+
 		default:
 			if ref, err = s.ActorOf(to.Name); err != nil {
 				log.Warn().Msgf("Actor not found [remote %v -> local %v]", from, to)
 				return
 			}
+
 		}
+
+		log.Debug().Msgf("Tell %+v To %+v From %+v", message, to, from)
+
 		ref.Tell(message, to, from)
 		return
 	}

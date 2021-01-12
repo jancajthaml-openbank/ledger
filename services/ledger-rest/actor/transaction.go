@@ -22,13 +22,7 @@ import (
 )
 
 // CreateTransaction creates new transaction
-func CreateTransaction(sys *System, tenant string, transaction model.Transaction) (result interface{}) {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Error().Msgf("CreateTransaction recovered in %+v", r)
-			result = nil
-		}
-	}()
+func CreateTransaction(sys *System, tenant string, transaction model.Transaction) interface{} {
 
 	ch := make(chan interface{})
 	defer close(ch)
@@ -54,13 +48,16 @@ func CreateTransaction(sys *System, tenant string, transaction model.Transaction
 
 	select {
 
-	case result = <-ch:
-		return
+	case result := <-ch:
+		return result
 
-	case <-time.After(25 * time.Second):
-		log.Warn().Msgf("Create transaction %s/%s timeout", tenant, transaction.IDTransaction)
-		result = new(ReplyTimeout)
-		return
+	case <-time.After(20 * time.Second):
+		return new(ReplyTimeout)
+
+	default:
+		return new(ReplyTimeout)
+
 	}
-	return
+
+
 }
