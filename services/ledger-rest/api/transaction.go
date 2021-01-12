@@ -115,12 +115,21 @@ func CreateTransaction(storage localfs.Storage, system *actor.System) func(c ech
 			c.Response().WriteHeader(http.StatusConflict)
 			return nil
 
-		case *actor.TransactionRace, *actor.ReplyTimeout:
+		case *actor.TransactionRace:
+			log.Debug().Msgf("Transaction %s Accepted for Processing", req.IDTransaction)
+			log.Debug().Msgf("Transaction %s Accepted for Processing", req.IDTransaction)
+			c.Response().WriteHeader(http.StatusAccepted)
+			return nil
+
+		case *actor.ReplyTimeout:
+
+			log.Debug().Msgf("Transaction %s Timeout fallback to storage lookup", req.IDTransaction)
 
 			transaction, err := persistence.LoadTransaction(storage, tenant, req.IDTransaction)
 			if err != nil {
 				log.Debug().Msgf("Transaction %s Accepted for Processing", req.IDTransaction)
 				c.Response().WriteHeader(http.StatusAccepted)
+				return nil
 			}
 
 			switch transaction.Status {
