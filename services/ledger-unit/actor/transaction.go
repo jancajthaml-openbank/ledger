@@ -25,7 +25,7 @@ import (
 func TerminalTransaction(s *System) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(TransactionState)
-		s.SendMessage(FatalError, state.ReplyTo, context.Receiver)
+		log.Warn().Msgf("%s/Terminal waiting for expiration", state.Transaction.IDTransaction)
 	}
 }
 
