@@ -21,6 +21,8 @@ import (
 	system "github.com/jancajthaml-openbank/actor-system"
 )
 
+// FIXME actor leaking if transaction stales and negotiation does not finish
+
 // InitialTransaction represents initial transaction state
 func InitialTransaction(s *System) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
