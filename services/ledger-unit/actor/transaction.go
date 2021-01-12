@@ -37,7 +37,7 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 		switch msg := context.Data.(type) {
 
 		case model.Transaction:
-			if state.Ready {
+			if state.Stage != INITIAL {
 				s.SendMessage(
 					RespTransactionRace+" "+msg.IDTransaction,
 					state.ReplyTo,
@@ -98,6 +98,11 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 
 		s.Metrics.TransactionPromised(len(state.Transaction.Transfers))
 
+		log.Debug().Msgf("%s/Initial -> %s/Promise", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
+
+		state.ChangeStage(PROMISE)
+		context.Self.Become(state, PromisingTransaction(s))
+
 		for account, task := range state.Negotiation {
 			s.SendMessage(
 				PromiseOrder+" "+task,
@@ -108,11 +113,6 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 				context.Receiver,
 			)
 		}
-
-		log.Debug().Msgf("%s/Initial -> %s/Promise", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
-
-		state.ResetMarks()
-		context.Self.Become(state, PromisingTransaction(s))
 	}
 }
 
@@ -174,6 +174,11 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 		if state.FailedResponses > 0 {
 			log.Debug().Msgf("%s/Promise Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
 
+			log.Debug().Msgf("%s/Promise -> %s/Rollback", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
+
+			state.ChangeStage(ROLLBACK)
+			context.Self.Become(state, RollbackingTransaction(s))
+
 			for account, task := range state.Negotiation {
 				s.SendMessage(
 					RollbackOrder+" "+task,
@@ -184,11 +189,6 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 					context.Receiver,
 				)
 			}
-
-			log.Debug().Msgf("%s/Promise -> %s/Rollback", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
-
-			state.ResetMarks()
-			context.Self.Become(state, RollbackingTransaction(s))
 
 			return
 		}
@@ -209,6 +209,11 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 			return
 		}
 
+		log.Debug().Msgf("%s/Promise -> %s/Commit", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
+
+		state.ChangeStage(COMMIT)
+		context.Self.Become(state, CommitingTransaction(s))
+
 		for account, task := range state.Negotiation {
 			s.SendMessage(
 				CommitOrder+" "+task,
@@ -219,11 +224,6 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 				context.Receiver,
 			)
 		}
-
-		log.Debug().Msgf("%s/Promise -> %s/Commit", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
-
-		state.ResetMarks()
-		context.Self.Become(state, CommitingTransaction(s))
 
 		return
 	}
@@ -257,6 +257,11 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 				return
 			}
 
+			log.Debug().Msgf("%s/Commit -> %s/Rollback", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
+
+			state.ChangeStage(ROLLBACK)
+			context.Self.Become(state, RollbackingTransaction(s))
+
 			for account, task := range state.Negotiation {
 				s.SendMessage(
 					RollbackOrder+" "+task,
@@ -267,11 +272,6 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 					context.Receiver,
 				)
 			}
-
-			log.Debug().Msgf("%s/Commit -> %s/Rollback", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
-
-			state.ResetMarks()
-			context.Self.Become(state, RollbackingTransaction(s))
 
 			return
 		}
@@ -369,6 +369,7 @@ func RollbackingTransaction(s *System) func(interface{}, system.Context) {
 		log.Info().Msgf("New Transaction %s Rollbacked", state.Transaction.IDTransaction)
 		log.Debug().Msgf("%s/Rollback -> Terminal", state.Transaction.IDTransaction)
 
+		state.ChangeStage(INITIAL)
 		context.Self.Become(state, TerminalTransaction(s))
 		return
 	}

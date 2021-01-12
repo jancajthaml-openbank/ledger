@@ -21,6 +21,15 @@ import (
 	system "github.com/jancajthaml-openbank/actor-system"
 )
 
+type TransactionStage int
+
+const (
+	INITIAL TransactionStage = iota
+  PROMISE
+  COMMIT
+  ROLLBACK
+)
+
 // TransactionState represent negotiation state of transaction actor
 type TransactionState struct {
 	Transaction     model.Transaction
@@ -28,7 +37,7 @@ type TransactionState struct {
 	WaitFor         map[model.Account]bool
 	OkResponses     int
 	FailedResponses int
-	Ready           bool
+	Stage           TransactionStage
 	ReplyTo         system.Coordinates
 }
 
@@ -37,12 +46,45 @@ func NewTransactionState() TransactionState {
 	return TransactionState{
 		OkResponses:     0,
 		FailedResponses: 0,
-		Ready:           false,
+		Stage:           INITIAL,
 	}
 }
 
-// Mark update negotiation state based on value
-func (state *TransactionState) Mark(value interface{}) *model.Account {
+func (state *TransactionState) markCommit(value interface{}) *model.Account {
+	if state == nil {
+		return nil
+	}
+
+	switch msg := value.(type) {
+
+	case CommitWasAccepted:
+		if _, exists := state.WaitFor[msg.Account]; exists {
+			delete(state.WaitFor, msg.Account)
+			state.OkResponses++
+		}
+		return nil
+
+	case CommitWasRejected:
+		if _, exists := state.WaitFor[msg.Account]; exists {
+			delete(state.WaitFor, msg.Account)
+			state.FailedResponses++
+		}
+		return nil
+
+	case FatalErrored:
+		if _, exists := state.WaitFor[msg.Account]; exists {
+			delete(state.WaitFor, msg.Account)
+			state.FailedResponses++
+		}
+		return nil
+
+	default:
+		return nil
+
+	}
+}
+
+func (state *TransactionState) markPromise(value interface{}) *model.Account {
 	if state == nil {
 		return nil
 	}
@@ -69,19 +111,25 @@ func (state *TransactionState) Mark(value interface{}) *model.Account {
 		}
 		return nil
 
-	case CommitWasAccepted:
-		if _, exists := state.WaitFor[msg.Account]; exists {
-			delete(state.WaitFor, msg.Account)
-			state.OkResponses++
-		}
-		return nil
-
-	case CommitWasRejected:
+	case FatalErrored:
 		if _, exists := state.WaitFor[msg.Account]; exists {
 			delete(state.WaitFor, msg.Account)
 			state.FailedResponses++
 		}
 		return nil
+
+	default:
+		return nil
+
+	}
+}
+
+func (state *TransactionState) markRollback(value interface{}) *model.Account {
+	if state == nil {
+		return nil
+	}
+
+	switch msg := value.(type) {
 
 	case RollbackWasAccepted:
 		if _, exists := state.WaitFor[msg.Account]; exists {
@@ -110,15 +158,37 @@ func (state *TransactionState) Mark(value interface{}) *model.Account {
 	}
 }
 
-// ResetMarks zeroes out negotiation state
-func (state *TransactionState) ResetMarks() {
+
+// Mark update negotiation state based on value
+func (state *TransactionState) Mark(value interface{}) *model.Account {
 	if state == nil {
+		return nil
+	}
+
+	switch state.Stage {
+	case INITIAL:
+		return nil
+	case PROMISE:
+		return state.markPromise(value)
+	case COMMIT:
+		return state.markCommit(value)
+	case ROLLBACK:
+		return state.markRollback(value)
+	default:
+		return nil
+	}
+}
+
+// ChangeStage zeroes out negotiation state and changes current stage
+func (state *TransactionState) ChangeStage(nextStage TransactionStage) {
+	if state == nil || state.Stage == nextStage {
 		return
 	}
 	state.WaitFor = make(map[model.Account]bool)
 	for account := range state.Negotiation {
 		state.WaitFor[account] = true
 	}
+	state.Stage = nextStage
 	state.OkResponses = 0
 	state.FailedResponses = 0
 }
@@ -137,7 +207,6 @@ func (state *TransactionState) PrepareNewForTransaction(transaction model.Transa
 	state.Transaction = transaction
 	state.Transaction.State = persistence.StatusNew
 	state.Negotiation = negotiation
-	state.ResetMarks()
-	state.Ready = true
+	state.ChangeStage(PROMISE)
 	state.ReplyTo = requestedBy
 }
