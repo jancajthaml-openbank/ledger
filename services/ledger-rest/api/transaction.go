@@ -90,6 +90,7 @@ func CreateTransaction(storage localfs.Storage, system *actor.System) func(c ech
 		switch actor.CreateTransaction(system, tenant, *req).(type) {
 
 		case *actor.TransactionCreated:
+			log.Debug().Msgf("Transaction %s Created", req.IDTransaction)
 			c.Response().Header().Set(echo.HeaderContentType, echo.MIMETextPlainCharsetUTF8)
 			c.Response().WriteHeader(http.StatusOK)
 			c.Response().Write([]byte(req.IDTransaction))
@@ -97,6 +98,7 @@ func CreateTransaction(storage localfs.Storage, system *actor.System) func(c ech
 			return nil
 
 		case *actor.TransactionRejected:
+			log.Debug().Msgf("Transaction %s Rejected", req.IDTransaction)
 			c.Response().Header().Set(echo.HeaderContentType, echo.MIMETextPlainCharsetUTF8)
 			c.Response().WriteHeader(http.StatusCreated)
 			c.Response().Write([]byte(req.IDTransaction))
@@ -104,14 +106,17 @@ func CreateTransaction(storage localfs.Storage, system *actor.System) func(c ech
 			return nil
 
 		case *actor.TransactionRefused:
+			log.Debug().Msgf("Transaction %s Refused", req.IDTransaction)
 			c.Response().WriteHeader(http.StatusExpectationFailed)
 			return nil
 
 		case *actor.TransactionDuplicate:
+			log.Debug().Msgf("Transaction %s Duplicate", req.IDTransaction)
 			c.Response().WriteHeader(http.StatusConflict)
 			return nil
 
 		case *actor.TransactionRace, *actor.ReplyTimeout:
+			log.Debug().Msgf("Transaction %s Accepted for Processing", req.IDTransaction)
 			c.Response().WriteHeader(http.StatusAccepted)
 			return nil
 
