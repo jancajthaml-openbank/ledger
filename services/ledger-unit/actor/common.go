@@ -16,6 +16,7 @@ package actor
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/jancajthaml-openbank/ledger-unit/model"
 
@@ -216,8 +217,6 @@ func ProcessMessage(s *System) system.ProcessMessage {
 
 		}
 
-		log.Debug().Msgf("Tell %+v To %+v From %+v", message, to, from)
-
 		ref.Tell(message, to, from)
 		return
 	}
@@ -231,6 +230,10 @@ func NewTransactionActor(s *System, name string) (*system.Actor, error) {
 		log.Warn().Msgf("Unable to register %s actor", name)
 		return nil, err
 	}
-	log.Debug().Msgf("Actor %s registered", name)
+	go func() {
+		time.Sleep(time.Minute)
+		s.UnregisterActor(envelope.Name)
+	}()
+	log.Debug().Msgf("Actor %s registered with ttl of 1minute", name)
 	return envelope, nil
 }
