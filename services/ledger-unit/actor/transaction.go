@@ -21,6 +21,14 @@ import (
 	system "github.com/jancajthaml-openbank/actor-system"
 )
 
+// TerminalTransaction represents terminal transaction state
+func TerminalTransaction(s *System) func(interface{}, system.Context) {
+	return func(t_state interface{}, context system.Context) {
+		state := t_state.(TransactionState)
+		s.SendMessage(FatalError, state.ReplyTo, context.Receiver)
+	}
+}
+
 // InitialTransaction represents initial transaction state
 func InitialTransaction(s *System) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
@@ -88,8 +96,6 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 
 		}
 
-		log.Debug().Msgf("%s/Initial Negotiating Promise", state.Transaction.IDTransaction)
-
 		s.Metrics.TransactionPromised(len(state.Transaction.Transfers))
 
 		for account, task := range state.Negotiation {
@@ -114,7 +120,6 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 func PromisingTransaction(s *System) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(TransactionState)
-
 		accountRetry := state.Mark(context.Data)
 
 		if accountRetry != nil {
@@ -137,7 +142,7 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 		}
 
 		if !state.IsNegotiationFinished() {
-			log.Debug().Msgf("%s/Promise Negotiating", state.Transaction.IDTransaction)
+			log.Debug().Msgf("%s/Promise Negotiating %+v", state.Transaction.IDTransaction, state.WaitFor)
 			context.Self.Become(state, PromisingTransaction(s))
 			return
 		}
@@ -152,7 +157,6 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 					state.ReplyTo,
 					context.Receiver,
 				)
-				s.UnregisterActor(context.Sender.Name)
 				return
 			}
 		}
@@ -169,8 +173,6 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 
 		if state.FailedResponses > 0 {
 			log.Debug().Msgf("%s/Promise Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
-
-			log.Debug().Msgf("%s/Promise Negotiating Rollback", state.Transaction.IDTransaction)
 
 			for account, task := range state.Negotiation {
 				s.SendMessage(
@@ -204,12 +206,8 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 			)
 
 			log.Warn().Msgf("%s/Promise failed to accept transaction", state.Transaction.IDTransaction)
-
-			s.UnregisterActor(context.Sender.Name)
 			return
 		}
-
-		log.Debug().Msgf("%s/Promise Negotiating Commit", state.Transaction.IDTransaction)
 
 		for account, task := range state.Negotiation {
 			s.SendMessage(
@@ -238,7 +236,7 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 		state.Mark(context.Data)
 
 		if !state.IsNegotiationFinished() {
-			log.Debug().Msgf("%s/Commit Negotiating", state.Transaction.IDTransaction)
+			log.Debug().Msgf("%s/Commit Negotiating %+v", state.Transaction.IDTransaction, state.WaitFor)
 			context.Self.Become(state, CommitingTransaction(s))
 			return
 		}
@@ -256,11 +254,8 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 					state.ReplyTo,
 					context.Receiver,
 				)
-				s.UnregisterActor(context.Sender.Name)
 				return
 			}
-
-			log.Debug().Msgf("%s/Commit Negotiating Rollback", state.Transaction.IDTransaction)
 
 			for account, task := range state.Negotiation {
 				s.SendMessage(
@@ -296,8 +291,6 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 			)
 
 			log.Warn().Msgf("%s/Commit failed to commit transaction", state.Transaction.IDTransaction)
-
-			s.UnregisterActor(context.Sender.Name)
 			return
 		}
 
@@ -315,9 +308,9 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 		)
 
 		log.Info().Msgf("New Transaction %s Committed", state.Transaction.IDTransaction)
-		log.Debug().Msgf("%s/Commit -> Unregister", state.Transaction.IDTransaction)
+		log.Debug().Msgf("%s/Commit -> Terminal", state.Transaction.IDTransaction)
 
-		s.UnregisterActor(context.Sender.Name)
+		context.Self.Become(state, TerminalTransaction(s))
 		return
 	}
 }
@@ -329,7 +322,7 @@ func RollbackingTransaction(s *System) func(interface{}, system.Context) {
 		state.Mark(context.Data)
 
 		if !state.IsNegotiationFinished() {
-			log.Debug().Msgf("%s/Rollback Negotiating", state.Transaction.IDTransaction)
+			log.Debug().Msgf("%s/Rollback Negotiating %+v", state.Transaction.IDTransaction, state.WaitFor)
 			context.Self.Become(state, RollbackingTransaction(s))
 			return
 		}
@@ -342,8 +335,6 @@ func RollbackingTransaction(s *System) func(interface{}, system.Context) {
 			)
 
 			log.Debug().Msgf("%s/Rollback Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
-
-			s.UnregisterActor(context.Sender.Name)
 			return
 		}
 
@@ -364,8 +355,6 @@ func RollbackingTransaction(s *System) func(interface{}, system.Context) {
 			)
 
 			log.Warn().Msgf("%s/Rollback failed to rollback transaction", state.Transaction.IDTransaction)
-
-			s.UnregisterActor(context.Sender.Name)
 			return
 		}
 
@@ -378,9 +367,9 @@ func RollbackingTransaction(s *System) func(interface{}, system.Context) {
 		)
 
 		log.Info().Msgf("New Transaction %s Rollbacked", state.Transaction.IDTransaction)
-		log.Debug().Msgf("%s/Rollback -> Unregister", state.Transaction.IDTransaction)
+		log.Debug().Msgf("%s/Rollback -> Terminal", state.Transaction.IDTransaction)
 
-		s.UnregisterActor(context.Sender.Name)
+		context.Self.Become(state, TerminalTransaction(s))
 		return
 	}
 }

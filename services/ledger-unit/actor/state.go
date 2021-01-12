@@ -25,7 +25,7 @@ import (
 type TransactionState struct {
 	Transaction     model.Transaction
 	Negotiation     map[model.Account]string
-	WaitFor         map[model.Account]interface{}
+	WaitFor         map[model.Account]bool
 	OkResponses     int
 	FailedResponses int
 	Ready           bool
@@ -115,9 +115,9 @@ func (state *TransactionState) ResetMarks() {
 	if state == nil {
 		return
 	}
-	state.WaitFor = make(map[model.Account]interface{})
+	state.WaitFor = make(map[model.Account]bool)
 	for account := range state.Negotiation {
-		state.WaitFor[account] = nil
+		state.WaitFor[account] = true
 	}
 	state.OkResponses = 0
 	state.FailedResponses = 0
