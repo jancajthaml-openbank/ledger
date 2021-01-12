@@ -54,9 +54,6 @@ func CreateTransaction(sys *System, tenant string, transaction model.Transaction
 	case <-time.After(20 * time.Second):
 		return new(ReplyTimeout)
 
-	default:
-		return new(ReplyTimeout)
-
 	}
 
 

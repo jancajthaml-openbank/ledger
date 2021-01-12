@@ -27,7 +27,7 @@ def create_transfer(context, tenant):
 
   try:
     response = urllib.request.urlopen(request, timeout=10, context=ctx)
-    assert response.code in [200, 201], response.code
+    assert response.code in [200, 201], "expected 200 or 202 got #{response.code}"
     response = response.read().decode('utf-8')
     context.last_transaction_id = response or None
   except (http.client.RemoteDisconnected, socket.timeout):
