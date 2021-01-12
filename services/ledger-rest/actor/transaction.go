@@ -23,9 +23,7 @@ import (
 
 // CreateTransaction creates new transaction
 func CreateTransaction(sys *System, tenant string, transaction model.Transaction) interface{} {
-
 	ch := make(chan interface{})
-	defer close(ch)
 
 	envelope := system.NewActor("transaction/"+xid.New().String(), nil)
 	defer sys.UnregisterActor(envelope.Name)
@@ -47,14 +45,9 @@ func CreateTransaction(sys *System, tenant string, transaction model.Transaction
 	)
 
 	select {
-
 	case result := <-ch:
 		return result
-
 	case <-time.After(20 * time.Second):
 		return new(ReplyTimeout)
-
 	}
-
-
 }
