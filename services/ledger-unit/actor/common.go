@@ -187,12 +187,16 @@ func ProcessMessage(s *System) system.ProcessMessage {
 		if to.Name == "" {
 			return
 		}
+
 		message, err := parseMessage(msg, from)
 		if err != nil {
 			log.Warn().Msgf("%s [remote %v -> local %v]", err, from, to)
 			s.SendMessage(FatalError, from, to)
 			return
 		}
+
+		log.Debug().Msgf("Process Message %+v", message)
+
 		var ref *system.Actor
 
 		switch message.(type) {
