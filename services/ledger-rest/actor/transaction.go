@@ -32,8 +32,10 @@ func CreateTransaction(sys *System, tenant string, transaction model.Transaction
 		ch <- context.Data
 	})
 
+	message := CreateTransactionMessage(transaction)
+
 	sys.SendMessage(
-		CreateTransactionMessage(transaction),
+		message,
 		system.Coordinates{
 			Region: "LedgerUnit/" + tenant,
 			Name:   envelope.Name,
@@ -47,7 +49,7 @@ func CreateTransaction(sys *System, tenant string, transaction model.Transaction
 	select {
 	case result := <-ch:
 		return result
-	case <-time.After(20 * time.Second):
+	case <-time.After(5 * time.Second):
 		return new(ReplyTimeout)
 	}
 }
