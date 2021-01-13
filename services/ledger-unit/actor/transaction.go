@@ -29,6 +29,7 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 		msg, ok := context.Data.(model.Transaction)
 		if !ok {
 			s.SendMessage(FatalError, state.ReplyTo, context.Receiver)
+			s.UnregisterActor(context.Sender.Name)
 			return
 		}
 
@@ -42,6 +43,7 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 					state.ReplyTo,
 					context.Receiver,
 				)
+				s.UnregisterActor(context.Sender.Name)
 				return
 			}
 
