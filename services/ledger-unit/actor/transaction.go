@@ -40,7 +40,7 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 				log.Warn().Msgf("%s/Initial Conflict storage bounce", msg.IDTransaction)
 				s.SendMessage(
 					RespTransactionRace+" "+msg.IDTransaction,
-					state.ReplyTo,
+					context.Sender,
 					context.Receiver,
 				)
 				s.UnregisterActor(context.Sender.Name)
@@ -63,7 +63,7 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 
 					s.SendMessage(
 						reply,
-						state.ReplyTo,
+						context.Sender,
 						context.Receiver,
 					)
 
@@ -75,7 +75,7 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 
 					s.SendMessage(
 						RespTransactionDuplicate+" "+current.IDTransaction+" "+current.State,
-						state.ReplyTo,
+						context.Sender,
 						context.Receiver,
 					)
 
@@ -84,9 +84,10 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 
 			default:
 				log.Debug().Msgf("%s/Initial Conflict status bounce", current.IDTransaction)
+
 				s.SendMessage(
 					RespTransactionRace+" "+current.IDTransaction,
-					state.ReplyTo,
+					context.Sender,
 					context.Receiver,
 				)
 
@@ -288,7 +289,6 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 
 		err := persistence.UpdateTransaction(s.Storage, &state.Transaction)
 
-		// FIXME log error
 		if err != nil {
 			s.SendMessage(
 				RespTransactionRefused+" "+state.Transaction.IDTransaction,
