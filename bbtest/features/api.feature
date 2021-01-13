@@ -180,7 +180,7 @@ Feature: REST
               "tenant": "API",
               "name": "yyy"
             },
-            "amount": "1",
+            "amount": "1.000",
             "currency": "XXX"
           }
         ]

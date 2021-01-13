@@ -20,52 +20,62 @@ type negotiatonChunk struct {
 }
 
 // IsSameAs represents equality check of two Transactions
-func (entity *Transaction) IsSameAs(obj *Transaction) bool {
-	if entity == nil || obj == nil {
+func (original *Transaction) IsSameAs(candidate *Transaction) bool {
+	if original == nil || candidate == nil {
 		return false
 	}
 
-	if entity.IDTransaction != obj.IDTransaction {
+	if original.IDTransaction != candidate.IDTransaction {
 		return false
 	}
 
-	leftLen := len(entity.Transfers)
-	rightLen := len(obj.Transfers)
+	originalLen := len(original.Transfers)
+	candidateLen := len(candidate.Transfers)
 
-	if leftLen != rightLen {
+	if originalLen != candidateLen {
 		return false
 	}
 
-	x := make([]string, leftLen)
-	y := make([]string, rightLen)
-
-	for i, e := range entity.Transfers {
-		x[i] = e.Credit.Tenant + "/" + e.Credit.Name + "/" + e.Debit.Tenant + "/" + e.Debit.Name + "/" + e.Amount.String() + "/" + e.Currency
-	}
-
-	for i, e := range obj.Transfers {
-		y[i] = e.Credit.Tenant + "/" + e.Credit.Name + "/" + e.Debit.Tenant + "/" + e.Debit.Name + "/" + e.Amount.String() + "/" + e.Currency
-	}
-
-	visited := make([]bool, len(y))
-	for i := 0; i < len(x); i++ {
+	confirmed := make(map[int]bool)
+	for _, left := range candidate.Transfers {
 		found := false
-		for j := 0; j < len(y); j++ {
-			if visited[j] {
+		for j, right := range original.Transfers {
+			if _, ok := confirmed[j]; ok {
 				continue
 			}
-			if y[j] == x[i] {
-				visited[j] = true
-				found = true
-				break
+			if left.IDTransfer != right.IDTransfer {
+				continue
 			}
+			if left.Currency != right.Currency {
+				continue
+			}
+			if left.Credit.Tenant != right.Credit.Tenant {
+				continue
+			}
+			if left.Credit.Name != right.Credit.Name {
+				continue
+			}
+			if left.Debit.Tenant != right.Debit.Tenant {
+				continue
+			}
+			if left.Debit.Name != right.Debit.Name {
+				continue
+			}
+			diff := new(Dec)
+			diff.Add(left.Amount)
+			diff.Sub(right.Amount)
+			if diff.Sign() != 0 {
+				continue
+			}
+			confirmed[j] = true
 		}
+
 		if !found {
 			return false
 		}
 	}
 
-	return true
+	return len(confirmed) == originalLen
 }
 
 // PrepareRemoteNegotiation prepares negotiation of promises for all related accounts
@@ -97,7 +107,7 @@ func (entity *Transaction) PrepareRemoteNegotiation() map[Account]string {
 	}
 
 	for chunk, amounts := range chunks {
-		var acc *Dec = new(Dec)
+		acc := new(Dec)
 
 		for _, amount := range amounts {
 			acc.Add(amount)
