@@ -21,45 +21,24 @@ import (
 	system "github.com/jancajthaml-openbank/actor-system"
 )
 
-// TerminalTransaction represents terminal transaction state
-func TerminalTransaction(s *System) func(interface{}, system.Context) {
-	return func(t_state interface{}, context system.Context) {
-		state := t_state.(TransactionState)
-		log.Warn().Msgf("%s/Terminal waiting for expiration", state.Transaction.IDTransaction)
-	}
-}
-
 // InitialTransaction represents initial transaction state
 func InitialTransaction(s *System) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(TransactionState)
 
-		switch msg := context.Data.(type) {
-
-		case model.Transaction:
-			if state.Stage != INITIAL {
-				s.SendMessage(
-					RespTransactionRace+" "+msg.IDTransaction,
-					state.ReplyTo,
-					context.Receiver,
-				)
-				log.Warn().Msgf("%s/Initial already in progress", state.Transaction.IDTransaction)
-				return
-			}
-			state.PrepareNewForTransaction(msg, context.Sender)
-
-		default:
+		msg, ok := context.Data.(model.Transaction)
+		if !ok {
 			s.SendMessage(FatalError, state.ReplyTo, context.Receiver)
 			return
 		}
 
-		if err := persistence.CreateTransaction(s.Storage, &state.Transaction); err != nil {
+		if err := persistence.CreateTransaction(s.Storage, &msg); err != nil {
 
-			current, err := persistence.LoadTransaction(s.Storage, state.Transaction.IDTransaction)
+			current, err := persistence.LoadTransaction(s.Storage, msg.IDTransaction)
 			if err != nil {
-				log.Warn().Msgf("%s/Initial Conflict storage bounce", state.Transaction.IDTransaction)
+				log.Warn().Msgf("%s/Initial Conflict storage bounce", msg.IDTransaction)
 				s.SendMessage(
-					RespTransactionRace+" "+state.Transaction.IDTransaction,
+					RespTransactionRace+" "+msg.IDTransaction,
 					state.ReplyTo,
 					context.Receiver,
 				)
@@ -68,36 +47,54 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 
 			switch current.State {
 
-			case persistence.StatusCommitted:
+			case persistence.StatusCommitted, persistence.StatusRollbacked:
 				if state.Transaction.IsSameAs(current) {
-					log.Debug().Msgf("%s/Initial Conflict already committed", state.Transaction.IDTransaction)
+					log.Debug().Msgf("%s/Initial Conflict already done", current.IDTransaction)
+					var reply string
+					if current.State == persistence.StatusCommitted {
+						reply = RespCreateTransaction+" "+current.IDTransaction
+					} else {
+						reply = RespTransactionRejected+" "+current.IDTransaction+" "+current.State
+					}
+
+					log.Debug().Msgf("%s/Initial -> Terminal", current.IDTransaction)
+
 					s.SendMessage(
-						RespCreateTransaction+" "+state.Transaction.IDTransaction,
+						reply,
 						state.ReplyTo,
 						context.Receiver,
 					)
-				}
-			case persistence.StatusRollbacked:
-				if state.Transaction.IsSameAs(current) {
-					log.Debug().Msgf("%s/Initial Conflict already rejected", state.Transaction.IDTransaction)
+
+					s.UnregisterActor(context.Sender.Name)
+				} else {
+					log.Debug().Msgf("%s/Initial Conflict duplicate", current.IDTransaction)
+
+					log.Debug().Msgf("%s/Initial -> Terminal", current.IDTransaction)
+
 					s.SendMessage(
-						RespTransactionRejected+" "+state.Transaction.IDTransaction+" "+state.Transaction.State,
+						RespTransactionDuplicate+" "+current.IDTransaction+" "+current.State,
 						state.ReplyTo,
 						context.Receiver,
 					)
+
+					s.UnregisterActor(context.Sender.Name)
 				}
 
 			default:
-				log.Debug().Msgf("%s/Initial Conflict status bounce", state.Transaction.IDTransaction)
+				log.Debug().Msgf("%s/Initial Conflict status bounce", current.IDTransaction)
 				s.SendMessage(
-					RespTransactionRace+" "+state.Transaction.IDTransaction,
+					RespTransactionRace+" "+current.IDTransaction,
 					state.ReplyTo,
 					context.Receiver,
 				)
+
+				s.UnregisterActor(context.Sender.Name)
 			}
 
 			return
 		}
+
+		state.PrepareNewForTransaction(msg, context.Sender)
 
 		s.Metrics.TransactionPromised(len(state.Transaction.Transfers))
 
@@ -160,6 +157,7 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 					state.ReplyTo,
 					context.Receiver,
 				)
+				s.UnregisterActor(context.Sender.Name)
 				return
 			}
 		}
@@ -209,6 +207,8 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 			)
 
 			log.Warn().Msgf("%s/Promise failed to accept transaction", state.Transaction.IDTransaction)
+
+			s.UnregisterActor(context.Sender.Name)
 			return
 		}
 
@@ -257,6 +257,7 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 					state.ReplyTo,
 					context.Receiver,
 				)
+				s.UnregisterActor(context.Sender.Name)
 				return
 			}
 
@@ -294,12 +295,9 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 			)
 
 			log.Warn().Msgf("%s/Commit failed to commit transaction", state.Transaction.IDTransaction)
-			return
-		}
 
-		var transfers []string
-		for _, transfer := range state.Transaction.Transfers {
-			transfers = append(transfers, transfer.IDTransfer)
+			s.UnregisterActor(context.Sender.Name)
+			return
 		}
 
 		s.Metrics.TransactionCommitted(len(state.Transaction.Transfers))
@@ -313,7 +311,7 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 		log.Info().Msgf("New Transaction %s Committed", state.Transaction.IDTransaction)
 		log.Debug().Msgf("%s/Commit -> Terminal", state.Transaction.IDTransaction)
 
-		context.Self.Become(state, TerminalTransaction(s))
+		s.UnregisterActor(context.Sender.Name)
 		return
 	}
 }
@@ -338,6 +336,8 @@ func RollbackingTransaction(s *System) func(interface{}, system.Context) {
 			)
 
 			log.Debug().Msgf("%s/Rollback Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
+
+			s.UnregisterActor(context.Sender.Name)
 			return
 		}
 
@@ -358,6 +358,8 @@ func RollbackingTransaction(s *System) func(interface{}, system.Context) {
 			)
 
 			log.Warn().Msgf("%s/Rollback failed to rollback transaction", state.Transaction.IDTransaction)
+
+			s.UnregisterActor(context.Sender.Name)
 			return
 		}
 
@@ -372,8 +374,7 @@ func RollbackingTransaction(s *System) func(interface{}, system.Context) {
 		log.Info().Msgf("New Transaction %s Rollbacked", state.Transaction.IDTransaction)
 		log.Debug().Msgf("%s/Rollback -> Terminal", state.Transaction.IDTransaction)
 
-		state.ChangeStage(INITIAL)
-		context.Self.Become(state, TerminalTransaction(s))
+		s.UnregisterActor(context.Sender.Name)
 		return
 	}
 }

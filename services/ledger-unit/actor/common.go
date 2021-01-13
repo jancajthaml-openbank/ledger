@@ -230,10 +230,12 @@ func NewTransactionActor(s *System, name string) (*system.Actor, error) {
 		log.Warn().Msgf("Unable to register %s actor", name)
 		return nil, err
 	}
-	go func() {
+
+	go func(actorName string) {
 		time.Sleep(time.Minute)
-		s.UnregisterActor(envelope.Name)
-	}()
+		s.UnregisterActor(actorName)
+	}(envelope.Name)
+
 	log.Debug().Msgf("Actor %s registered with ttl of 1minute", name)
 	return envelope, nil
 }
