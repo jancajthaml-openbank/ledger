@@ -15,6 +15,7 @@
 package api
 
 import (
+	"fmt"
 	"encoding/json"
 	"github.com/jancajthaml-openbank/ledger-rest/actor"
 	"github.com/jancajthaml-openbank/ledger-rest/model"
