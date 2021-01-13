@@ -20,8 +20,6 @@ import (
 )
 
 func parseMessage(msg string) (interface{}, error) {
-	log.Debug().Msgf("Parsing Message %s", msg)
-
 	end := len(msg)
 	i := 0
 	for i < end && msg[i] != 32 {
@@ -59,7 +57,6 @@ func parseMessage(msg string) (interface{}, error) {
 // ProcessMessage processing of remote message
 func ProcessMessage(s *System) system.ProcessMessage {
 	return func(msg string, to system.Coordinates, from system.Coordinates) {
-		log.Debug().Msgf("ProcessMessage %s", msg)
 
 		ref, err := s.ActorOf(to.Name)
 		if err != nil {

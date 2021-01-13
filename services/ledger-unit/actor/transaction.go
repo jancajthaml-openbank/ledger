@@ -147,7 +147,6 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 		}
 
 		if !state.IsNegotiationFinished() {
-			log.Debug().Msgf("%s/Promise Negotiating %+v", state.Transaction.IDTransaction, state.WaitFor)
 			context.Self.Become(state, PromisingTransaction(s))
 			return
 		}
@@ -244,7 +243,6 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 		state.Mark(context.Data)
 
 		if !state.IsNegotiationFinished() {
-			log.Debug().Msgf("%s/Commit Negotiating %+v", state.Transaction.IDTransaction, state.WaitFor)
 			context.Self.Become(state, CommitingTransaction(s))
 			return
 		}
@@ -327,7 +325,6 @@ func RollbackingTransaction(s *System) func(interface{}, system.Context) {
 		state.Mark(context.Data)
 
 		if !state.IsNegotiationFinished() {
-			log.Debug().Msgf("%s/Rollback Negotiating %+v", state.Transaction.IDTransaction, state.WaitFor)
 			context.Self.Become(state, RollbackingTransaction(s))
 			return
 		}

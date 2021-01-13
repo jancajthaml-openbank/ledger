@@ -88,10 +88,12 @@ func CreateTransaction(storage localfs.Storage, system *actor.System) func(c ech
 			return nil
 		}
 
+		log.Debug().Msgf("Transaction %s Creating Requested", req.IDTransaction)
+
 		switch actor.CreateTransaction(system, tenant, *req).(type) {
 
 		case *actor.TransactionCreated:
-			log.Debug().Msgf("Transaction %s Created", req.IDTransaction)
+			log.Info().Msgf("Transaction %s Created", req.IDTransaction)
 			c.Response().Header().Set(echo.HeaderContentType, echo.MIMETextPlainCharsetUTF8)
 			c.Response().WriteHeader(http.StatusOK)
 			c.Response().Write([]byte(req.IDTransaction))
@@ -99,7 +101,7 @@ func CreateTransaction(storage localfs.Storage, system *actor.System) func(c ech
 			return nil
 
 		case *actor.TransactionRejected:
-			log.Debug().Msgf("Transaction %s Rejected", req.IDTransaction)
+			log.Info().Msgf("Transaction %s Rejected", req.IDTransaction)
 			c.Response().Header().Set(echo.HeaderContentType, echo.MIMETextPlainCharsetUTF8)
 			c.Response().WriteHeader(http.StatusCreated)
 			c.Response().Write([]byte(req.IDTransaction))
@@ -117,12 +119,12 @@ func CreateTransaction(storage localfs.Storage, system *actor.System) func(c ech
 			return nil
 
 		case *actor.TransactionRace:
-			log.Debug().Msgf("Transaction %s Accepted for Processing (Bounce)", req.IDTransaction)
+			log.Info().Msgf("Transaction %s Accepted for Processing (Bounce)", req.IDTransaction)
 			c.Response().WriteHeader(http.StatusAccepted)
 			return nil
 
 		case *actor.ReplyTimeout:
-			log.Debug().Msgf("Transaction %s Accepted for Processing (Timeout)", req.IDTransaction)
+			log.Warn().Msgf("Transaction %s Accepted for Processing (Timeout)", req.IDTransaction)
 			c.Response().WriteHeader(http.StatusAccepted)
 			return nil
 

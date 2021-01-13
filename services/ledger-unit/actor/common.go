@@ -196,8 +196,6 @@ func ProcessMessage(s *System) system.ProcessMessage {
 			return
 		}
 
-		log.Debug().Msgf("Process Message %+v", message)
-
 		var ref *system.Actor
 
 		switch message.(type) {
@@ -218,6 +216,7 @@ func ProcessMessage(s *System) system.ProcessMessage {
 		}
 
 		ref.Tell(message, to, from)
+
 		return
 	}
 }

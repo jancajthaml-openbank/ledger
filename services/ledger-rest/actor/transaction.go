@@ -47,7 +47,7 @@ func CreateTransaction(sys *System, tenant string, transaction model.Transaction
 	select {
 	case result := <-ch:
 		return result
-	case <-time.After(5 * time.Second):
+	case <-time.After(10 * time.Second):
 		return new(ReplyTimeout)
 	}
 }
