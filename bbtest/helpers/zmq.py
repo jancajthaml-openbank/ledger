@@ -46,7 +46,6 @@ class ZMQHelper(threading.Thread):
         if not (data and self.working):
           continue
         self.__pub.send(data)
-        self.__pub.send(data)
         self.__process_next_message(data)
         self.backlog.append(data)
       except zmq.error.Again as ex:
@@ -65,7 +64,6 @@ class ZMQHelper(threading.Thread):
     tenant, sender, account, req_id, kind, transaction, amount, currency = m.groups()
     reply_event = self.context.vault.process_account_event(tenant, account, kind, transaction, amount, currency)
     self.__pub.send('LedgerUnit/{} VaultUnit/{} {} {} {}'.format(sender, tenant, req_id, account, reply_event).encode())
-
 
   def send(self, data):
     self.__pub.send(data.encode())

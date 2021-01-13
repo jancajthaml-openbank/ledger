@@ -88,8 +88,6 @@ func CreateTransaction(storage localfs.Storage, system *actor.System) func(c ech
 			return nil
 		}
 
-		log.Debug().Msgf("Transaction %s Creating Requested", req.IDTransaction)
-
 		switch actor.CreateTransaction(system, tenant, *req).(type) {
 
 		case *actor.TransactionCreated:
