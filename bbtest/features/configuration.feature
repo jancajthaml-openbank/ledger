@@ -12,18 +12,6 @@ Feature: Service can be configured
     """
     And tenant CONFIGURATION_ERROR is offboarded
 
-  Scenario: configure log level to DEBUG
-    Given ledger is configured with
-      | property  | value |
-      | LOG_LEVEL | DEBUG |
-    And tenant CONFIGURATION_DEBUG is onboarded
-
-    Then journalctl of "ledger-unit@CONFIGURATION_DEBUG.service" contains following
-    """
-      Log level set to DEBUG
-    """
-    And tenant CONFIGURATION_DEBUG is offboarded
-
   Scenario: configure log level to INFO
     Given ledger is configured with
       | property  | value |
@@ -47,3 +35,15 @@ Feature: Service can be configured
       Log level set to INFO
     """
     And tenant CONFIGURATION_INVALID is offboarded
+
+  Scenario: configure log level to DEBUG
+    Given ledger is configured with
+      | property  | value |
+      | LOG_LEVEL | DEBUG |
+    And tenant CONFIGURATION_DEBUG is onboarded
+
+    Then journalctl of "ledger-unit@CONFIGURATION_DEBUG.service" contains following
+    """
+      Log level set to DEBUG
+    """
+    And tenant CONFIGURATION_DEBUG is offboarded
