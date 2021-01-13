@@ -37,8 +37,10 @@ func (original *Transaction) IsSameAs(candidate *Transaction) bool {
 	}
 
 	confirmed := make(map[int]bool)
+	var found bool
+
 	for _, left := range candidate.Transfers {
-		found := false
+		found = false
 		for j, right := range original.Transfers {
 			if _, ok := confirmed[j]; ok {
 				continue
@@ -68,8 +70,8 @@ func (original *Transaction) IsSameAs(candidate *Transaction) bool {
 				continue
 			}
 			confirmed[j] = true
+			found = true
 		}
-
 		if !found {
 			return false
 		}
