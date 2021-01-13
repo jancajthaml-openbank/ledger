@@ -71,7 +71,7 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 
 					s.UnregisterActor(context.Sender.Name)
 				} else {
-					log.Debug().Msgf("%s/Initial Conflict duplicate", current.IDTransaction)
+					log.Debug().Msgf("%s/Initial Conflict duplicate. Existing %+v vs requested %+v", current.IDTransaction, current, msg)
 
 					log.Debug().Msgf("%s/Initial -> Terminal", current.IDTransaction)
 

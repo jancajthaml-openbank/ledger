@@ -59,8 +59,10 @@ func parseMessage(msg string) (interface{}, error) {
 // ProcessMessage processing of remote message
 func ProcessMessage(s *System) system.ProcessMessage {
 	return func(msg string, to system.Coordinates, from system.Coordinates) {
+		log.Debug("ProcessMessage %s", msg)
 		ref, err := s.ActorOf(to.Name)
 		if err != nil {
+			log.Warn().Msgf("Deadletter [remote %v -> local %v]", from, to)
 			// FIXME forward into deadletter receiver and finish whatever has started
 			return
 		}

@@ -126,7 +126,7 @@ func CreateTransaction(storage localfs.Storage, system *actor.System) func(c ech
 			return nil
 
 		default:
-			return err
+			return fmt.Errorf("interval server error")
 
 		}
 	}
