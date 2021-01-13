@@ -57,7 +57,6 @@ func parseMessage(msg string) (interface{}, error) {
 // ProcessMessage processing of remote message
 func ProcessMessage(s *System) system.ProcessMessage {
 	return func(msg string, to system.Coordinates, from system.Coordinates) {
-
 		ref, err := s.ActorOf(to.Name)
 		if err != nil {
 			log.Warn().Msgf("Deadletter [remote %v -> local %v]", from, to)
@@ -69,7 +68,6 @@ func ProcessMessage(s *System) system.ProcessMessage {
 			log.Warn().Msgf("%s [remote %v -> local %v]", err, from, to)
 		}
 
-		log.Debug().Msgf("Tell %+v from %+v to %+v", message, from, to)
 		ref.Tell(message, to, from)
 		return
 	}
