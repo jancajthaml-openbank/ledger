@@ -50,12 +50,14 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 			switch current.State {
 
 			case persistence.StatusCommitted, persistence.StatusRollbacked:
-				if state.Transaction.IsSameAs(current) {
-					log.Debug().Msgf("%s/Initial Conflict already done", current.IDTransaction)
+				if msg.IsSameAs(current) {
+
 					var reply string
 					if current.State == persistence.StatusCommitted {
+						log.Debug().Msgf("%s/Initial Conflict already committed", current.IDTransaction)
 						reply = RespCreateTransaction+" "+current.IDTransaction
 					} else {
+						log.Debug().Msgf("%s/Initial Conflict already rejected", current.IDTransaction)
 						reply = RespTransactionRejected+" "+current.IDTransaction+" "+current.State
 					}
 
