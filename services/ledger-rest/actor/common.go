@@ -20,6 +20,8 @@ import (
 )
 
 func parseMessage(msg string) (interface{}, error) {
+	log.Debug().Msgf("Parsing Message %s", msg)
+
 	end := len(msg)
 	i := 0
 	for i < end && msg[i] != 32 {
@@ -66,6 +68,8 @@ func ProcessMessage(s *System) system.ProcessMessage {
 		if err != nil {
 			log.Warn().Msgf("%s [remote %v -> local %v]", err, from, to)
 		}
+
+		log.Debug().Msgf("Tell %+v from %+v to %+v", message, from, to)
 		ref.Tell(message, to, from)
 		return
 	}

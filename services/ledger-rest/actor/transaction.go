@@ -36,7 +36,7 @@ func CreateTransaction(sys *System, tenant string, transaction model.Transaction
 		CreateTransactionMessage(transaction),
 		system.Coordinates{
 			Region: "LedgerUnit/" + tenant,
-			Name:   envelope.Name,
+			Name:   envelope.Name,	//IDTransaction
 		},
 		system.Coordinates{
 			Region: "LedgerRest",

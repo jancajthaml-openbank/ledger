@@ -116,44 +116,13 @@ func CreateTransaction(storage localfs.Storage, system *actor.System) func(c ech
 			return nil
 
 		case *actor.TransactionRace:
-			log.Debug().Msgf("Transaction %s Accepted for Processing", req.IDTransaction)
-			log.Debug().Msgf("Transaction %s Accepted for Processing", req.IDTransaction)
+			log.Debug().Msgf("Transaction %s Accepted for Processing (Bounce)", req.IDTransaction)
 			c.Response().WriteHeader(http.StatusAccepted)
 			return nil
 
 		case *actor.ReplyTimeout:
-
-			log.Debug().Msgf("Transaction %s Timeout fallback to storage lookup", req.IDTransaction)
-
-			transaction, err := persistence.LoadTransaction(storage, tenant, req.IDTransaction)
-			if err != nil {
-				log.Debug().Msgf("Transaction %s Accepted for Processing", req.IDTransaction)
-				c.Response().WriteHeader(http.StatusAccepted)
-				return nil
-			}
-
-			switch transaction.Status {
-
-			case "committed":
-				log.Debug().Msgf("Transaction %s Created", transaction.IDTransaction)
-				c.Response().Header().Set(echo.HeaderContentType, echo.MIMETextPlainCharsetUTF8)
-				c.Response().WriteHeader(http.StatusOK)
-				c.Response().Write([]byte(transaction.IDTransaction))
-				c.Response().Flush()
-
-			case "rollbacked":
-				log.Debug().Msgf("Transaction %s Rejected", req.IDTransaction)
-				c.Response().Header().Set(echo.HeaderContentType, echo.MIMETextPlainCharsetUTF8)
-				c.Response().WriteHeader(http.StatusCreated)
-				c.Response().Write([]byte(req.IDTransaction))
-				c.Response().Flush()
-
-			default:
-				log.Debug().Msgf("Transaction %s Accepted for Processing", req.IDTransaction)
-				c.Response().WriteHeader(http.StatusAccepted)
-
-			}
-
+			log.Debug().Msgf("Transaction %s Accepted for Processing (Timeout)", req.IDTransaction)
+			c.Response().WriteHeader(http.StatusAccepted)
 			return nil
 
 		default:

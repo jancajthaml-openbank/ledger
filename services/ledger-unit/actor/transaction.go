@@ -53,47 +53,50 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 			return
 		}
 
-		err := persistence.CreateTransaction(s.Storage, &state.Transaction)
-		if err != nil {
+		if err := persistence.CreateTransaction(s.Storage, &state.Transaction); err != nil {
 
 			current, err := persistence.LoadTransaction(s.Storage, state.Transaction.IDTransaction)
 			if err != nil {
-				// FIXME bounce try again
-				log.Warn().Msgf("%s/Initial Conflict Does not exist", state.Transaction.IDTransaction)
-				s.SendMessage(FatalError, state.ReplyTo, context.Receiver)
+				log.Warn().Msgf("%s/Initial Conflict storage bounce", state.Transaction.IDTransaction)
+				s.SendMessage(
+					RespTransactionRace+" "+state.Transaction.IDTransaction,
+					state.ReplyTo,
+					context.Receiver,
+				)
 				return
 			}
 
-			if current.State == persistence.StatusCommitted || current.State == persistence.StatusRollbacked {
+			switch current.State {
+
+			case persistence.StatusCommitted:
 				if state.Transaction.IsSameAs(current) {
-					log.Debug().Msgf("%s/Initial Conflict already done", state.Transaction.IDTransaction)
-					if current.State == persistence.StatusCommitted {
-						s.SendMessage(
-							RespCreateTransaction+" "+state.Transaction.IDTransaction,
-							state.ReplyTo,
-							context.Receiver,
-						)
-					} else {
-						s.SendMessage(
-							RespTransactionRejected+" "+state.Transaction.IDTransaction+" "+state.Transaction.State,
-							state.ReplyTo,
-							context.Receiver,
-						)
-					}
-				} else {
-					log.Debug().Msgf("%s/Initial Conflict duplicate transaction id", state.Transaction.IDTransaction)
-
-					log.Warn().Msgf("%s/Initial Conflict original %+v requested %+v", state.Transaction.IDTransaction, current, state.Transaction)
-
+					log.Debug().Msgf("%s/Initial Conflict already committed", state.Transaction.IDTransaction)
 					s.SendMessage(
-						RespTransactionDuplicate+" "+state.Transaction.IDTransaction,
+						RespCreateTransaction+" "+state.Transaction.IDTransaction,
 						state.ReplyTo,
 						context.Receiver,
 					)
 				}
-				return
+			case persistence.StatusRollbacked:
+				if state.Transaction.IsSameAs(current) {
+					log.Debug().Msgf("%s/Initial Conflict already rejected", state.Transaction.IDTransaction)
+					s.SendMessage(
+						RespTransactionRejected+" "+state.Transaction.IDTransaction+" "+state.Transaction.State,
+						state.ReplyTo,
+						context.Receiver,
+					)
+				}
+
+			default:
+				log.Debug().Msgf("%s/Initial Conflict status bounce", state.Transaction.IDTransaction)
+				s.SendMessage(
+					RespTransactionRace+" "+state.Transaction.IDTransaction,
+					state.ReplyTo,
+					context.Receiver,
+				)
 			}
 
+			return
 		}
 
 		s.Metrics.TransactionPromised(len(state.Transaction.Transfers))
