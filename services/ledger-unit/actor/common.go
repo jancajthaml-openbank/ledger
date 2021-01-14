@@ -201,7 +201,6 @@ func ProcessMessage(s *System) system.ProcessMessage {
 		switch message.(type) {
 
 		case model.Transaction:
-			log.Debug().Msg("Received request for new Transaction")
 			if ref, err = NewTransactionActor(s, to.Name); err != nil {
 				log.Warn().Msgf("%s [remote %v -> local %v]", err, from, to)
 				s.SendMessage(FatalError, from, to)
@@ -233,10 +232,8 @@ func NewTransactionActor(s *System, name string) (*system.Actor, error) {
 
 	go func(actorName string) {
 		time.Sleep(time.Minute)
-		log.Debug().Msgf("Actor %s expired", actorName)
 		s.UnregisterActor(actorName)
 	}(envelope.Name)
 
-	log.Debug().Msgf("Actor %s registered with ttl of 1minute", name)
 	return envelope, nil
 }
