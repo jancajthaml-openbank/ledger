@@ -26,61 +26,87 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(TransactionState)
 
-		switch msg := context.Data.(type) {
-
-		case model.Transaction:
-			if state.Ready {
-				s.SendMessage(
-					RespTransactionRace+" "+msg.IDTransaction,
-					state.ReplyTo,
-					context.Receiver,
-				)
-				log.Warn().Msgf("%s/Initial already in progress", state.Transaction.IDTransaction)
-				return
-			}
-			state.PrepareNewForTransaction(msg, context.Sender)
-
-		default:
+		msg, ok := context.Data.(model.Transaction)
+		if !ok {
 			s.SendMessage(FatalError, state.ReplyTo, context.Receiver)
+			s.UnregisterActor(context.Sender.Name)
 			return
 		}
 
-		err := persistence.CreateTransaction(s.Storage, &state.Transaction)
-		if err != nil {
-			current, err := persistence.LoadTransaction(s.Storage, state.Transaction.IDTransaction)
+		if err := persistence.CreateTransaction(s.Storage, &msg); err != nil {
+
+			current, err := persistence.LoadTransaction(s.Storage, msg.IDTransaction)
 			if err != nil {
-				s.SendMessage(FatalError, state.ReplyTo, context.Receiver)
+				log.Warn().Msgf("%s/Initial Conflict storage bounce", msg.IDTransaction)
+				s.SendMessage(
+					RespTransactionRace+" "+msg.IDTransaction,
+					context.Sender,
+					context.Receiver,
+				)
+				s.UnregisterActor(context.Sender.Name)
 				return
 			}
 
-			if current.State == persistence.StatusCommitted || current.State == persistence.StatusRollbacked {
-				if state.Transaction.IsSameAs(current) {
+			switch current.State {
+
+			case persistence.StatusCommitted, persistence.StatusRollbacked:
+				if msg.IsSameAs(current) {
+
+					var reply string
 					if current.State == persistence.StatusCommitted {
-						s.SendMessage(
-							RespCreateTransaction+" "+state.Transaction.IDTransaction,
-							state.ReplyTo,
-							context.Receiver,
-						)
+						log.Debug().Msgf("%s/Initial Conflict already committed", current.IDTransaction)
+						reply = RespCreateTransaction+" "+current.IDTransaction
 					} else {
-						s.SendMessage(
-							RespTransactionRejected+" "+state.Transaction.IDTransaction+" "+state.Transaction.State,
-							state.ReplyTo,
-							context.Receiver,
-						)
+						log.Debug().Msgf("%s/Initial Conflict already rejected", current.IDTransaction)
+						reply = RespTransactionRejected+" "+current.IDTransaction+" "+current.State
 					}
-				} else {
+
+					log.Debug().Msgf("%s/Initial -> Terminal", current.IDTransaction)
+
 					s.SendMessage(
-						RespTransactionDuplicate+" "+state.Transaction.IDTransaction,
-						state.ReplyTo,
+						reply,
+						context.Sender,
 						context.Receiver,
 					)
+
+					s.UnregisterActor(context.Sender.Name)
+				} else {
+					log.Debug().Msgf("%s/Initial Conflict duplicate. Existing %+v vs requested %+v", current.IDTransaction, current, msg)
+
+					log.Debug().Msgf("%s/Initial -> Terminal", current.IDTransaction)
+
+					s.SendMessage(
+						RespTransactionDuplicate+" "+current.IDTransaction+" "+current.State,
+						context.Sender,
+						context.Receiver,
+					)
+
+					s.UnregisterActor(context.Sender.Name)
 				}
-				return
+
+			default:
+				log.Debug().Msgf("%s/Initial Conflict status bounce", current.IDTransaction)
+
+				s.SendMessage(
+					RespTransactionRace+" "+current.IDTransaction,
+					context.Sender,
+					context.Receiver,
+				)
+
+				s.UnregisterActor(context.Sender.Name)
 			}
 
+			return
 		}
 
+		state.PrepareNewForTransaction(msg, context.Sender)
+
 		s.Metrics.TransactionPromised(len(state.Transaction.Transfers))
+
+		log.Debug().Msgf("%s/Initial -> %s/Promise", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
+
+		state.ChangeStage(PROMISE)
+		context.Self.Become(state, PromisingTransaction(s))
 
 		for account, task := range state.Negotiation {
 			s.SendMessage(
@@ -92,11 +118,6 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 				context.Receiver,
 			)
 		}
-
-		state.ResetMarks()
-		context.Self.Become(state, PromisingTransaction(s))
-
-		log.Debug().Msgf("%s/Initial -> %s/Promise", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
 	}
 }
 
@@ -104,7 +125,6 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 func PromisingTransaction(s *System) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(TransactionState)
-
 		accountRetry := state.Mark(context.Data)
 
 		if accountRetry != nil {
@@ -158,9 +178,10 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 
 		if state.FailedResponses > 0 {
 			log.Debug().Msgf("%s/Promise Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
+
 			log.Debug().Msgf("%s/Promise -> %s/Rollback", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
 
-			state.ResetMarks()
+			state.ChangeStage(ROLLBACK)
 			context.Self.Become(state, RollbackingTransaction(s))
 
 			for account, task := range state.Negotiation {
@@ -195,6 +216,11 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 			return
 		}
 
+		log.Debug().Msgf("%s/Promise -> %s/Commit", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
+
+		state.ChangeStage(COMMIT)
+		context.Self.Become(state, CommitingTransaction(s))
+
 		for account, task := range state.Negotiation {
 			s.SendMessage(
 				CommitOrder+" "+task,
@@ -206,9 +232,6 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 			)
 		}
 
-		state.ResetMarks()
-		context.Self.Become(state, CommitingTransaction(s))
-		log.Debug().Msgf("%s/Promise -> %s/Commit", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
 		return
 	}
 }
@@ -218,6 +241,7 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(TransactionState)
 		state.Mark(context.Data)
+
 		if !state.IsNegotiationFinished() {
 			context.Self.Become(state, CommitingTransaction(s))
 			return
@@ -240,6 +264,11 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 				return
 			}
 
+			log.Debug().Msgf("%s/Commit -> %s/Rollback", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
+
+			state.ChangeStage(ROLLBACK)
+			context.Self.Become(state, RollbackingTransaction(s))
+
 			for account, task := range state.Negotiation {
 				s.SendMessage(
 					RollbackOrder+" "+task,
@@ -251,11 +280,6 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 				)
 			}
 
-			state.ResetMarks()
-			context.Self.Become(state, RollbackingTransaction(s))
-
-			log.Debug().Msgf("%s/Commit -> %s/Rollback", state.Transaction.IDTransaction, state.Transaction.IDTransaction)
-
 			return
 		}
 
@@ -264,7 +288,7 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 		state.Transaction.State = persistence.StatusCommitted
 
 		err := persistence.UpdateTransaction(s.Storage, &state.Transaction)
-		// FIXME log error
+
 		if err != nil {
 			s.SendMessage(
 				RespTransactionRefused+" "+state.Transaction.IDTransaction,
@@ -278,12 +302,8 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 			return
 		}
 
-		var transfers []string
-		for _, transfer := range state.Transaction.Transfers {
-			transfers = append(transfers, transfer.IDTransfer)
-		}
-
 		s.Metrics.TransactionCommitted(len(state.Transaction.Transfers))
+
 		s.SendMessage(
 			RespCreateTransaction+" "+state.Transaction.IDTransaction,
 			state.ReplyTo,
@@ -291,7 +311,7 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 		)
 
 		log.Info().Msgf("New Transaction %s Committed", state.Transaction.IDTransaction)
-		log.Debug().Msgf("%s/Commit -> Unregister", state.Transaction.IDTransaction)
+		log.Debug().Msgf("%s/Commit -> Terminal", state.Transaction.IDTransaction)
 
 		s.UnregisterActor(context.Sender.Name)
 		return
@@ -303,6 +323,7 @@ func RollbackingTransaction(s *System) func(interface{}, system.Context) {
 	return func(t_state interface{}, context system.Context) {
 		state := t_state.(TransactionState)
 		state.Mark(context.Data)
+
 		if !state.IsNegotiationFinished() {
 			context.Self.Become(state, RollbackingTransaction(s))
 			return
@@ -352,7 +373,7 @@ func RollbackingTransaction(s *System) func(interface{}, system.Context) {
 		)
 
 		log.Info().Msgf("New Transaction %s Rollbacked", state.Transaction.IDTransaction)
-		log.Debug().Msgf("%s/Rollback -> Unregister", state.Transaction.IDTransaction)
+		log.Debug().Msgf("%s/Rollback -> Terminal", state.Transaction.IDTransaction)
 
 		s.UnregisterActor(context.Sender.Name)
 		return

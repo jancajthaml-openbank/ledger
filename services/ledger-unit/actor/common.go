@@ -16,6 +16,7 @@ package actor
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/jancajthaml-openbank/ledger-unit/model"
 
@@ -187,27 +188,35 @@ func ProcessMessage(s *System) system.ProcessMessage {
 		if to.Name == "" {
 			return
 		}
+
 		message, err := parseMessage(msg, from)
 		if err != nil {
 			log.Warn().Msgf("%s [remote %v -> local %v]", err, from, to)
 			s.SendMessage(FatalError, from, to)
 			return
 		}
+
 		var ref *system.Actor
+
 		switch message.(type) {
+
 		case model.Transaction:
 			if ref, err = NewTransactionActor(s, to.Name); err != nil {
 				log.Warn().Msgf("%s [remote %v -> local %v]", err, from, to)
 				s.SendMessage(FatalError, from, to)
 				return
 			}
+
 		default:
 			if ref, err = s.ActorOf(to.Name); err != nil {
 				log.Warn().Msgf("Actor not found [remote %v -> local %v]", from, to)
 				return
 			}
+
 		}
+
 		ref.Tell(message, to, from)
+
 		return
 	}
 }
@@ -220,6 +229,11 @@ func NewTransactionActor(s *System, name string) (*system.Actor, error) {
 		log.Warn().Msgf("Unable to register %s actor", name)
 		return nil, err
 	}
-	log.Debug().Msgf("Actor %s registered", name)
+
+	go func(actorName string) {
+		time.Sleep(time.Minute)
+		s.UnregisterActor(actorName)
+	}(envelope.Name)
+
 	return envelope, nil
 }

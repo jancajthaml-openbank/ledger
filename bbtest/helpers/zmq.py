@@ -65,7 +65,6 @@ class ZMQHelper(threading.Thread):
     reply_event = self.context.vault.process_account_event(tenant, account, kind, transaction, amount, currency)
     self.__pub.send('LedgerUnit/{} VaultUnit/{} {} {} {}'.format(sender, tenant, req_id, account, reply_event).encode())
 
-
   def send(self, data):
     self.__pub.send(data.encode())
 

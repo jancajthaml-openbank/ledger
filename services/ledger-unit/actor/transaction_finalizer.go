@@ -67,6 +67,7 @@ func (scan *TransactionFinalizer) finalizeStaleTransactions() {
 		log.Info().Msgf("Transaction %s in state %s needs completion", transaction, instance.State)
 		scan.callback(*instance)
 	}
+	log.Info().Msg("Finished stale transactions scan")
 }
 
 func (scan *TransactionFinalizer) getTransaction(id string) *model.Transaction {
@@ -77,7 +78,7 @@ func (scan *TransactionFinalizer) getTransaction(id string) *model.Transaction {
 	if err != nil {
 		return nil
 	}
-	if time.Now().Sub(modTime).Seconds() < 120 { // FIXME configurable
+	if time.Now().Sub(modTime).Minutes() < 5 { // FIXME configurable
 		return nil
 	}
 	state, err := persistence.LoadTransactionState(scan.storage, id)

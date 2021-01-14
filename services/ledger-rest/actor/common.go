@@ -59,6 +59,7 @@ func ProcessMessage(s *System) system.ProcessMessage {
 	return func(msg string, to system.Coordinates, from system.Coordinates) {
 		ref, err := s.ActorOf(to.Name)
 		if err != nil {
+			log.Warn().Msgf("Deadletter [remote %v -> local %v]", from, to)
 			// FIXME forward into deadletter receiver and finish whatever has started
 			return
 		}
@@ -66,6 +67,7 @@ func ProcessMessage(s *System) system.ProcessMessage {
 		if err != nil {
 			log.Warn().Msgf("%s [remote %v -> local %v]", err, from, to)
 		}
+
 		ref.Tell(message, to, from)
 		return
 	}

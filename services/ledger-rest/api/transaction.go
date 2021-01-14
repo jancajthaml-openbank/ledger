@@ -15,6 +15,7 @@
 package api
 
 import (
+	"fmt"
 	"encoding/json"
 	"github.com/jancajthaml-openbank/ledger-rest/actor"
 	"github.com/jancajthaml-openbank/ledger-rest/model"
@@ -90,6 +91,7 @@ func CreateTransaction(storage localfs.Storage, system *actor.System) func(c ech
 		switch actor.CreateTransaction(system, tenant, *req).(type) {
 
 		case *actor.TransactionCreated:
+			log.Info().Msgf("Transaction %s/%s Created", tenant, req.IDTransaction)
 			c.Response().Header().Set(echo.HeaderContentType, echo.MIMETextPlainCharsetUTF8)
 			c.Response().WriteHeader(http.StatusOK)
 			c.Response().Write([]byte(req.IDTransaction))
@@ -97,6 +99,7 @@ func CreateTransaction(storage localfs.Storage, system *actor.System) func(c ech
 			return nil
 
 		case *actor.TransactionRejected:
+			log.Info().Msgf("Transaction %s/%s Rejected", tenant, req.IDTransaction)
 			c.Response().Header().Set(echo.HeaderContentType, echo.MIMETextPlainCharsetUTF8)
 			c.Response().WriteHeader(http.StatusCreated)
 			c.Response().Write([]byte(req.IDTransaction))
@@ -104,19 +107,27 @@ func CreateTransaction(storage localfs.Storage, system *actor.System) func(c ech
 			return nil
 
 		case *actor.TransactionRefused:
+			log.Debug().Msgf("Transaction %s/%s Refused", tenant, req.IDTransaction)
 			c.Response().WriteHeader(http.StatusExpectationFailed)
 			return nil
 
 		case *actor.TransactionDuplicate:
+			log.Debug().Msgf("Transaction %s/%s Duplicate", tenant, req.IDTransaction)
 			c.Response().WriteHeader(http.StatusConflict)
 			return nil
 
-		case *actor.TransactionRace, *actor.ReplyTimeout:
+		case *actor.TransactionRace:
+			log.Info().Msgf("Transaction %s/%s Accepted for Processing (Bounce)", tenant, req.IDTransaction)
+			c.Response().WriteHeader(http.StatusAccepted)
+			return nil
+
+		case *actor.ReplyTimeout:
+			log.Warn().Msgf("Transaction %s/%s Accepted for Processing (Timeout)", tenant, req.IDTransaction)
 			c.Response().WriteHeader(http.StatusAccepted)
 			return nil
 
 		default:
-			return err
+			return fmt.Errorf("interval server error")
 
 		}
 	}
