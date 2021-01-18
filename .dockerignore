@@ -3,4 +3,3 @@
 .circleci
 .jenkins
 packaging/debian/target
-**/*/vendor
