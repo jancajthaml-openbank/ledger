@@ -73,6 +73,8 @@ func (entity *Transaction) Deserialize(data []byte) {
 		return
 	}
 
+	// TODO improve performance of this function
+
 	entity.Transfers = make([]Transfer, 0)
 
 	var j = bytes.IndexByte(data, '\n')
@@ -120,7 +122,7 @@ parse:
 	goto scan
 }
 
-// DeserializeState deserializes transaction state from persistent data
+// DeserializeState saves first line of data into Transaction State
 func (entity *Transaction) DeserializeState(data []byte) {
 	if entity == nil {
 		return
