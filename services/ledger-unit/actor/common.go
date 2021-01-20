@@ -96,8 +96,8 @@ func parseMessage(msg string, from system.Coordinates) (interface{}, error) {
 			transaction := model.Transaction{
 				IDTransaction: parts[1],
 			}
-			for j := range parts[2:idx] {
-				transfer, err := parseTransfer(parts[j])
+			for _, part := range parts[2:idx] {
+				transfer, err := parseTransfer(part)
 				if err != nil {
 					return nil, fmt.Errorf("invalid transfer in message %s", msg)
 				}
