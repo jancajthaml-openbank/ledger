@@ -78,7 +78,7 @@ func (scan *TransactionFinalizer) getTransaction(id string) *model.Transaction {
 	if err != nil {
 		return nil
 	}
-	if time.Now().Sub(modTime).Minutes() < 5 { // FIXME configurable
+	if time.Now().Sub(modTime).Minutes() < 5 { // TODO configurable
 		return nil
 	}
 	state, err := persistence.LoadTransactionState(scan.storage, id)

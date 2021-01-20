@@ -35,6 +35,7 @@ func CreateTenant(control system.Control) func(c echo.Context) error {
 		if err != nil {
 			return err
 		}
+		log.Info().Msgf("Tenant %s Created", tenant)
 		c.Response().WriteHeader(http.StatusOK)
 		return nil
 	}
@@ -52,6 +53,7 @@ func DeleteTenant(control system.Control) func(c echo.Context) error {
 		if err != nil {
 			return err
 		}
+		log.Info().Msgf("Tenant %s Deleted", tenant)
 		c.Response().WriteHeader(http.StatusOK)
 		return nil
 	}

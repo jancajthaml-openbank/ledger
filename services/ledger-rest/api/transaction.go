@@ -15,8 +15,8 @@
 package api
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"github.com/jancajthaml-openbank/ledger-rest/actor"
 	"github.com/jancajthaml-openbank/ledger-rest/model"
 	"github.com/jancajthaml-openbank/ledger-rest/persistence"
@@ -107,12 +107,12 @@ func CreateTransaction(storage localfs.Storage, system *actor.System) func(c ech
 			return nil
 
 		case *actor.TransactionRefused:
-			log.Debug().Msgf("Transaction %s/%s Refused", tenant, req.IDTransaction)
+			log.Info().Msgf("Transaction %s/%s Refused", tenant, req.IDTransaction)
 			c.Response().WriteHeader(http.StatusExpectationFailed)
 			return nil
 
 		case *actor.TransactionDuplicate:
-			log.Debug().Msgf("Transaction %s/%s Duplicate", tenant, req.IDTransaction)
+			log.Info().Msgf("Transaction %s/%s Duplicate", tenant, req.IDTransaction)
 			c.Response().WriteHeader(http.StatusConflict)
 			return nil
 

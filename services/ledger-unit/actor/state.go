@@ -21,13 +21,18 @@ import (
 	system "github.com/jancajthaml-openbank/actor-system"
 )
 
+// TransactionStage enum INITIAL | PROMISE | COMMIT | ROLLBACK
 type TransactionStage int
 
 const (
+	// INITIAL stage enum
 	INITIAL TransactionStage = iota
-  PROMISE
-  COMMIT
-  ROLLBACK
+	// PROMISE stage enum
+	PROMISE
+	// COMMIT stage enum
+	COMMIT
+	// ROLLBACK stage enum
+	ROLLBACK
 )
 
 // TransactionState represent negotiation state of transaction actor
@@ -157,7 +162,6 @@ func (state *TransactionState) markRollback(value interface{}) *model.Account {
 
 	}
 }
-
 
 // Mark update negotiation state based on value
 func (state *TransactionState) Mark(value interface{}) *model.Account {
