@@ -20,13 +20,15 @@ import (
 	"github.com/DataDog/datadog-go/statsd"
 )
 
+// Metrics provides helper function for metrics
 type Metrics interface {
 	TransactionPromised(transfers int)
 	TransactionCommitted(transfers int)
 	TransactionRollbacked(transfers int)
 }
 
-type metrics struct {
+// StatsdMetrics provides metrics helper with statsd client
+type StatsdMetrics struct {
 	client                 *statsd.Client
 	tenant                 string
 	promisedTransactions   int64
@@ -38,13 +40,13 @@ type metrics struct {
 }
 
 // NewMetrics returns blank metrics holder
-func NewMetrics(tenant string, endpoint string) *metrics {
+func NewMetrics(tenant string, endpoint string) *StatsdMetrics {
 	client, err := statsd.New(endpoint, statsd.WithClientSideAggregation(), statsd.WithoutTelemetry())
 	if err != nil {
 		log.Error().Msgf("Failed to ensure statsd client %+v", err)
 		return nil
 	}
-	return &metrics{
+	return &StatsdMetrics{
 		client:                 client,
 		tenant:                 tenant,
 		promisedTransactions:   int64(0),
@@ -57,7 +59,7 @@ func NewMetrics(tenant string, endpoint string) *metrics {
 }
 
 // TransactionPromised increments transactions promised by one
-func (instance *metrics) TransactionPromised(transfers int) {
+func (instance *StatsdMetrics) TransactionPromised(transfers int) {
 	if instance == nil {
 		return
 	}
@@ -66,7 +68,7 @@ func (instance *metrics) TransactionPromised(transfers int) {
 }
 
 // TransactionCommitted increments transactions committed by one
-func (instance *metrics) TransactionCommitted(transfers int) {
+func (instance *StatsdMetrics) TransactionCommitted(transfers int) {
 	if instance == nil {
 		return
 	}
@@ -75,7 +77,7 @@ func (instance *metrics) TransactionCommitted(transfers int) {
 }
 
 // TransactionRollbacked increments transactions rollbacked by one
-func (instance *metrics) TransactionRollbacked(transfers int) {
+func (instance *StatsdMetrics) TransactionRollbacked(transfers int) {
 	if instance == nil {
 		return
 	}
@@ -84,23 +86,23 @@ func (instance *metrics) TransactionRollbacked(transfers int) {
 }
 
 // Setup does nothing
-func (*metrics) Setup() error {
+func (*StatsdMetrics) Setup() error {
 	return nil
 }
 
 // Done returns always finished
-func (*metrics) Done() <-chan interface{} {
+func (*StatsdMetrics) Done() <-chan interface{} {
 	done := make(chan interface{})
 	close(done)
 	return done
 }
 
 // Cancel does nothing
-func (*metrics) Cancel() {
+func (*StatsdMetrics) Cancel() {
 }
 
 // Work represents metrics worker work
-func (instance *metrics) Work() {
+func (instance *StatsdMetrics) Work() {
 	if instance == nil {
 		return
 	}

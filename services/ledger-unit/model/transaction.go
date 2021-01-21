@@ -16,7 +16,9 @@ package model
 
 import (
 	"bytes"
+	"reflect"
 	"strings"
+	"unsafe"
 )
 
 // Transfer represents ingress/egress message of transfer
@@ -65,11 +67,13 @@ func (entity *Transaction) Serialize() []byte {
 	return buffer.Bytes()
 }
 
-// Deserialize transaction from binary data
+// Deserialize transaction from persistent data
 func (entity *Transaction) Deserialize(data []byte) {
 	if entity == nil {
 		return
 	}
+
+	// TODO improve performance of this function
 
 	entity.Transfers = make([]Transfer, 0)
 
@@ -118,12 +122,22 @@ parse:
 	goto scan
 }
 
-// DeserializeState deserializes transaction state from binary data
+// DeserializeState saves first line of data into Transaction State
 func (entity *Transaction) DeserializeState(data []byte) {
 	if entity == nil {
 		return
 	}
-	var j = bytes.IndexByte(data, '\n')
-	entity.State = string(data[0:j])
+	var j = 0
+	header := (*reflect.SliceHeader)(unsafe.Pointer(&data))
+	for j < header.Len {
+		if data[j] == '\n' {
+			entity.State = *(*string)(unsafe.Pointer(&reflect.StringHeader{
+				Data: header.Data,
+				Len:  j,
+			}))
+			return
+		}
+		j++
+	}
 	return
 }

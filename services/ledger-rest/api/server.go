@@ -29,8 +29,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-const connectionReadTimeout = 5 * time.Second
-const connectionWriteTimeout = 5 * time.Second
+const connectionReadTimeout = 30 * time.Second
+const connectionWriteTimeout = 30 * time.Second
 
 // Server is a fascade for http-server following handler api of Gin and
 // lifecycle api of http

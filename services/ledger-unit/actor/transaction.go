@@ -55,10 +55,10 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 					var reply string
 					if current.State == persistence.StatusCommitted {
 						log.Debug().Msgf("%s/Initial Conflict already committed", current.IDTransaction)
-						reply = RespCreateTransaction+" "+current.IDTransaction
+						reply = RespCreateTransaction + " " + current.IDTransaction
 					} else {
 						log.Debug().Msgf("%s/Initial Conflict already rejected", current.IDTransaction)
-						reply = RespTransactionRejected+" "+current.IDTransaction+" "+current.State
+						reply = RespTransactionRejected + " " + current.IDTransaction + " " + current.State
 					}
 
 					log.Debug().Msgf("%s/Initial -> Terminal", current.IDTransaction)

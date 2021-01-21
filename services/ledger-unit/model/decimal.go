@@ -21,6 +21,7 @@ import (
 	"strings"
 )
 
+// Dec represents "infinite" precision decimal number
 type Dec struct {
 	unscaled big.Int
 	scale    int32
@@ -51,83 +52,41 @@ var exp10cache [64]big.Int = func() [64]big.Int {
 	return e10
 }()
 
-func NewDec(unscaled int64, scale int32) *Dec {
-	return new(Dec).SetUnscaled(unscaled).SetScale(scale)
-}
-
-func (x *Dec) Unscaled() (u int64, ok bool) {
-	u = x.unscaled.Int64()
-	var i big.Int
-	ok = i.SetInt64(u).Cmp(&x.unscaled) == 0
-	return
-}
-
-func (x *Dec) UnscaledBig() *big.Int {
-	return &x.unscaled
-}
-
-func (z *Dec) SetScale(scale int32) *Dec {
-	z.scale = scale
-	return z
-}
-
-func (z *Dec) SetUnscaled(unscaled int64) *Dec {
-	z.unscaled.SetInt64(unscaled)
-	return z
-}
-
-func (z *Dec) SetUnscaledBig(unscaled *big.Int) *Dec {
-	z.unscaled.Set(unscaled)
-	return z
-}
-
-func (z *Dec) Set(x *Dec) *Dec {
-	if z != x {
-		z.SetUnscaledBig(x.UnscaledBig())
-		z.SetScale(x.scale)
-	}
-	return z
-}
-
+// Sign of receiver
 func (x *Dec) Sign() int {
-	return x.UnscaledBig().Sign()
+	return x.unscaled.Sign()
 }
 
+// Add number to receiver
 func (x *Dec) Add(y *Dec) {
 	if x == nil || y == nil {
 		return
 	}
 	if x.scale == y.scale {
-		x.UnscaledBig().Add(x.UnscaledBig(), y.UnscaledBig())
+		x.unscaled.Add(&x.unscaled, &y.unscaled)
 	} else if x.scale > y.scale {
 		y.rescale(x.scale)
-		x.UnscaledBig().Add(x.UnscaledBig(), y.UnscaledBig())
+		x.unscaled.Add(&x.unscaled, &y.unscaled)
 	} else {
 		x.rescale(y.scale)
-		x.UnscaledBig().Add(x.UnscaledBig(), y.UnscaledBig())
+		x.unscaled.Add(&x.unscaled, &y.unscaled)
 	}
 }
 
+// Sub number from receiver
 func (x *Dec) Sub(y *Dec) {
 	if x == nil || y == nil {
 		return
 	}
 	if x.scale == y.scale {
-		x.UnscaledBig().Sub(x.UnscaledBig(), y.UnscaledBig())
+		x.unscaled.Sub(&x.unscaled, &y.unscaled)
 	} else if x.scale > y.scale {
 		y.rescale(x.scale)
-		x.UnscaledBig().Sub(x.UnscaledBig(), y.UnscaledBig())
+		x.unscaled.Sub(&x.unscaled, &y.unscaled)
 	} else {
 		x.rescale(y.scale)
-		x.UnscaledBig().Sub(x.UnscaledBig(), y.UnscaledBig())
+		x.unscaled.Sub(&x.unscaled, &y.unscaled)
 	}
-}
-
-func exp10(x int32) *big.Int {
-	if int(x) < len(exp10cache) {
-		return &exp10cache[int(x)]
-	}
-	return new(big.Int).Exp(bigInt[10], big.NewInt(int64(x)), nil)
 }
 
 func (x *Dec) rescale(newScale int32) {
@@ -138,10 +97,12 @@ func (x *Dec) rescale(newScale int32) {
 	switch {
 	case shift < 0:
 		e := exp10(-shift)
-		x.SetUnscaledBig(new(big.Int).Quo(x.UnscaledBig(), e)).SetScale(newScale)
+		x.unscaled.Set(new(big.Int).Quo(&x.unscaled, e))
+		x.scale = newScale
 	case shift > 0:
 		e := exp10(shift)
-		x.SetUnscaledBig(new(big.Int).Mul(x.UnscaledBig(), e)).SetScale(newScale)
+		x.unscaled.Set(new(big.Int).Mul(&x.unscaled, e))
+		x.scale = newScale
 	}
 }
 
@@ -150,7 +111,7 @@ func (x *Dec) String() string {
 		return "0.0"
 	}
 
-	numbers := x.UnscaledBig().Text(10)
+	numbers := x.unscaled.Text(10)
 
 	if x.scale <= 0 {
 		if x.scale != 0 && x.unscaled.Sign() != 0 {
@@ -198,7 +159,7 @@ func (x *Dec) String() string {
 	return result
 }
 
-func (z *Dec) scan(r io.RuneScanner) (*Dec, error) {
+func (x *Dec) scan(r io.RuneScanner) (*Dec, error) {
 	unscaled := make([]byte, 0, 256)
 	dp, dg := -1, -1
 loop:
@@ -237,20 +198,23 @@ loop:
 		return nil, fmt.Errorf("no digits read")
 	}
 	if dp >= 0 {
-		z.SetScale(int32(len(unscaled) - dp))
+		x.scale = int32(len(unscaled) - dp)
 	} else {
-		z.SetScale(0)
+		x.scale = 0
 	}
-	_, ok := z.UnscaledBig().SetString(string(unscaled), 10)
+
+	_, ok := x.unscaled.SetString(string(unscaled), 10)
 	if !ok {
 		return nil, fmt.Errorf("invalid decimal: %s", string(unscaled))
 	}
-	return z, nil
+	return x, nil
 }
 
-func (z *Dec) SetString(s string) bool {
+// SetString value
+func (x *Dec) SetString(s string) bool {
+	// TODO improve performance of this function
 	r := strings.NewReader(s)
-	_, err := z.scan(r)
+	_, err := x.scan(r)
 	if err != nil {
 		return false
 	}
@@ -259,4 +223,11 @@ func (z *Dec) SetString(s string) bool {
 		return false
 	}
 	return true
+}
+
+func exp10(x int32) *big.Int {
+	if int(x) < len(exp10cache) {
+		return &exp10cache[int(x)]
+	}
+	return new(big.Int).Exp(bigInt[10], big.NewInt(int64(x)), nil)
 }

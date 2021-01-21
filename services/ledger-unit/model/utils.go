@@ -81,8 +81,8 @@ func (original *Transaction) IsSameAs(candidate *Transaction) bool {
 }
 
 // PrepareRemoteNegotiation prepares negotiation of promises for all related accounts
-func (entity *Transaction) PrepareRemoteNegotiation() map[Account]string {
-	if entity == nil {
+func (original *Transaction) PrepareRemoteNegotiation() map[Account]string {
+	if original == nil {
 		return nil
 	}
 
@@ -90,7 +90,7 @@ func (entity *Transaction) PrepareRemoteNegotiation() map[Account]string {
 
 	chunks := make(map[negotiatonChunk][]*Dec)
 
-	for _, transfer := range entity.Transfers {
+	for _, transfer := range original.Transfers {
 		keyDebit := negotiatonChunk{
 			Currency: transfer.Currency,
 			Key:      transfer.Debit,
@@ -110,12 +110,10 @@ func (entity *Transaction) PrepareRemoteNegotiation() map[Account]string {
 
 	for chunk, amounts := range chunks {
 		acc := new(Dec)
-
 		for _, amount := range amounts {
 			acc.Add(amount)
 		}
-
-		result[chunk.Key] = entity.IDTransaction + " " + acc.String() + " " + chunk.Currency
+		result[chunk.Key] = original.IDTransaction + " " + acc.String() + " " + chunk.Currency
 	}
 
 	return result

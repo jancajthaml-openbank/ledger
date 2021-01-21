@@ -33,7 +33,7 @@ def create_transfer(context, tenant):
   except (http.client.RemoteDisconnected, socket.timeout):
     raise AssertionError('timeout')
   except urllib.error.HTTPError as err:
-    assert err.code == 417, 'missing transaction id with {}'.format(ex)
+    assert err.code == 417, 'missing transaction id with {}'.format(err)
     context.last_transaction_id = None
 
 

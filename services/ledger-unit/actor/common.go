@@ -231,8 +231,12 @@ func NewTransactionActor(s *System, name string) (*system.Actor, error) {
 	}
 
 	go func(actorName string) {
-		time.Sleep(time.Minute)
-		s.UnregisterActor(actorName)
+		select {
+		case <-time.After(time.Minute):
+			s.UnregisterActor(actorName)
+		case <-envelope.Exit:
+			return
+		}
 	}(envelope.Name)
 
 	return envelope, nil
