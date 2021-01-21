@@ -202,6 +202,7 @@ loop:
 	} else {
 		x.scale = 0
 	}
+
 	_, ok := x.unscaled.SetString(string(unscaled), 10)
 	if !ok {
 		return nil, fmt.Errorf("invalid decimal: %s", string(unscaled))
@@ -211,6 +212,7 @@ loop:
 
 // SetString value
 func (x *Dec) SetString(s string) bool {
+	// TODO improve performance of this function
 	r := strings.NewReader(s)
 	_, err := x.scan(r)
 	if err != nil {

@@ -16,9 +16,9 @@ package model
 
 import (
 	"bytes"
+	"reflect"
 	"strings"
 	"unsafe"
-	"reflect"
 )
 
 // Transfer represents ingress/egress message of transfer
@@ -67,7 +67,7 @@ func (entity *Transaction) Serialize() []byte {
 	return buffer.Bytes()
 }
 
-// Deserialize transaction from peristent data
+// Deserialize transaction from persistent data
 func (entity *Transaction) Deserialize(data []byte) {
 	if entity == nil {
 		return
