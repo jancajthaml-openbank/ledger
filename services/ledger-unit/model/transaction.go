@@ -77,6 +77,7 @@ func (entity *Transaction) Deserialize(data []byte) {
 
 	entity.Transfers = make([]Transfer, 0)
 
+	// FIXME improve perf
 	var j = bytes.IndexByte(data, '\n')
 
 	entity.State = string(data[0:j])
@@ -85,15 +86,18 @@ func (entity *Transaction) Deserialize(data []byte) {
 	var transfer []string
 
 scan:
+// FIXME improve perf
 	j = bytes.IndexByte(data[i:], '\n')
 	if j < 0 {
 		if len(data) > 0 {
+			// FIXME improve perf
 			transfer = strings.SplitN(string(data[i:]), " ", 8)
 			goto parse
 		}
 		return
 	}
 	j += i
+	// FIXME improve perf
 	transfer = strings.SplitN(string(data[i:j]), " ", 8)
 
 parse:

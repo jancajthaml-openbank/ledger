@@ -30,8 +30,8 @@ func parseTransfer(chunk string) (*model.Transfer, error) {
 	idx := 0
 	i := 0
 	for i < end && idx < 8 {
-		if chunk[i] == 59 {
-			if !(start == i && chunk[start] == 59) {
+		if chunk[i] == ';' {
+			if !(start == i && chunk[start] == ';') {
 				parts[idx] = chunk[start:i]
 				idx++
 			}
@@ -39,7 +39,7 @@ func parseTransfer(chunk string) (*model.Transfer, error) {
 		}
 		i++
 	}
-	if idx < 8 && chunk[start] != 59 && len(chunk[start:]) > 0 {
+	if idx < 8 && chunk[start] != ';' && len(chunk[start:]) > 0 {
 		parts[idx] = chunk[start:]
 	}
 
@@ -67,12 +67,12 @@ func parseTransfer(chunk string) (*model.Transfer, error) {
 func parseMessage(msg string, from system.Coordinates) (interface{}, error) {
 	start := 0
 	end := len(msg)
-	parts := make([]string, 40)
+	parts := make([]string, 256)
 	idx := 0
 	i := 0
-	for i < end && idx < 40 {
-		if msg[i] == 32 {
-			if !(start == i && msg[start] == 32) {
+	for i < end && idx < 256 {
+		if msg[i] == ' ' {
+			if !(start == i && msg[start] == ' ') {
 				parts[idx] = msg[start:i]
 				idx++
 			}
@@ -80,7 +80,7 @@ func parseMessage(msg string, from system.Coordinates) (interface{}, error) {
 		}
 		i++
 	}
-	if idx < 40 && msg[start] != 32 && len(msg[start:]) > 0 {
+	if idx < 256 && msg[start] != ' ' && len(msg[start:]) > 0 {
 		parts[idx] = msg[start:]
 		idx++
 	}

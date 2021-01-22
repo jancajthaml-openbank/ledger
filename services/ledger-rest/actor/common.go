@@ -22,7 +22,7 @@ import (
 func parseMessage(msg string) (interface{}, error) {
 	end := len(msg)
 	i := 0
-	for i < end && msg[i] != 32 {
+	for i < end && msg[i] != ' ' {
 		i++
 	}
 
