@@ -16,9 +16,8 @@ package model
 
 import (
 	"bytes"
-	"reflect"
-	"strings"
-	"unsafe"
+
+	"github.com/jancajthaml-openbank/ledger-unit/support/cast"
 )
 
 // Transfer represents ingress/egress message of transfer
@@ -40,12 +39,15 @@ type Transaction struct {
 
 // Serialize transaction to binary data
 func (entity *Transaction) Serialize() []byte {
+	if entity == nil {
+		return nil
+	}
 	var buffer bytes.Buffer
 
 	buffer.WriteString(entity.State)
-	buffer.WriteString("\n")
 
 	for _, transfer := range entity.Transfers {
+		buffer.WriteString("\n")
 		buffer.WriteString(transfer.IDTransfer)
 		buffer.WriteString(" ")
 		buffer.WriteString(transfer.Credit.Tenant)
@@ -61,7 +63,6 @@ func (entity *Transaction) Serialize() []byte {
 		buffer.WriteString(transfer.Amount.String())
 		buffer.WriteString(" ")
 		buffer.WriteString(transfer.Currency)
-		buffer.WriteString("\n")
 	}
 
 	return buffer.Bytes()
@@ -73,35 +74,49 @@ func (entity *Transaction) Deserialize(data []byte) {
 		return
 	}
 
-	// TODO improve performance of this function
+	var (
+		i int
+		j int
+		k int
+		l = len(data)
+	)
 
 	entity.Transfers = make([]Transfer, 0)
 
-	var j = bytes.IndexByte(data, '\n')
+	for ; j < l && data[j] != '\n'; j++ {
+	}
 
-	entity.State = string(data[0:j])
+	entity.State = cast.BytesToString(data[0:j])
 
-	var i = j + 1
-	var transfer []string
+	j++
+	if j >= l {
+		return
+	}
+	i = j
+	transfer := make([]string, 8)
 
 scan:
-	j = bytes.IndexByte(data[i:], '\n')
-	if j < 0 {
-		if len(data) > 0 {
-			transfer = strings.SplitN(string(data[i:]), " ", 8)
-			goto parse
+	if i >= l {
+		return
+	}
+	idx := 0
+	k = i
+	for ; k < l && idx < 8; k++ {
+		if data[k] == ' ' || data[k] == '\n' {
+			transfer[idx] = cast.BytesToString(data[i:k])
+			idx++
+			i = k + 1
 		}
-		return
 	}
-	j += i
-	transfer = strings.SplitN(string(data[i:j]), " ", 8)
+	if k == l && idx < 8 {
+		transfer[idx] = cast.BytesToString(data[i:])
+		i = k + 1
+	}
 
-parse:
-	if len(transfer) != 8 {
+	amount := new(Dec)
+	if !amount.SetString(transfer[6]) {
 		return
 	}
-	amount := new(Dec)
-	amount.SetString(transfer[6])
 
 	entity.Transfers = append(entity.Transfers, Transfer{
 		IDTransfer: transfer[0],
@@ -118,7 +133,6 @@ parse:
 		Currency:  transfer[7],
 	})
 
-	i = j + 1
 	goto scan
 }
 
@@ -128,16 +142,9 @@ func (entity *Transaction) DeserializeState(data []byte) {
 		return
 	}
 	var j = 0
-	header := (*reflect.SliceHeader)(unsafe.Pointer(&data))
-	for j < header.Len {
-		if data[j] == '\n' {
-			entity.State = *(*string)(unsafe.Pointer(&reflect.StringHeader{
-				Data: header.Data,
-				Len:  j,
-			}))
-			return
-		}
-		j++
+	var l = len(data)
+	for ; j < l && data[j] != '\n'; j++ {
 	}
+	entity.State = cast.BytesToString(data[0:j])
 	return
 }

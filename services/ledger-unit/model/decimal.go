@@ -15,10 +15,11 @@
 package model
 
 import (
-	"fmt"
 	"io"
 	"math/big"
 	"strings"
+
+	"github.com/jancajthaml-openbank/ledger-unit/support/cast"
 )
 
 // Dec represents "infinite" precision decimal number
@@ -112,9 +113,10 @@ func (x *Dec) String() string {
 	}
 
 	numbers := x.unscaled.Text(10)
+	sign := x.unscaled.Sign()
 
 	if x.scale <= 0 {
-		if x.scale != 0 && x.unscaled.Sign() != 0 {
+		if x.scale != 0 && sign != 0 {
 			n := -x.scale
 			for i := int32(0); i < n; i += lzeros {
 				if n > i+lzeros {
@@ -128,7 +130,7 @@ func (x *Dec) String() string {
 	}
 
 	var negbit int32
-	if x.unscaled.Sign() == -1 {
+	if sign == -1 {
 		negbit = 1
 	}
 
@@ -159,70 +161,45 @@ func (x *Dec) String() string {
 	return result
 }
 
-func (x *Dec) scan(r io.RuneScanner) (*Dec, error) {
-	unscaled := make([]byte, 0, 256)
-	dp, dg := -1, -1
+// SetString value
+func (x *Dec) SetString(s string) bool {
+	r := strings.NewReader(s)
+	unscaled := make([]byte, 0, 128)
+	dot := -1
 loop:
-	for {
-		ch, _, err := r.ReadRune()
-		if err == io.EOF {
-			break loop
-		}
-		if err != nil {
-			return nil, err
-		}
-		switch {
-		case ch == '+' || ch == '-':
-			if len(unscaled) > 0 || dp >= 0 {
-				r.UnreadRune()
-				break loop
-			}
-		case ch == '.':
-			if dp >= 0 {
-				r.UnreadRune()
-				break loop
-			}
-			dp = len(unscaled)
-			continue
-		case ch >= '0' && ch <= '9':
-			if dg == -1 {
-				dg = len(unscaled)
-			}
-		default:
+	ch, _, err := r.ReadRune()
+	switch {
+	case err == io.EOF:
+		goto eos
+	case err != nil:
+		return false
+	case ch == '+' || ch == '-':
+		if len(unscaled) > 0 || dot >= 0 {
 			r.UnreadRune()
-			break loop
+			goto eos
 		}
-		unscaled = append(unscaled, byte(ch))
+	case ch == '.':
+		if dot >= 0 {
+			r.UnreadRune()
+			goto eos
+		}
+		dot = len(unscaled)
+		goto loop
+	case ch >= '0' && ch <= '9':
+	default:
+		r.UnreadRune()
+		goto eos
 	}
-	if dg == -1 {
-		return nil, fmt.Errorf("no digits read")
-	}
-	if dp >= 0 {
-		x.scale = int32(len(unscaled) - dp)
+	unscaled = append(unscaled, byte(ch))
+	goto loop
+eos:
+	if dot >= 0 {
+		x.scale = int32(len(unscaled) - dot)
 	} else {
 		x.scale = 0
 	}
-
-	_, ok := x.unscaled.SetString(string(unscaled), 10)
-	if !ok {
-		return nil, fmt.Errorf("invalid decimal: %s", string(unscaled))
-	}
-	return x, nil
-}
-
-// SetString value
-func (x *Dec) SetString(s string) bool {
-	// TODO improve performance of this function
-	r := strings.NewReader(s)
-	_, err := x.scan(r)
-	if err != nil {
-		return false
-	}
-	_, _, err = r.ReadRune()
-	if err != io.EOF {
-		return false
-	}
-	return true
+	_, ok := x.unscaled.SetString(cast.BytesToString(unscaled), 10)
+	return ok
 }
 
 func exp10(x int32) *big.Int {
