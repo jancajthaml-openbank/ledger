@@ -79,6 +79,10 @@ func Test_DeSerialize(t *testing.T) {
 
 		assert.Equal(t, "committed", entity.State)
 		assert.Equal(t, 2, len(entity.Transfers))
+		assert.Equal(t, "CUR", entity.Transfers[0].Currency)
+		assert.Equal(t, "0.0", entity.Transfers[0].Amount.String())
+		assert.Equal(t, "CUR", entity.Transfers[1].Currency)
+		assert.Equal(t, "0.0", entity.Transfers[1].Amount.String())
 	}
 }
 
