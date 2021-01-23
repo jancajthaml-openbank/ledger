@@ -31,20 +31,20 @@ func Test_Serialize(t *testing.T) {
 		entity.State = "committed"
 		entity.Transfers = make([]Transfer, 2)
 
-		for i := 0 ; i < len(entity.Transfers) ; i++ {
+		for i := 0; i < len(entity.Transfers); i++ {
 			entity.Transfers[i] = Transfer{
 				IDTransfer: fmt.Sprintf("x%d", i),
 				Credit: Account{
 					Tenant: "t",
-					Name: "c",
+					Name:   "c",
 				},
 				Debit: Account{
 					Tenant: "t",
-					Name: "d",
+					Name:   "d",
 				},
 				ValueDate: "v",
-				Amount: new(Dec),
-				Currency: "CUR",
+				Amount:    new(Dec),
+				Currency:  "CUR",
 			}
 		}
 
@@ -88,20 +88,20 @@ func Benchmark_Serialize(b *testing.B) {
 	entity.State = "committed"
 	entity.Transfers = make([]Transfer, 10)
 
-	for i := 0 ; i < len(entity.Transfers) ; i++ {		
+	for i := 0; i < len(entity.Transfers); i++ {
 		entity.Transfers[i] = Transfer{
 			IDTransfer: fmt.Sprintf("trx%d", i),
 			Credit: Account{
 				Tenant: "tenant",
-				Name: "credit",
+				Name:   "credit",
 			},
 			Debit: Account{
 				Tenant: "tenant",
-				Name: "debit",
+				Name:   "debit",
 			},
 			ValueDate: "2018-03-04T17:08:22Z",
-			Amount: new(Dec),
-			Currency: "CUR",
+			Amount:    new(Dec),
+			Currency:  "CUR",
 		}
 	}
 
@@ -118,20 +118,20 @@ func Benchmark_Deserialize(b *testing.B) {
 	entity.State = "committed"
 	entity.Transfers = make([]Transfer, 10)
 
-	for i := 0 ; i < len(entity.Transfers) ; i++ {		
+	for i := 0; i < len(entity.Transfers); i++ {
 		entity.Transfers[i] = Transfer{
 			IDTransfer: fmt.Sprintf("trx%d", i),
 			Credit: Account{
 				Tenant: "tenant",
-				Name: "credit",
+				Name:   "credit",
 			},
 			Debit: Account{
 				Tenant: "tenant",
-				Name: "debit",
+				Name:   "debit",
 			},
 			ValueDate: "2018-03-04T17:08:22Z",
-			Amount: new(Dec),
-			Currency: "CUR",
+			Amount:    new(Dec),
+			Currency:  "CUR",
 		}
 	}
 
@@ -140,7 +140,7 @@ func Benchmark_Deserialize(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		entity.Deserialize(data)		
+		entity.Deserialize(data)
 	}
 }
 

@@ -162,16 +162,16 @@ func (entity *Transaction) Deserialize(data []byte) {
 	}
 
 	var (
-		i = 0
-		j = 0
-		k = 0
+		i int
+		j int
+		k int
 		l = len(data)
 	)
 
 	entity.Transfers = make([]Transfer, 0)
 
-	i = j
-	for ;j < l && data[j] != '\n' ; j++ {}
+	for ; j < l && data[j] != '\n'; j++ {
+	}
 
 	entity.Status = cast.BytesToString(data[0:j])
 
@@ -183,12 +183,12 @@ func (entity *Transaction) Deserialize(data []byte) {
 	transfer := make([]string, 8)
 
 scan:
-    if i >= l {
-    	return
-    }
+	if i >= l {
+		return
+	}
 	idx := 0
 	k = i
-	for ;k < l && idx < 8; k++ {
+	for ; k < l && idx < 8; k++ {
 		if k == l-1 || data[k] == ' ' || data[k] == '\n' {
 			transfer[idx] = cast.BytesToString(data[i:k])
 			idx++
