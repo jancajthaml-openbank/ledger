@@ -37,15 +37,6 @@ type Transaction struct {
 	Transfers     []Transfer
 }
 
-
-/*
-old:
-Benchmark_Serialize        	   10000	      3286 ns/op	    2224 B/op	       5 allocs/op
-
-new:
-Benchmark_Serialize        	   10000	      2540 ns/op	    2224 B/op	       5 allocs/op
-
-*/
 // Serialize transaction to binary data
 func (entity *Transaction) Serialize() []byte {
 	if entity == nil {
@@ -77,14 +68,6 @@ func (entity *Transaction) Serialize() []byte {
 	return buffer.Bytes()
 }
 
-/*
-old:
-Benchmark_Deserialize      	   10000	      7775 ns/op	    6784 B/op	      47 allocs/op
-
-new:
-Benchmark_Deserialize      	   10000	      5591 ns/op	    4720 B/op	      25 allocs/op
-
-*/
 // Deserialize transaction from persistent data
 func (entity *Transaction) Deserialize(data []byte) {
 	if entity == nil {
