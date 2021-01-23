@@ -20,8 +20,9 @@ import (
 	"fmt"
 	"github.com/rs/xid"
 	"strconv"
-	"strings"
 	"time"
+
+	"github.com/jancajthaml-openbank/ledger-rest/support/cast"
 )
 
 // Transaction represents transaction
@@ -156,30 +157,64 @@ func (entity Transfer) MarshalJSON() ([]byte, error) {
 
 // Deserialize transaction from binary data
 func (entity *Transaction) Deserialize(data []byte) {
-	lines := strings.Split(string(data), "\n")
-	entity.Status = lines[0]
-	entity.Transfers = make([]Transfer, len(lines)-2)
+	if entity == nil {
+		return
+	}
 
-	for i := range entity.Transfers {
-		transfer := strings.SplitN(lines[i+1], " ", 8)
+	var (
+		i = 0
+		j = 0
+		k = 0
+		l = len(data)
+	)
 
-		valueDate, _ := time.Parse(time.RFC3339, transfer[5])
+	entity.Transfers = make([]Transfer, 0)
 
-		entity.Transfers[i] = Transfer{
-			IDTransfer: transfer[0],
-			Credit: Account{
-				Tenant: transfer[1],
-				Name:   transfer[2],
-			},
-			Debit: Account{
-				Tenant: transfer[3],
-				Name:   transfer[4],
-			},
-			ValueDate: valueDate,
-			Amount:    transfer[6],
-			Currency:  transfer[7],
+	i = j
+	for ;j < l && data[j] != '\n' ; j++ {}
+
+	entity.Status = cast.BytesToString(data[0:j])
+
+	j++
+	if j >= l {
+		return
+	}
+	i = j
+	transfer := make([]string, 8)
+
+scan:
+    if i >= l {
+    	return
+    }
+	idx := 0
+	k = i
+	for ;k < l && idx < 8; k++ {
+		if k == l-1 || data[k] == ' ' || data[k] == '\n' {
+			transfer[idx] = cast.BytesToString(data[i:k])
+			idx++
+			i = k + 1
 		}
 	}
 
-	return
+	valueDate, err := time.Parse(time.RFC3339, transfer[5])
+	if err != nil {
+		return
+	}
+
+	entity.Transfers = append(entity.Transfers, Transfer{
+		IDTransfer: transfer[0],
+		Credit: Account{
+			Tenant: transfer[1],
+			Name:   transfer[2],
+		},
+		Debit: Account{
+			Tenant: transfer[3],
+			Name:   transfer[4],
+		},
+		ValueDate: valueDate,
+		Amount:    transfer[6],
+		Currency:  transfer[7],
+	})
+
+	goto scan
 }

@@ -31,7 +31,7 @@ func parseTransfer(chunk string) (*model.Transfer, error) {
 	i := 0
 	for i < end && idx < 8 {
 		if chunk[i] == ';' {
-			if !(start == i && chunk[start] == ';') {
+			if start != i {
 				parts[idx] = chunk[start:i]
 				idx++
 			}
