@@ -188,12 +188,16 @@ scan:
 	}
 	idx := 0
 	k = i
-	for ; k <= l && idx < 8; k++ {
-		if k == l || data[k] == ' ' || data[k] == '\n' {
+	for ; k < l && idx < 8; k++ {
+		if data[k] == ' ' || data[k] == '\n' {
 			transfer[idx] = cast.BytesToString(data[i:k])
 			idx++
 			i = k + 1
 		}
+	}
+	if k == l && idx < 8 {
+		transfer[idx] = cast.BytesToString(data[i:])
+		i = k + 1
 	}
 
 	valueDate, err := time.Parse(time.RFC3339, transfer[5])
