@@ -40,7 +40,7 @@ type DbusControl struct {
 func NewSystemControl() Control {
 	connection, err := dbus.New()
 	if err != nil {
-		log.Error().Msgf("Unable to obtain dbus connection because %+v", err)
+		log.Error().Err(err).Msgf("Unable to obtain dbus connection")
 		return nil
 	}
 	return &DbusControl{

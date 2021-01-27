@@ -65,7 +65,7 @@ func ProcessMessage(s *System) system.ProcessMessage {
 		}
 		message, err := parseMessage(msg)
 		if err != nil {
-			log.Warn().Msgf("%s [remote %v -> local %v]", err, from, to)
+			log.Warn().Err(err).Msgf("Failed to parse message [remote %v -> local %v]", from, to)
 		}
 
 		ref.Tell(message, to, from)
