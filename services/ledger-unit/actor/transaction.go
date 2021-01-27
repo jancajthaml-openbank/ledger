@@ -155,7 +155,7 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 			state.Transaction.State = persistence.StatusRejected
 			err := persistence.UpdateTransaction(s.Storage, &state.Transaction)
 			if err != nil {
-				log.Error().Msgf("%s/Promise failed to update transaction %+v", state.Transaction.IDTransaction, err)
+				log.Error().Err(err).Msgf("%s/Promise failed to update transaction", state.Transaction.IDTransaction)
 				s.SendMessage(
 					RespTransactionRefused+" "+state.Transaction.IDTransaction,
 					state.ReplyTo,
@@ -254,7 +254,7 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 
 			err := persistence.UpdateTransaction(s.Storage, &state.Transaction)
 			if err != nil {
-				log.Error().Msgf("%s/Commit failed to update transaction %+v", state.Transaction.IDTransaction, err)
+				log.Error().Err(err).Msgf("%s/Commit failed to update transaction", state.Transaction.IDTransaction)
 				s.SendMessage(
 					RespTransactionRefused+" "+state.Transaction.IDTransaction,
 					state.ReplyTo,
@@ -351,7 +351,7 @@ func RollbackingTransaction(s *System) func(interface{}, system.Context) {
 
 		err := persistence.UpdateTransaction(s.Storage, &state.Transaction)
 		if err != nil {
-			log.Error().Msgf("%s/Rollback failed to update transaction %+v", state.Transaction.IDTransaction, err)
+			log.Error().Err(err).Msgf("%s/Rollback failed to update transaction", state.Transaction.IDTransaction)
 			s.SendMessage(
 				RespTransactionRefused+" "+state.Transaction.IDTransaction,
 				state.ReplyTo,
