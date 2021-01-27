@@ -33,12 +33,12 @@ type System struct {
 func NewActorSystem(tenant string, endpoint string, rootStorage string, metrics metrics.Metrics) *System {
 	storage, err := localfs.NewPlaintextStorage(rootStorage)
 	if err != nil {
-		log.Error().Msgf("Failed to ensure storage %+v", err)
+		log.Error().Err(err).Msg("Failed to ensure storage")
 		return nil
 	}
 	sys, err := system.New("LedgerUnit/"+tenant, endpoint)
 	if err != nil {
-		log.Error().Msgf("Failed to register actor system %+v", err)
+		log.Error().Err(err).Msg("Failed to register actor system")
 		return nil
 	}
 	result := new(System)

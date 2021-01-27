@@ -98,6 +98,7 @@ lifecycle::debian::generate_changelog() {
 
 lifecycle::debian::package() {
   echo "[info] (${TARGET_PACKAGE}_${TARGET_ARCHITECTURE}) running dpkg-buildpackage"
+  
   local CC=gcc
   case ${TARGET_ARCHITECTURE} in
     armhf) CC=arm-linux-gnueabihf-gcc ;;
@@ -110,9 +111,12 @@ lifecycle::debian::package() {
   CC=${CC} \
     dpkg-buildpackage \
     --host-arch=${TARGET_ARCHITECTURE} \
-    -tc -uc -b -rfakeroot
-
-  find ".." -name "${TARGET_PACKAGE}_*_${TARGET_ARCHITECTURE}.*" -exec mv {} bin/ \;
+    --buildinfo-option=-ubin \
+    --changes-option=-ubin \
+    -tc \
+    -uc \
+    -b \
+    -rfakeroot
 }
 
 lifecycle::lintian() {

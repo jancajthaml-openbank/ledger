@@ -7,7 +7,7 @@ export DEB_BUILD_OPTIONS = parallel=$(shell getconf _NPROCESSORS_ONLN)
 SUBSTVARS = -Vshlibs:Depends="libc6"
 
 %:
-	+dh $@ -P debian/target/${DEB_HOST_ARCH} --with=systemd
+	+dh $@ -P debian/target/${DEB_HOST_ARCH_OS}-${DEB_HOST_ARCH_CPU} --with=systemd
 
 override_dh_systemd_enable:
 	dh_systemd_enable -pledger --name=ledger ledger.path
@@ -23,22 +23,26 @@ override_dh_systemd_start:
 override_dh_installinit:
 	dh_installinit -pledger --noscripts
 	@mv \
-		debian/target/${DEB_HOST_ARCH}/usr/bin/ledger-rest-* \
-		debian/target/${DEB_HOST_ARCH}/usr/bin/ledger-rest
+		debian/target/${DEB_HOST_ARCH_OS}-${DEB_HOST_ARCH_CPU}/usr/bin/ledger-rest-* \
+		debian/target/${DEB_HOST_ARCH_OS}-${DEB_HOST_ARCH_CPU}/usr/bin/ledger-rest
 	@mv \
-		debian/target/${DEB_HOST_ARCH}/usr/bin/ledger-unit-* \
-		debian/target/${DEB_HOST_ARCH}/usr/bin/ledger-unit
+		debian/target/${DEB_HOST_ARCH_OS}-${DEB_HOST_ARCH_CPU}/usr/bin/ledger-unit-* \
+		debian/target/${DEB_HOST_ARCH_OS}-${DEB_HOST_ARCH_CPU}/usr/bin/ledger-unit
 
 override_dh_strip:
 
 override_dh_shlibdeps:
 
+override_dh_builddeb:
+	dpkg-deb --build debian/target/${DEB_HOST_ARCH_OS}-${DEB_HOST_ARCH_CPU} bin
+
 override_dh_gencontrol:
 	dh_gencontrol -- $(SUBSTVARS)
 
 clean:
+	find ".." -name "ledger_*_${DEB_HOST_ARCH_OS}-${DEB_HOST_ARCH_CPU}.changes" -exec mv {} bin/ \;
 	rm -f debian/debhelper-build-stamp || :
 	rm -f debian/files || :
-	rm -rf debian/target/${DEB_HOST_ARCH} || :
+	rm -rf debian/target/${DEB_HOST_ARCH_OS}-${DEB_HOST_ARCH_CPU} || :
 	rm -rf debian/*.debhelper* || :
 	rm -rf debian/*.substvars || :

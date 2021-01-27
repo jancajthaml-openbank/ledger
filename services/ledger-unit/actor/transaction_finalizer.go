@@ -33,7 +33,7 @@ type TransactionFinalizer struct {
 func NewTransactionFinalizer(rootStorage string, callback func(transaction model.Transaction)) *TransactionFinalizer {
 	storage, err := localfs.NewPlaintextStorage(rootStorage)
 	if err != nil {
-		log.Error().Msgf("Failed to ensure storage %+v", err)
+		log.Error().Err(err).Msg("Failed to ensure storage")
 		return nil
 	}
 	return &TransactionFinalizer{

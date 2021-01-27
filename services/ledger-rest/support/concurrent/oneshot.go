@@ -75,7 +75,7 @@ func (daemon *OneShotDaemon) Start(parentContext context.Context, cancelFunction
 	}
 	err := daemon.Setup()
 	if err != nil {
-		log.Error().Msgf("Setup daemon %s error %+v", daemon.name, err.Error())
+		log.Error().Err(err).Msgf("Setup daemon %s", daemon.name)
 		return
 	}
 	go func() {
