@@ -81,7 +81,7 @@ func (daemon *ScheduledDaemon) Start(parentContext context.Context, cancelFuncti
 	}
 	err := daemon.Setup()
 	if err != nil {
-		log.Error().Msgf("Setup daemon %s error %+v", daemon.name, err.Error())
+		log.Error().Err(err).Msgf("Setup daemon %s", daemon.name)
 		return
 	}
 
