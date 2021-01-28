@@ -4,9 +4,7 @@ StartLimitBurst=5
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c 'echo reloading ledger.service'
 ExecStart=/bin/sh -c 'systemctl restart ledger.service'
-ExecStart=/bin/sh -c 'echo reloaded ledger.service'
 
 [Install]
 WantedBy=multi-user.target
