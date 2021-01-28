@@ -3,17 +3,18 @@ Feature: System control
   Scenario: check units presence
     Then  systemctl contains following active units
       | name              | type    |
-      | ledger            | path    |
       | ledger            | service |
       | ledger-rest       | service |
-      | ledger-unit@lorem | service |
-      | ledger-unit@ipsum | service |
 
   Scenario: onboard
     Given tenant lorem is onboarded
     And   tenant ipsum is onboarded
 
-    Then unit "ledger-unit@lorem.service" is running
+    Then  systemctl contains following active units
+      | name              | type    |
+      | ledger-unit@lorem | service |
+      | ledger-unit@ipsum | service |
+    And unit "ledger-unit@lorem.service" is running
     And unit "ledger-unit@ipsum.service" is running
 
   Scenario: stop
@@ -40,6 +41,5 @@ Feature: System control
       | ledger-unit@ipsum | service |
     And systemctl contains following active units
       | name              | type    |
-      | ledger            | path    |
       | ledger            | service |
       | ledger-rest       | service |
