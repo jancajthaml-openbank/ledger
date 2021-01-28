@@ -2,7 +2,7 @@
 Description=openbank transaction ledger tenant %i
 PartOf=ledger.service
 After=ledger.service
-ConditionPathExists=/etc/ledger/conf.d/init.conf
+Requires=ledger.service
 
 [Service]
 Type=notify
@@ -23,4 +23,4 @@ KillMode=process
 KillSignal=SIGTERM
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=ledger.service

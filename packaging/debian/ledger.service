@@ -1,13 +1,15 @@
 [Unit]
-Description=openbank transaction ledger services namespace
+Description=openbank transaction ledger control group
 After=inetd.service
 ConditionPathExists=/etc/ledger/conf.d/init.conf
 
 [Service]
 Type=oneshot
-ExecStart=/bin/echo start ledger namespace
+ExecStart=/bin/true
 RemainAfterExit=yes
 KillMode=control-group
+StartLimitBurst=0
+StartLimitInterval=0
 
 [Install]
 WantedBy=multi-user.target

@@ -10,14 +10,16 @@ SUBSTVARS = -Vshlibs:Depends="libc6"
 	+dh $@ -P debian/target/${DEB_HOST_ARCH_OS}-${DEB_HOST_ARCH_CPU} --with=systemd
 
 override_dh_systemd_enable:
-	dh_systemd_enable -pledger --name=ledger ledger.path
 	dh_systemd_enable -pledger --name=ledger ledger.service
+	dh_systemd_enable -pledger --name=ledger-watcher ledger-watcher.path
+	dh_systemd_enable -pledger --name=ledger-watcher ledger-watcher.service
 	dh_systemd_enable -pledger --name=ledger-rest ledger-rest.service
 	dh_systemd_enable -pledger --name=ledger-unit@ ledger-unit@.service
 
 override_dh_systemd_start:
-	dh_systemd_start -pledger --name=ledger ledger.path
 	dh_systemd_start -pledger --name=ledger ledger.service
+	dh_systemd_start -pledger --name=ledger-watcher ledger-watcher.path
+	dh_systemd_start -pledger --name=ledger-watcher ledger-watcher.service
 	dh_systemd_start -pledger --name=ledger-rest ledger-rest.service
 
 override_dh_installinit:

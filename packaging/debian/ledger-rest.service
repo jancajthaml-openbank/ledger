@@ -2,7 +2,7 @@
 Description=openbank transaction ledger REST service
 PartOf=ledger.service
 After=ledger.service
-ConditionPathExists=/etc/ledger/conf.d/init.conf
+Requires=ledger.service
 
 [Service]
 Type=notify
@@ -13,7 +13,7 @@ StandardInput=null
 LimitNOFILE=1048576
 LimitNPROC=infinity
 LimitCORE=infinity
-Restart=always
+Restart=on-failure
 RestartSec=0
 TimeoutStartSec=0
 TimeoutSec=infinity
@@ -22,4 +22,4 @@ KillMode=process
 KillSignal=SIGTERM
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=ledger.service
