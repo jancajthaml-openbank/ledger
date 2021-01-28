@@ -12,7 +12,7 @@ class StatsdHelper(threading.Thread):
   def __init__(self):
     threading.Thread.__init__(self)
     self.__cancel = threading.Event()
-    self.__backlog = {}
+    self.__backlog = dict()
 
   def start(self):
     self._sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -27,6 +27,9 @@ class StatsdHelper(threading.Thread):
         self.process(data.decode('utf-8'))
       except:
         return
+
+  def clear(self):
+    self.__backlog = dict()
 
   def get(self):
     return self.__backlog

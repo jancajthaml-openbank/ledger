@@ -4,7 +4,8 @@ Feature: Uninstall package
     Given lake is not running
     And   package ledger is uninstalled
     Then  systemctl does not contain following active units
-      | name        | type    |
-      | ledger-rest | service |
-      | ledger      | service |
-      | ledger      | path    |
+      | name           | type    |
+      | ledger         | service |
+      | ledger-rest    | service |
+      | ledger-watcher | path    |
+      | ledger-watcher | service |

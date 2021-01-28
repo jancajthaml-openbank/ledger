@@ -6,6 +6,19 @@ from helpers.unit import UnitHelper
 from helpers.zmq import ZMQHelper
 from helpers.vault import VaultHelper
 from helpers.statsd import StatsdHelper
+from helpers.logger import logger
+
+
+def before_feature(context, feature):
+  context.statsd.clear()
+  context.log.info('')
+  context.log.info('  (FEATURE) {}'.format(feature.name))
+
+
+def before_scenario(context, scenario):
+  context.log.info('')
+  context.log.info('  (SCENARIO) {}'.format(scenario.name))
+  context.log.info('')
 
 
 def after_feature(context, feature):
@@ -14,6 +27,7 @@ def after_feature(context, feature):
 
 
 def before_all(context):
+  context.log = logger()
   context.unit = UnitHelper(context)
   context.zmq = ZMQHelper(context)
   context.vault = VaultHelper(context)
