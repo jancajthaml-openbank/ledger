@@ -3,7 +3,7 @@ module github.com/jancajthaml-openbank/ledger-unit
 go 1.15
 
 require (
-	github.com/DataDog/datadog-go v4.3.0+incompatible
+	github.com/DataDog/datadog-go v4.3.1+incompatible
 	github.com/jancajthaml-openbank/actor-system v1.4.6
 	github.com/jancajthaml-openbank/local-fs v1.2.2
 	github.com/rs/xid v1.2.1
