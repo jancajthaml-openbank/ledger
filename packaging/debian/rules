@@ -42,7 +42,7 @@ override_dh_gencontrol:
 	dh_gencontrol -- $(SUBSTVARS)
 
 clean:
-	find ".." -name "ledger_*_${DEB_HOST_ARCH_OS}-${DEB_HOST_ARCH_CPU}.changes" -exec mv {} bin/ \;
+	find ".." -name "ledger_*_${DEB_HOST_ARCH_CPU}.changes" -exec mv {} bin/ \;
 	rm -f debian/debhelper-build-stamp || :
 	rm -f debian/files || :
 	rm -rf debian/target/${DEB_HOST_ARCH_OS}-${DEB_HOST_ARCH_CPU} || :
