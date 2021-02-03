@@ -191,8 +191,10 @@ func ProcessMessage(s *System) system.ProcessMessage {
 
 		message, err := parseMessage(msg, from)
 		if err != nil {
-			log.Warn().Msgf("%s [remote %v -> local %v]", err, from, to)
-			s.SendMessage(FatalError, from, to)
+			if from != to && to.Name != "" {
+				log.Warn().Err(err).Msgf("Failed to parse message [remote %v -> local %v]", from, to)
+				s.SendMessage(FatalError, from, to)
+			}
 			return
 		}
 
@@ -202,14 +204,16 @@ func ProcessMessage(s *System) system.ProcessMessage {
 
 		case model.Transaction:
 			if ref, err = NewTransactionActor(s, to.Name); err != nil {
-				log.Warn().Msgf("%s [remote %v -> local %v]", err, from, to)
-				s.SendMessage(FatalError, from, to)
+				if from != to && to.Name != "" {
+					log.Warn().Msgf("Register Actor [remote %v -> local %v]", from, to)
+					s.SendMessage(FatalError, from, to)
+				}
 				return
 			}
 
 		default:
 			if ref, err = s.ActorOf(to.Name); err != nil {
-				log.Warn().Msgf("Actor not found [remote %v -> local %v]", from, to)
+				log.Warn().Err(err).Msgf("Deadletter [remote %v -> local %v] %s", from, to, msg)
 				return
 			}
 
