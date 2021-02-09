@@ -46,14 +46,14 @@ func LoadTransactionState(storage localfs.Storage, id string) (string, error) {
 	return result.State, nil
 }
 
-// CreateTransaction persist transaction entity state to storage
+// CreateTransaction persist transaction to storage
 func CreateTransaction(storage localfs.Storage, entity *model.Transaction) error {
 	transactionPath := "transaction/" + entity.IDTransaction
 	data := entity.Serialize()
 	return storage.WriteFileExclusive(transactionPath, data)
 }
 
-// UpdateTransaction persist update of transaction to disk
+// UpdateTransaction updates transaction at storage
 func UpdateTransaction(storage localfs.Storage, entity *model.Transaction) error {
 	transactionPath := "transaction/" + entity.IDTransaction
 	data := entity.Serialize()

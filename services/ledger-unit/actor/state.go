@@ -16,7 +16,6 @@ package actor
 
 import (
 	"github.com/jancajthaml-openbank/ledger-unit/model"
-	"github.com/jancajthaml-openbank/ledger-unit/persistence"
 
 	system "github.com/jancajthaml-openbank/actor-system"
 )
@@ -209,7 +208,7 @@ func (state *TransactionState) PrepareNewForTransaction(transaction model.Transa
 	}
 	negotiation := transaction.PrepareRemoteNegotiation()
 	state.Transaction = transaction
-	state.Transaction.State = persistence.StatusNew
+	state.Transaction.State = model.StatusNew
 	state.Negotiation = negotiation
 	state.ChangeStage(PROMISE)
 	state.ReplyTo = requestedBy

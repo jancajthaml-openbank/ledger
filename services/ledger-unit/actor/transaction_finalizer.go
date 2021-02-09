@@ -85,7 +85,7 @@ func (scan *TransactionFinalizer) getTransaction(id string) *model.Transaction {
 	if err != nil {
 		return nil
 	}
-	if state == persistence.StatusCommitted || state == persistence.StatusRollbacked {
+	if state == model.StatusCommitted || state == model.StatusRollbacked {
 		return nil
 	}
 	transaction, err := persistence.LoadTransaction(scan.storage, id)
