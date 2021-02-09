@@ -33,6 +33,8 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 			return
 		}
 
+		msg.State = model.StatusNew
+
 		if err := persistence.CreateTransaction(s.Storage, &msg); err != nil {
 
 			current, err := persistence.LoadTransaction(s.Storage, msg.IDTransaction)
@@ -49,11 +51,11 @@ func InitialTransaction(s *System) func(interface{}, system.Context) {
 
 			switch current.State {
 
-			case persistence.StatusCommitted, persistence.StatusRollbacked:
+			case model.StatusCommitted, model.StatusRollbacked:
 				if msg.IsSameAs(current) {
 
 					var reply string
-					if current.State == persistence.StatusCommitted {
+					if current.State == model.StatusCommitted {
 						log.Debug().Msgf("%s/Initial Conflict already committed", current.IDTransaction)
 						reply = RespCreateTransaction + " " + current.IDTransaction
 					} else {
@@ -152,7 +154,7 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 		}
 
 		if state.FailedResponses > 0 {
-			state.Transaction.State = persistence.StatusRejected
+			state.Transaction.State = model.StatusRejected
 			err := persistence.UpdateTransaction(s.Storage, &state.Transaction)
 			if err != nil {
 				log.Error().Err(err).Msgf("%s/Promise failed to update transaction", state.Transaction.IDTransaction)
@@ -200,7 +202,7 @@ func PromisingTransaction(s *System) func(interface{}, system.Context) {
 
 		log.Debug().Msgf("%s/Promise Accepted All", state.Transaction.IDTransaction)
 
-		state.Transaction.State = persistence.StatusAccepted
+		state.Transaction.State = model.StatusAccepted
 
 		err := persistence.UpdateTransaction(s.Storage, &state.Transaction)
 		if err != nil {
@@ -250,7 +252,7 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 		if state.FailedResponses > 0 {
 			log.Debug().Msgf("%s/Commit Rejected Some [total: %d, accepted: %d, rejected: %d]", state.Transaction.IDTransaction, len(state.Negotiation), state.FailedResponses, state.OkResponses)
 
-			state.Transaction.State = persistence.StatusRejected
+			state.Transaction.State = model.StatusRejected
 
 			err := persistence.UpdateTransaction(s.Storage, &state.Transaction)
 			if err != nil {
@@ -285,7 +287,7 @@ func CommitingTransaction(s *System) func(interface{}, system.Context) {
 
 		log.Debug().Msgf("%s/Commit Accepted All", state.Transaction.IDTransaction)
 
-		state.Transaction.State = persistence.StatusCommitted
+		state.Transaction.State = model.StatusCommitted
 
 		err := persistence.UpdateTransaction(s.Storage, &state.Transaction)
 
@@ -347,7 +349,7 @@ func RollbackingTransaction(s *System) func(interface{}, system.Context) {
 		// FIXME
 		//rollBackReason := "unknown"
 
-		state.Transaction.State = persistence.StatusRollbacked
+		state.Transaction.State = model.StatusRollbacked
 
 		err := persistence.UpdateTransaction(s.Storage, &state.Transaction)
 		if err != nil {

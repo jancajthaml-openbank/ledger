@@ -20,6 +20,19 @@ import (
 	"github.com/jancajthaml-openbank/ledger-unit/support/cast"
 )
 
+const (
+	// StatusNew represents NEW transaction
+	StatusNew = "new"
+	// StatusAccepted represents ACCEPTED transaction
+	StatusAccepted = "accepted"
+	// StatusRejected represents REJECTED transaction
+	StatusRejected = "rejected"
+	// StatusCommitted represents COMMITTED transaction
+	StatusCommitted = "committed"
+	// StatusRollbacked represents ROLLBACKED transaction
+	StatusRollbacked = "rollbacked"
+)
+
 // Transfer represents ingress/egress message of transfer
 type Transfer struct {
 	IDTransfer string

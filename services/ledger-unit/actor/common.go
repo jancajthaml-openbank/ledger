@@ -230,7 +230,7 @@ func NewTransactionActor(s *System, name string) (*system.Actor, error) {
 	envelope := system.NewActor(name, NewTransactionState())
 	err := s.RegisterActor(envelope, InitialTransaction(s))
 	if err != nil {
-		log.Warn().Msgf("Unable to register %s actor", name)
+		log.Warn().Err(err).Msgf("Unable to register %s actor", name)
 		return nil, err
 	}
 
