@@ -24,6 +24,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"strings"
 )
 
 // GetTransaction returns transaction state
@@ -31,12 +33,22 @@ func GetTransaction(storage localfs.Storage) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 
-		tenant := c.Param("tenant")
+		unescapedTenant, err := url.PathUnescape(c.Param("tenant"))
+		if err != nil {
+			c.Response().WriteHeader(http.StatusNotFound)
+			return nil
+		}
+		tenant := strings.TrimSpace(unescapedTenant)
 		if tenant == "" {
 			c.Response().WriteHeader(http.StatusNotFound)
 			return nil
 		}
-		id := c.Param("id")
+		unescapedId, err := url.PathUnescape(c.Param("id"))
+		if err != nil {
+			c.Response().WriteHeader(http.StatusNotFound)
+			return nil
+		}
+		id := strings.TrimSpace(unescapedId)
 		if id == "" {
 			c.Response().WriteHeader(http.StatusNotFound)
 			return nil
@@ -69,7 +81,12 @@ func CreateTransaction(storage localfs.Storage, system *actor.System) func(c ech
 	return func(c echo.Context) error {
 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 
-		tenant := c.Param("tenant")
+		unescapedTenant, err := url.PathUnescape(c.Param("tenant"))
+		if err != nil {
+			c.Response().WriteHeader(http.StatusNotFound)
+			return nil
+		}
+		tenant := strings.TrimSpace(unescapedTenant)
 		if tenant == "" {
 			c.Response().WriteHeader(http.StatusNotFound)
 			return nil
@@ -138,7 +155,12 @@ func GetTransactions(storage localfs.Storage) func(c echo.Context) error {
 	return func(c echo.Context) error {
 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSONCharsetUTF8)
 
-		tenant := c.Param("tenant")
+		unescapedTenant, err := url.PathUnescape(c.Param("tenant"))
+		if err != nil {
+			c.Response().WriteHeader(http.StatusNotFound)
+			return nil
+		}
+		tenant := strings.TrimSpace(unescapedTenant)
 		if tenant == "" {
 			c.Response().WriteHeader(http.StatusNotFound)
 			return nil
