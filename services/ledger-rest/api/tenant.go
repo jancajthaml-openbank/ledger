@@ -16,6 +16,7 @@ package api
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/jancajthaml-openbank/ledger-rest/system"
@@ -26,12 +27,17 @@ import (
 // CreateTenant enables ledger-unit@{tenant}
 func CreateTenant(control system.Control) func(c echo.Context) error {
 	return func(c echo.Context) error {
-		tenant := strings.TrimSpace(c.Param("tenant"))
+		unescapedTenant, err := url.PathUnescape(c.Param("tenant"))
+		if err != nil {
+			c.Response().WriteHeader(http.StatusNotFound)
+			return nil
+		}
+		tenant := strings.TrimSpace(unescapedTenant)
 		if tenant == "" {
 			c.Response().WriteHeader(http.StatusNotFound)
 			return nil
 		}
-		err := control.EnableUnit("unit@" + tenant + ".service")
+		err = control.EnableUnit("unit@" + tenant + ".service")
 		if err != nil {
 			return err
 		}
@@ -44,12 +50,17 @@ func CreateTenant(control system.Control) func(c echo.Context) error {
 // DeleteTenant disables ledger-unit@{tenant}
 func DeleteTenant(control system.Control) func(c echo.Context) error {
 	return func(c echo.Context) error {
-		tenant := strings.TrimSpace(c.Param("tenant"))
+		unescapedTenant, err := url.PathUnescape(c.Param("tenant"))
+		if err != nil {
+			c.Response().WriteHeader(http.StatusNotFound)
+			return nil
+		}
+		tenant := strings.TrimSpace(unescapedTenant)
 		if tenant == "" {
 			c.Response().WriteHeader(http.StatusNotFound)
 			return nil
 		}
-		err := control.DisableUnit("unit@" + tenant + ".service")
+		err = control.DisableUnit("unit@" + tenant + ".service")
 		if err != nil {
 			return err
 		}
