@@ -2,8 +2,8 @@ package env
 
 import (
 	"os"
-	"time"
 	"testing"
+	"time"
 )
 
 func TestEnvString(t *testing.T) {
@@ -56,7 +56,6 @@ func TestEnvInteger(t *testing.T) {
 	}
 }
 
-
 func TestEnvDuration(t *testing.T) {
 
 	t.Log("TEST_DUR missing")
@@ -86,4 +85,3 @@ func TestEnvDuration(t *testing.T) {
 		}
 	}
 }
-

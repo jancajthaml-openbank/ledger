@@ -15,9 +15,9 @@
 package env
 
 import (
+	"os"
 	"strconv"
 	"time"
-	"os"
 )
 
 // Get retrieves the string value of the environment variable named by the key

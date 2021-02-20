@@ -15,8 +15,8 @@
 package config
 
 import (
-	"strings"
 	"github.com/jancajthaml-openbank/ledger-rest/support/env"
+	"strings"
 )
 
 // Configuration of application

@@ -15,9 +15,9 @@
 package config
 
 import (
+	"github.com/jancajthaml-openbank/ledger-unit/support/env"
 	"strings"
 	"time"
-	"github.com/jancajthaml-openbank/ledger-unit/support/env"
 )
 
 // Configuration of application
