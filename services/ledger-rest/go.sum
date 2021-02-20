@@ -7,8 +7,8 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/godbus/dbus/v5 v5.0.3 h1:ZqHaoEF7TBzh4jzPmqVhE/5A1z9of6orkAe5uHoAeME=
 github.com/godbus/dbus/v5 v5.0.3/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
-github.com/jancajthaml-openbank/actor-system v1.4.6 h1:mo9DFiFW136tLG3oYRXGvEgwPmxvrDxmzQiWj3WpVq4=
-github.com/jancajthaml-openbank/actor-system v1.4.6/go.mod h1:mLnN69sePtKknn+OL18hOM4N8f/llDIoia98eNzBkXo=
+github.com/jancajthaml-openbank/actor-system v1.4.7 h1:sqO/7BTm47y/NQ29ZuWxgPU7d2CmIEH1pCrcKyN/7ck=
+github.com/jancajthaml-openbank/actor-system v1.4.7/go.mod h1:KzC0k0aZLZyj+eKAyEByXqM2eKCCKmBlMcjo2TXLtYU=
 github.com/jancajthaml-openbank/local-fs v1.2.2 h1:zBhEDRh2zY7VI1KHTMwp8uqxTP7XR9dB9cK0NYGnzmw=
 github.com/jancajthaml-openbank/local-fs v1.2.2/go.mod h1:aeF1ybqH3QQsFvqGdvk/0+5TXnHk1T7R1l+ZQ5d8SkY=
 github.com/labstack/echo/v4 v4.2.0 h1:jkCSsjXmBmapVXF6U4BrSz/cgofWM0CU3Q74wQvXkIc=
@@ -22,8 +22,8 @@ github.com/mattn/go-isatty v0.0.8/go.mod h1:Iq45c/XA43vh69/j3iqttzPXn0bhXyGjM0Hd
 github.com/mattn/go-isatty v0.0.9/go.mod h1:YNRxwqDuOph6SZLI9vUUz6OYw3QyUt7WiY2yME+cCiQ=
 github.com/mattn/go-isatty v0.0.12 h1:wuysRhFDzyxgEmMf5xjvJ2M9dZoWAXNNr5LSBS7uHXY=
 github.com/mattn/go-isatty v0.0.12/go.mod h1:cbi8OIDigv2wuxKPP5vlRcQ1OAZbq2CE4Kysco4FUpU=
-github.com/pebbe/zmq4 v1.2.2 h1:RZ5Ogp0D5S6u+tSxopnI3afAf0ifWbvQOAw9HxXvZP4=
-github.com/pebbe/zmq4 v1.2.2/go.mod h1:7N4y5R18zBiu3l0vajMUWQgZyjv464prE8RCyBcmnZM=
+github.com/pebbe/zmq4 v1.2.3 h1:SwOjTnXrtwyq4Hs4AXghkrNNEMuMnpvCZfEGTkDgrgI=
+github.com/pebbe/zmq4 v1.2.3/go.mod h1:7N4y5R18zBiu3l0vajMUWQgZyjv464prE8RCyBcmnZM=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
