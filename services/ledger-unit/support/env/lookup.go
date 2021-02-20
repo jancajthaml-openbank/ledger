@@ -49,19 +49,6 @@ func Int(key string, fallback int) int {
 	return fallback
 }
 
-// Uint64 retrieves 64-bit unsigned integer value from the environment.
-func Uint64(key string, fallback uint64) uint64 {
-	if str, exists := Get(key); exists {
-		v, err := strconv.ParseUint(str, 10, 64)
-		if err != nil {
-			log.Warn().Msgf("invalid value in %s, using fallback", key)
-			return fallback
-		}
-		return v
-	}
-	return fallback
-}
-
 // Duration retrieves duration value from the environment.
 func Duration(key string, fallback time.Duration) time.Duration {
 	if str, exists := Get(key); exists {
