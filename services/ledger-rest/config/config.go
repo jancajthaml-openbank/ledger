@@ -14,7 +14,10 @@
 
 package config
 
-import "strings"
+import (
+	"strings"
+	"github.com/jancajthaml-openbank/ledger-rest/support/env"
+)
 
 // Configuration of application
 type Configuration struct {
@@ -41,13 +44,13 @@ type Configuration struct {
 // LoadConfig loads application configuration
 func LoadConfig() Configuration {
 	return Configuration{
-		RootStorage:      envString("LEDGER_STORAGE", "/data"),
-		ServerPort:       envInteger("LEDGER_HTTP_PORT", 4401),
-		ServerKey:        envString("LEDGER_SERVER_KEY", ""),
-		ServerCert:       envString("LEDGER_SERVER_CERT", ""),
-		LakeHostname:     envString("LEDGER_LAKE_HOSTNAME", "127.0.0.1"),
-		LogLevel:         strings.ToUpper(envString("LEDGER_LOG_LEVEL", "INFO")),
-		MinFreeDiskSpace: uint64(envInteger("VAULT_STORAGE_THRESHOLD", 0)),
-		MinFreeMemory:    uint64(envInteger("VAULT_MEMORY_THRESHOLD", 0)),
+		RootStorage:      env.String("LEDGER_STORAGE", "/data"),
+		ServerPort:       env.Int("LEDGER_HTTP_PORT", 4401),
+		ServerKey:        env.String("LEDGER_SERVER_KEY", ""),
+		ServerCert:       env.String("LEDGER_SERVER_CERT", ""),
+		LakeHostname:     env.String("LEDGER_LAKE_HOSTNAME", "127.0.0.1"),
+		LogLevel:         strings.ToUpper(env.String("LEDGER_LOG_LEVEL", "INFO")),
+		MinFreeDiskSpace: env.Uint64("VAULT_STORAGE_THRESHOLD", 0),
+		MinFreeMemory:    env.Uint64("VAULT_MEMORY_THRESHOLD", 0),
 	}
 }
