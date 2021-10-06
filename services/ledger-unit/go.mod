@@ -8,6 +8,6 @@ require (
 	github.com/jancajthaml-openbank/actor-system v1.4.7
 	github.com/jancajthaml-openbank/local-fs v1.2.2
 	github.com/rs/xid v1.3.0
-	github.com/rs/zerolog v1.24.0
+	github.com/rs/zerolog v1.25.0
 	github.com/stretchr/testify v1.7.0
 )
