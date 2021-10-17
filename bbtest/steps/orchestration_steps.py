@@ -28,12 +28,12 @@ def step_impl(context, package, operation):
 @given('systemctl contains following active units')
 @then('systemctl contains following active units')
 def step_impl(context):
-  (code, result, error) = execute(["systemctl", "list-units", "--no-legend", "--state=active"])
+  (code, result, error) = execute(["systemctl", "list-units", "--all", "--no-legend", "--state=active"])
   assert code == 0, str(result) + ' ' + str(error)
   items = []
   for row in context.table:
     items.append(row['name'] + '.' + row['type'])
-  result = [item.split(' ')[0].strip() for item in result.split(os.linesep)]
+  result = [item.replace('*', '').strip().split(' ')[0].strip() for item in result.split(os.linesep)]
   result = [item for item in result if item in items]
   assert len(result) > 0, 'units not found\n{}'.format(result)
 
@@ -41,12 +41,12 @@ def step_impl(context):
 @given('systemctl does not contain following active units')
 @then('systemctl does not contain following active units')
 def step_impl(context):
-  (code, result, error) = execute(["systemctl", "list-units", "--no-legend", "--state=active"])
+  (code, result, error) = execute(["systemctl", "list-units", "--all", "--no-legend", "--state=active"])
   assert code == 0, str(result) + ' ' + str(error)
   items = []
   for row in context.table:
     items.append(row['name'] + '.' + row['type'])
-  result = [item.split(' ')[0].strip() for item in result.split(os.linesep)]
+  result = [item.replace('*', '').strip().split(' ')[0].strip() for item in result.split(os.linesep)]
   result = [item for item in result if item in items]
   assert len(result) == 0, 'units found\n{}'.format(result)
 
