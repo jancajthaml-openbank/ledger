@@ -38,8 +38,8 @@ lifecycle::go::test() {
   local output="$2"
   local target=$(basename $dir)
 
-  coverage_out=$(tempfile)
-  test_out=$(tempfile)
+  coverage_out=$(mktemp)
+  test_out=$(mktemp)
 
   mkdir -p ${output}
 
