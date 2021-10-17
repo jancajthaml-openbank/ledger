@@ -161,7 +161,7 @@ class UnitHelper(object):
     self.collect_logs()
 
   def __get_systemd_units(self):
-    (code, result, error) = execute(['systemctl', 'list-units', '--no-legend'])
-    result = [item.split(' ')[0].strip() for item in result.split(os.linesep)]
+    (code, result, error) = execute(['systemctl', 'list-units', '--all', '--no-legend'])
+    result = [item.replace('*', '').strip().split(' ')[0].strip() for item in result.split(os.linesep)]
     result = [item for item in result if "ledger" in item and not item.endswith('unit.slice')]
     return result
