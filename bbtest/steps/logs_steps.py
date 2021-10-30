@@ -16,7 +16,7 @@ def step_impl(context, unit):
   def impl():
     (code, result, error) = execute(['journalctl', '-o', 'cat', '-u', unit, '--no-pager'])
     result = ansi_escape.sub('', result)
-    assert code == 0, str(result) + ' ' + str(error)
+    assert code == 'OK', str(result) + ' ' + str(error)
 
     actual_lines_merged = [item.strip() for item in result.split('\n') if len(item.strip())]
     actual_lines = []
