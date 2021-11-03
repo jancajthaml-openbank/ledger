@@ -21,6 +21,7 @@ class StubHeaders(object):
 class StubResponse(object):
 
   def __init__(self, status, body):
+
     self.status = status
     self.body = body
     self.headers = StubHeaders()
@@ -66,6 +67,9 @@ class Request(object):
       except urllib.error.HTTPError as err:
         return StubResponse(err.code, err)
       except urllib.error.URLError as err:
+        last_exception = err
+        time.sleep(0.5)
+      except ssl.SSLError as err:
         last_exception = err
         time.sleep(0.5)
 
