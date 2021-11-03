@@ -2,38 +2,28 @@
 # -*- coding: utf-8 -*-
 
 from behave import *
-import ssl
-import urllib.request
-import socket
-import http
 import json
 import time
 import decimal
 import os
+from helpers.http import Request
 
 
 def create_transfer(context, tenant):
   uri = "https://127.0.0.1/transaction/{}".format(tenant)
 
-  ctx = ssl.create_default_context()
-  ctx.check_hostname = False
-  ctx.verify_mode = ssl.CERT_NONE
-
-  request = urllib.request.Request(method='POST', url=uri)
+  request = Request(method='POST', url=uri)
   request.add_header('Accept', 'application/json')
   request.add_header('Content-Type', 'application/json')
 
   request.data = context.http_request_body.encode('utf-8')
 
-  try:
-    response = urllib.request.urlopen(request, timeout=10, context=ctx)
-    assert response.code in [200, 201], "expected 200 or 202 got #{response.code}"
-    response = response.read().decode('utf-8')
-    context.last_transaction_id = response or None
-  except (http.client.RemoteDisconnected, socket.timeout):
-    raise AssertionError('timeout')
-  except urllib.error.HTTPError as err:
-    assert err.code == 417, 'missing transaction id with {}'.format(err)
+  response = request.do()
+  assert response.status in [200, 201, 417], str(response.status)
+
+  if response.status in [200, 201]:
+    context.last_transaction_id = response.read().decode('utf-8')
+  else:
     context.last_transaction_id = None
 
 
@@ -114,31 +104,18 @@ def perform_http_request(context, uri):
     for row in context.table:
       options[row['key']] = row['value']
 
-  ctx = ssl.create_default_context()
-  ctx.check_hostname = False
-  ctx.verify_mode = ssl.CERT_NONE
-
-  request = urllib.request.Request(method=options['method'], url=uri)
+  request = Request(method=options['method'], url=uri)
   request.add_header('Accept', 'application/json')
   if context.text:
     request.add_header('Content-Type', 'application/json')
     request.data = context.text.encode('utf-8')
 
-  context.http_response = dict()
-
-  try:
-    response = urllib.request.urlopen(request, timeout=10, context=ctx)
-    context.http_response['status'] = str(response.status)
-    context.http_response['body'] = response.read().decode('utf-8')
-    context.http_response['content-type'] = response.info().get_content_type()
-  except (http.client.RemoteDisconnected, socket.timeout):
-    context.http_response['status'] = '504'
-    context.http_response['body'] = ""
-    context.http_response['content-type'] = 'text-plain'
-  except urllib.error.HTTPError as err:
-    context.http_response['status'] = str(err.code)
-    context.http_response['body'] = err.read().decode('utf-8')
-    context.http_response['content-type'] = 'text-plain'
+  response = request.do()
+  context.http_response = {
+    'status': str(response.status),
+    'body': response.read().decode('utf-8'),
+    'content-type': response.info().get_content_type()
+  }
 
 
 @then('HTTP response is')
