@@ -16,7 +16,7 @@ def create_transfer(context, tenant):
   request.add_header('Accept', 'application/json')
   request.add_header('Content-Type', 'application/json')
 
-  request.data = context.http_request_body.encode('utf-8')
+  request.data = context.http_request_body
 
   response = request.do()
   assert response.status in [200, 201, 417], str(response.status)
@@ -108,7 +108,7 @@ def perform_http_request(context, uri):
   request.add_header('Accept', 'application/json')
   if context.text:
     request.add_header('Content-Type', 'application/json')
-    request.data = context.text.encode('utf-8')
+    request.data = context.text
 
   response = request.do()
   context.http_response = {
