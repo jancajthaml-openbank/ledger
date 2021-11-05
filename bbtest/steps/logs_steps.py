@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import re
+import os
 from behave import *
 from helpers.shell import execute
 from helpers.eventually import eventually
@@ -12,23 +13,35 @@ def step_impl(context, unit):
   expected_lines = [item.strip() for item in context.text.split('\n') if len(item.strip())]
   ansi_escape = re.compile(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]')
 
+  def get_unit_description():
+    (code, result, error) = execute(["systemctl", "status", unit])
+    result = ansi_escape.sub('', result)
+    assert len(result), str(result) + ' ' + str(error)
+    result = result.split(os.linesep)[0]
+    pivot = "{} - ".format(unit)
+    idx = result.rfind(pivot)
+    if idx >= 0:
+      return result[idx+len(pivot):]
+    else:
+      return None
+
+  description = get_unit_description()
+
   @eventually(5)
   def impl():
     (code, result, error) = execute(['journalctl', '-o', 'cat', '-u', unit, '--no-pager'])
     result = ansi_escape.sub('', result)
     assert code == 'OK', str(result) + ' ' + str(error)
 
-    actual_lines_merged = [item.strip() for item in result.split('\n') if len(item.strip())]
-    actual_lines = []
-    idx = len(actual_lines_merged) - 1
+    if description:
+      idx = result.rfind("Stopped {}.".format(description))
+    else:
+      idx = -1
 
-    while True:
-      if idx < 0 or actual_lines_merged[idx].startswith("Starting openbank transaction ledger"):
-        break
-      actual_lines.append(actual_lines_merged[idx])
-      idx -= 1
+    if idx > 0:
+      result = result[idx:]
 
-    actual_lines = reversed(actual_lines)
+    actual_lines = [item.strip() for item in result.split('\n') if len(item.strip())]
 
     for expected in expected_lines:
       found = False
@@ -37,6 +50,6 @@ def step_impl(context, unit):
           found = True
           break
 
-      assert found == True, 'message "{}" was not found in logs'.format(context.text.strip())
+      assert found, 'message "{}" was not found in logs\n  {}'.format(context.text.strip(), '\n  '.join(actual_lines))
 
   impl()
