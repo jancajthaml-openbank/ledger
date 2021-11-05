@@ -183,7 +183,7 @@ executors:
     docker:
       - image: docker.io/jancajthaml/debian-packager:latest
 
-  machine:
+  testbed:
     machine:
       image: circleci/classic:201808-01
       docker_layer_caching: false
@@ -525,7 +525,7 @@ jobs:
   # -------------------------------------------------------------------------- #
 
   blackbox-test-amd64:
-    executor: machine
+    executor: testbed
     working_directory: /home/circleci/project
     steps:
       - checkout
