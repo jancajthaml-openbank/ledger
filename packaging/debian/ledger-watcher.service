@@ -3,8 +3,9 @@ Description=openbank transaction ledger configuration watcher
 StartLimitBurst=5
 
 [Service]
-Type=oneshot
+Type=simple
+ExecStartPre=echo 'restarting ledger (configuration has changed)'
 ExecStart=/bin/sh -c 'systemctl restart ledger.service'
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=ledger.service

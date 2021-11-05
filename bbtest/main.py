@@ -21,7 +21,7 @@ if __name__ == "__main__":
   ]
 
   if str(os.environ.get('CI', 'false')) == 'false':
-    args.append('-f plain')
+    args.append('-f pretty')
     args.append('--tags=~@wip')
   else:
     args.append('-f progress3')
