@@ -185,7 +185,7 @@ executors:
 
   testbed:
     machine:
-      image: circleci/classic:201808-01
+      image: ubuntu-1604:202007-01
       docker_layer_caching: false
 
 # ---------------------------------------------------------------------------- #
