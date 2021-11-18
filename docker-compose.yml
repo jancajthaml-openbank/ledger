@@ -10,9 +10,9 @@ services:
     image: jancajthaml/go
     tty: true
     volumes:
-      - .:/project
-      - ./services/ledger-unit:/go/src/github.com/jancajthaml-openbank/ledger-unit
-      - ./services/ledger-rest:/go/src/github.com/jancajthaml-openbank/ledger-rest
+      - .:/project:delegated
+      - ./services/ledger-unit:/go/src/github.com/jancajthaml-openbank/ledger-unit:delegated
+      - ./services/ledger-rest:/go/src/github.com/jancajthaml-openbank/ledger-rest:delegated
     working_dir: /project
     environment:
       - GOOS
@@ -26,7 +26,7 @@ services:
     image: jancajthaml/debian-packager
     tty: true
     volumes:
-      - .:/project
+      - .:/project:delegated
     working_dir: /project
 
   # -------------------------------------------------------------------------- #
@@ -88,11 +88,10 @@ services:
   # -------------------------------------------------------------------------- #
 
   bbtest:
-    image: jancajthaml/bbtest:amd64
+    image: jancajthaml/bbtest:${ARCH}
     environment:
       IMAGE_VERSION: ${VERSION:-latest}-${META:-main}
       UNIT_VERSION: ${VERSION:-latest}
-      UNIT_ARCH: amd64
       CI: ${CI:-false}
     tmpfs:
       - /tmp
