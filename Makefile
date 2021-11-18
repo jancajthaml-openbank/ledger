@@ -10,7 +10,6 @@ export COMPOSE_PROJECT_NAME = ledger
 .ONESHELL:
 .PHONY: arm64
 .PHONY: amd64
-.PHONY: armhf
 
 .PHONY: all
 all: bootstrap sync test package bbtest

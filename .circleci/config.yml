@@ -44,14 +44,6 @@ workflows:
               ignore: /.*/
             tags:
               only: /^v[0-9]+(\.[0-9]+)*$/
-      - compile-armhf:
-          requires:
-            - deps
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*$/
       - compile-arm64:
           requires:
             - deps
@@ -63,15 +55,6 @@ workflows:
       - package-debian-amd64:
           requires:
             - compile-amd64
-            - versions
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*$/
-      - package-debian-armhf:
-          requires:
-            - compile-armhf
             - versions
           filters:
             branches:
@@ -91,7 +74,6 @@ workflows:
           requires:
             - unit-test
             - package-debian-amd64
-            - package-debian-armhf
             - package-debian-arm64
           filters:
             branches:
@@ -128,19 +110,12 @@ workflows:
       - compile-amd64:
           requires:
             - deps
-      - compile-armhf:
-          requires:
-            - deps
       - compile-arm64:
           requires:
             - deps
       - package-debian-amd64:
           requires:
             - compile-amd64
-            - versions
-      - package-debian-armhf:
-          requires:
-            - compile-armhf
             - versions
       - package-debian-arm64:
           requires:
@@ -150,7 +125,6 @@ workflows:
           requires:
             - unit-test
             - package-debian-amd64
-            - package-debian-armhf
             - package-debian-arm64
       - blackbox-test-amd64:
           requires:
@@ -322,37 +296,6 @@ jobs:
 
   # -------------------------------------------------------------------------- #
 
-  compile-armhf:
-    executor: go
-    working_directory: /mnt/ramdisk
-    steps:
-      - restore_cache:
-          key: code-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
-      - restore_cache:
-          key: dependencies-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
-      - run:
-          name: Compile ledger-unit binary
-          command: |
-            /mnt/ramdisk/dev/lifecycle/package \
-              --arch linux/armhf \
-              --source /mnt/ramdisk/services/ledger-unit \
-              --output /mnt/ramdisk/packaging/bin
-          no_output_timeout: 5m
-      - run:
-          name: Compile ledger-rest binary
-          command: |
-            /mnt/ramdisk/dev/lifecycle/package \
-              --arch linux/armhf \
-              --source /mnt/ramdisk/services/ledger-rest \
-              --output /mnt/ramdisk/packaging/bin
-          no_output_timeout: 5m
-      - save_cache:
-          key: binaries-armhf-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
-          paths:
-            - /mnt/ramdisk/packaging/bin
-
-  # -------------------------------------------------------------------------- #
-
   compile-arm64:
     executor: go
     working_directory: /home/circleci/project
@@ -411,33 +354,6 @@ jobs:
 
   # -------------------------------------------------------------------------- #
 
-  package-debian-armhf:
-    executor: debian
-    working_directory: /mnt/ramdisk
-    steps:
-      - restore_cache:
-          key: code-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
-      - restore_cache:
-          key: binaries-armhf-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
-      - restore_cache:
-          key: versions-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
-      - run:
-          name: Package for debian
-          command: |
-            VERSION=$(cat /mnt/ramdisk/VERSION)
-            /mnt/ramdisk/dev/lifecycle/debian \
-              --arch armhf \
-              --pkg ledger \
-              --version ${VERSION} \
-              --source /mnt/ramdisk/packaging
-          no_output_timeout: 5m
-      - save_cache:
-          key: debian-armhf-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
-          paths:
-            - /mnt/ramdisk/packaging/bin
-
-  # -------------------------------------------------------------------------- #
-
   package-debian-arm64:
     executor: debian
     working_directory: /mnt/ramdisk
@@ -475,13 +391,9 @@ jobs:
       - restore_cache:
           key: binaries-amd64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
-          key: binaries-armhf-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
-      - restore_cache:
           key: binaries-arm64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
           key: debian-amd64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
-      - restore_cache:
-          key: debian-armhf-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
           key: debian-arm64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
@@ -575,13 +487,9 @@ jobs:
       - restore_cache:
           key: binaries-amd64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
-          key: binaries-armhf-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
-      - restore_cache:
           key: binaries-arm64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
           key: debian-amd64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
-      - restore_cache:
-          key: debian-armhf-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
           key: debian-arm64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - deploy:
