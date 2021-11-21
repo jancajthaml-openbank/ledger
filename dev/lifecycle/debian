@@ -101,7 +101,6 @@ lifecycle::debian::package() {
   
   local CC=gcc
   case ${TARGET_ARCHITECTURE} in
-    armhf) CC=arm-linux-gnueabihf-gcc ;;
     arm64) CC=aarch64-linux-gnu-gcc   ;;
     *)     CC=gcc                     ;;
   esac

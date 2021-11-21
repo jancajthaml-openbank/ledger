@@ -63,25 +63,7 @@ lifecycle::go::build() {
     return
   fi
 
-
-
   case ${ARCH} in
-
-    armhf)
-      cd ${source} && \
-      \
-      GOOS=${PLATFORM} \
-      GOARM=7 \
-      GOARCH=arm \
-      CGO_ENABLED=1 \
-      GOFLAGS=-buildmode=pie \
-      CC=arm-linux-gnueabihf-gcc \
-      \
-      go build -a -o ${output} || {
-        (>&2 echo "[error] ${output} unable to build")
-        exit 1
-      }
-    ;;
 
     arm64)
       cd ${source} && \
@@ -132,10 +114,6 @@ lifecycle::go::strip() {
   fi
 
   case ${ARCH} in
-
-    armhf)
-      arm-linux-gnueabihf-objcopy --strip-unneeded ${output}
-    ;;
 
     arm64)
       aarch64-linux-gnu-objcopy --strip-unneeded ${output}

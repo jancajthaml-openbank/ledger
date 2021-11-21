@@ -1,3 +1,0 @@
-bin/ledger-rest-linux-armhf usr/bin
-bin/ledger-unit-linux-armhf usr/bin
-init.conf etc/ledger/conf.d
