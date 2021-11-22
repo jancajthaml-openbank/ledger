@@ -88,9 +88,18 @@ workflows:
               ignore: /.*/
             tags:
               only: /^v[0-9]+(\.[0-9]+)*$/
+      - blackbox-test-arm64:
+          requires:
+            - package-docker
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v[0-9]+(\.[0-9]+)*$/
       - release:
           requires:
             - blackbox-test-amd64
+            - blackbox-test-arm64
           filters:
             branches:
               ignore: /.*/
@@ -129,6 +138,9 @@ workflows:
       - blackbox-test-amd64:
           requires:
             - package-docker
+      - blackbox-test-arm64:
+          requires:
+            - package-docker
 
   rolling_contract:
     triggers:
@@ -140,6 +152,7 @@ workflows:
                 - main
     jobs:
       - blackbox-test-amd64
+      - blackbox-test-arm64
 
 # ---------------------------------------------------------------------------- #
 
@@ -157,10 +170,17 @@ executors:
     docker:
       - image: docker.io/jancajthaml/debian-packager:latest
 
-  testbed:
+  arm64-testbed:
     machine:
-      image: ubuntu-1604:202007-01
+      image: ubuntu-2004:202101-01
       docker_layer_caching: false
+      resource_class: arm.medium
+
+  amd64-testbed:
+    machine:
+      image: ubuntu-2004:202101-01
+      docker_layer_caching: false
+      resource_class: medium
 
 # ---------------------------------------------------------------------------- #
 
@@ -437,7 +457,7 @@ jobs:
   # -------------------------------------------------------------------------- #
 
   blackbox-test-amd64:
-    executor: testbed
+    executor: amd64-testbed
     working_directory: /home/circleci/project
     steps:
       - checkout
@@ -465,6 +485,48 @@ jobs:
             export VERSION=v$(cat /home/circleci/project/VERSION)
             export META=$(cat /home/circleci/project/META)
             export ARCH=amd64
+
+            docker-compose up -d bbtest
+            docker exec -t $(docker-compose ps -q bbtest) python3 /opt/app/bbtest/main.py
+            docker-compose down -v
+          no_output_timeout: 5m
+      - store_test_results:
+          path: /home/circleci/project/reports/blackbox-tests/junit
+      - store_artifacts:
+          path: /home/circleci/project/reports/blackbox-tests
+          destination: reports
+
+  # -------------------------------------------------------------------------- #
+
+  blackbox-test-arm64:
+    executor: arm64-testbed
+    working_directory: /home/circleci/project
+    steps:
+      - checkout
+      - run: docker pull docker.io/jancajthaml/bbtest:arm64
+      - run:
+          name: Update VERSION + META
+          command: |
+            if [ -z ${CIRCLE_TAG} ] ; then
+              tags=$(git tag --sort=-v:refname | head -1)
+              if [ -z ${tags} ] ; then
+                VERSION=v0.0.0
+              else
+                VERSION=${tags}
+              fi
+              META=$(echo -e ${CIRCLE_BRANCH} | sed 's:.*/::')
+              echo -e "${VERSION#v}" > /home/circleci/project/VERSION
+              echo -e "${META}" > /home/circleci/project/META
+            else
+              echo -e "${CIRCLE_TAG#v}" > /home/circleci/project/VERSION
+              echo -e "main" > /home/circleci/project/META
+            fi
+      - run:
+          name: Run blackbox tests
+          command: |
+            export VERSION=v$(cat /home/circleci/project/VERSION)
+            export META=$(cat /home/circleci/project/META)
+            export ARCH=arm64
 
             docker-compose up -d bbtest
             docker exec -t $(docker-compose ps -q bbtest) python3 /opt/app/bbtest/main.py
