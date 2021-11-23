@@ -80,15 +80,10 @@ workflows:
               ignore: /.*/
             tags:
               only: /^v[0-9]+(\.[0-9]+)*$/
-      - blackbox-test-amd64:
-          requires:
-            - package-docker
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*$/
-      - blackbox-test-arm64:
+      - blackbox-test:
+          matrix:
+            parameters:
+              arch: [amd64, arm64]
           requires:
             - package-docker
           filters:
@@ -98,8 +93,7 @@ workflows:
               only: /^v[0-9]+(\.[0-9]+)*$/
       - release:
           requires:
-            - blackbox-test-amd64
-            - blackbox-test-arm64
+            - blackbox-test
           filters:
             branches:
               ignore: /.*/
@@ -135,10 +129,10 @@ workflows:
             - unit-test
             - package-debian-amd64
             - package-debian-arm64
-      - blackbox-test-amd64:
-          requires:
-            - package-docker
-      - blackbox-test-arm64:
+      - blackbox-test:
+          matrix:
+            parameters:
+              arch: [amd64, arm64]
           requires:
             - package-docker
 
@@ -151,8 +145,10 @@ workflows:
               only:
                 - main
     jobs:
-      - blackbox-test-amd64
-      - blackbox-test-arm64
+      - blackbox-test:
+          matrix:
+            parameters:
+              arch: [amd64, arm64]
 
 # ---------------------------------------------------------------------------- #
 
@@ -170,13 +166,13 @@ executors:
     docker:
       - image: docker.io/jancajthaml/debian-packager:latest
 
-  arm64-testbed:
+  machine-arm64:
     machine:
       image: ubuntu-2004:202101-01
       docker_layer_caching: false
       resource_class: arm.medium
 
-  amd64-testbed:
+  machine-amd64:
     machine:
       image: ubuntu-2004:202101-01
       docker_layer_caching: false
@@ -456,12 +452,15 @@ jobs:
 
   # -------------------------------------------------------------------------- #
 
-  blackbox-test-amd64:
-    executor: amd64-testbed
+  blackbox-test:
+    parameters:
+      arch:
+        type: string
+    executor: machine-<< parameters.arch >>
     working_directory: /home/circleci/project
     steps:
       - checkout
-      - run: docker pull docker.io/jancajthaml/bbtest:amd64
+      - run: docker pull docker.io/jancajthaml/bbtest:<< parameters.arch >>
       - run:
           name: Update VERSION + META
           command: |
@@ -484,49 +483,7 @@ jobs:
           command: |
             export VERSION=v$(cat /home/circleci/project/VERSION)
             export META=$(cat /home/circleci/project/META)
-            export ARCH=amd64
-
-            docker-compose up -d bbtest
-            docker exec -t $(docker-compose ps -q bbtest) python3 /opt/app/bbtest/main.py
-            docker-compose down -v
-          no_output_timeout: 5m
-      - store_test_results:
-          path: /home/circleci/project/reports/blackbox-tests/junit
-      - store_artifacts:
-          path: /home/circleci/project/reports/blackbox-tests
-          destination: reports
-
-  # -------------------------------------------------------------------------- #
-
-  blackbox-test-arm64:
-    executor: arm64-testbed
-    working_directory: /home/circleci/project
-    steps:
-      - checkout
-      - run: docker pull docker.io/jancajthaml/bbtest:arm64
-      - run:
-          name: Update VERSION + META
-          command: |
-            if [ -z ${CIRCLE_TAG} ] ; then
-              tags=$(git tag --sort=-v:refname | head -1)
-              if [ -z ${tags} ] ; then
-                VERSION=v0.0.0
-              else
-                VERSION=${tags}
-              fi
-              META=$(echo -e ${CIRCLE_BRANCH} | sed 's:.*/::')
-              echo -e "${VERSION#v}" > /home/circleci/project/VERSION
-              echo -e "${META}" > /home/circleci/project/META
-            else
-              echo -e "${CIRCLE_TAG#v}" > /home/circleci/project/VERSION
-              echo -e "main" > /home/circleci/project/META
-            fi
-      - run:
-          name: Run blackbox tests
-          command: |
-            export VERSION=v$(cat /home/circleci/project/VERSION)
-            export META=$(cat /home/circleci/project/META)
-            export ARCH=arm64
+            export ARCH=<< parameters.arch >>
 
             docker-compose up -d bbtest
             docker exec -t $(docker-compose ps -q bbtest) python3 /opt/app/bbtest/main.py
