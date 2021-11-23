@@ -80,7 +80,10 @@ workflows:
               ignore: /.*/
             tags:
               only: /^v[0-9]+(\.[0-9]+)*$/
-      - blackbox-test-amd64:
+      - blackbox-test:
+          matrix:
+            parameters:
+              arch: [amd64, arm64]
           requires:
             - package-docker
           filters:
@@ -90,7 +93,7 @@ workflows:
               only: /^v[0-9]+(\.[0-9]+)*$/
       - release:
           requires:
-            - blackbox-test-amd64
+            - blackbox-test
           filters:
             branches:
               ignore: /.*/
@@ -126,7 +129,10 @@ workflows:
             - unit-test
             - package-debian-amd64
             - package-debian-arm64
-      - blackbox-test-amd64:
+      - blackbox-test:
+          matrix:
+            parameters:
+              arch: [amd64, arm64]
           requires:
             - package-docker
 
@@ -139,7 +145,10 @@ workflows:
               only:
                 - main
     jobs:
-      - blackbox-test-amd64
+      - blackbox-test:
+          matrix:
+            parameters:
+              arch: [amd64, arm64]
 
 # ---------------------------------------------------------------------------- #
 
@@ -157,10 +166,17 @@ executors:
     docker:
       - image: docker.io/jancajthaml/debian-packager:latest
 
-  testbed:
+  machine-arm64:
     machine:
-      image: ubuntu-1604:202007-01
+      image: ubuntu-2004:202101-01
       docker_layer_caching: false
+      resource_class: arm.medium
+
+  machine-amd64:
+    machine:
+      image: ubuntu-2004:202101-01
+      docker_layer_caching: false
+      resource_class: medium
 
 # ---------------------------------------------------------------------------- #
 
@@ -436,12 +452,15 @@ jobs:
 
   # -------------------------------------------------------------------------- #
 
-  blackbox-test-amd64:
-    executor: testbed
+  blackbox-test:
+    parameters:
+      arch:
+        type: string
+    executor: machine-<< parameters.arch >>
     working_directory: /home/circleci/project
     steps:
       - checkout
-      - run: docker pull docker.io/jancajthaml/bbtest:amd64
+      - run: docker pull docker.io/jancajthaml/bbtest:<< parameters.arch >>
       - run:
           name: Update VERSION + META
           command: |
@@ -464,7 +483,7 @@ jobs:
           command: |
             export VERSION=v$(cat /home/circleci/project/VERSION)
             export META=$(cat /home/circleci/project/META)
-            export ARCH=amd64
+            export ARCH=<< parameters.arch >>
 
             docker-compose up -d bbtest
             docker exec -t $(docker-compose ps -q bbtest) python3 /opt/app/bbtest/main.py
