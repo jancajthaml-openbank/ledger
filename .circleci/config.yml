@@ -71,6 +71,9 @@ workflows:
             tags:
               only: /^v[0-9]+(\.[0-9]+)*$/
       - package-docker:
+          matrix:
+            parameters:
+              arch: [amd64, arm64]
           requires:
             - unit-test
             - package-debian-amd64
@@ -125,6 +128,9 @@ workflows:
             - compile-arm64
             - versions
       - package-docker:
+          matrix:
+            parameters:
+              arch: [amd64, arm64]
           requires:
             - unit-test
             - package-debian-amd64
@@ -186,23 +192,23 @@ jobs:
 
   checkout:
     executor: git
-    working_directory: /mnt/ramdisk
+    working_directory: /home/circleci/project
     steps:
       - checkout
       - save_cache:
           key: code-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
-            - /mnt/ramdisk/.git
-            - /mnt/ramdisk/dev
-            - /mnt/ramdisk/services
-            - /mnt/ramdisk/packaging
-            - /mnt/ramdisk/Dockerfile
+            - /home/circleci/project/.git
+            - /home/circleci/project/dev
+            - /home/circleci/project/services
+            - /home/circleci/project/packaging
+            - /home/circleci/project/Dockerfile
 
   # -------------------------------------------------------------------------- #
 
   versions:
     executor: git
-    working_directory: /mnt/ramdisk
+    working_directory: /home/circleci/project
     steps:
       - checkout
       - run:
@@ -216,47 +222,47 @@ jobs:
                 VERSION=${tags}
               fi
               META=$(echo -e ${CIRCLE_BRANCH} | sed 's:.*/::')
-              echo -e "${VERSION#v}" > /mnt/ramdisk/VERSION
-              echo -e "${META}" > /mnt/ramdisk/META
+              echo -e "${VERSION#v}" > /home/circleci/project/VERSION
+              echo -e "${META}" > /home/circleci/project/META
             else
-              echo -e "${CIRCLE_TAG#v}" > /mnt/ramdisk/VERSION
-              echo -e "main" > /mnt/ramdisk/META
+              echo -e "${CIRCLE_TAG#v}" > /home/circleci/project/VERSION
+              echo -e "main" > /home/circleci/project/META
             fi
       - save_cache:
           key: versions-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
-            - /mnt/ramdisk/VERSION
-            - /mnt/ramdisk/META
+            - /home/circleci/project/VERSION
+            - /home/circleci/project/META
 
   # -------------------------------------------------------------------------- #
 
   deps:
     executor: go
-    working_directory: /mnt/ramdisk
+    working_directory: /home/circleci/project
     steps:
       - restore_cache:
           key: code-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Sync ledger-unit dependencies
           command: |
-            /mnt/ramdisk/dev/lifecycle/sync \
-              --source /mnt/ramdisk/services/ledger-unit
+            /home/circleci/project/dev/lifecycle/sync \
+              --source /home/circleci/project/services/ledger-unit
       - run:
           name: Sync ledger-rest dependencies
           command: |
-            /mnt/ramdisk/dev/lifecycle/sync \
-              --source /mnt/ramdisk/services/ledger-rest
+            /home/circleci/project/dev/lifecycle/sync \
+              --source /home/circleci/project/services/ledger-rest
       - save_cache:
           key: dependencies-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
-            - /mnt/ramdisk/services/ledger-unit/vendor
-            - /mnt/ramdisk/services/ledger-rest/vendor
+            - /home/circleci/project/services/ledger-unit/vendor
+            - /home/circleci/project/services/ledger-rest/vendor
 
   # -------------------------------------------------------------------------- #
 
   unit-test:
     executor: go
-    working_directory: /mnt/ramdisk
+    working_directory: /home/circleci/project
     steps:
       - restore_cache:
           key: code-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
@@ -265,25 +271,25 @@ jobs:
       - run:
           name: Unit test ledger-unit
           command: |
-            /mnt/ramdisk/dev/lifecycle/test \
-              --source /mnt/ramdisk/services/ledger-unit \
-              --output /mnt/ramdisk/reports/unit-tests
+            /home/circleci/project/dev/lifecycle/test \
+              --source /home/circleci/project/services/ledger-unit \
+              --output /home/circleci/project/reports/unit-tests
           no_output_timeout: 5m
       - run:
           name: Unit test ledger-rest
           command: |
-            /mnt/ramdisk/dev/lifecycle/test \
-              --source /mnt/ramdisk/services/ledger-rest \
-              --output /mnt/ramdisk/reports/unit-tests
+            /home/circleci/project/dev/lifecycle/test \
+              --source /home/circleci/project/services/ledger-rest \
+              --output /home/circleci/project/reports/unit-tests
           no_output_timeout: 5m
       - store_test_results:
-          path: /mnt/ramdisk/reports/unit-tests
+          path: /home/circleci/project/reports/unit-tests
 
   # -------------------------------------------------------------------------- #
 
   compile-amd64:
     executor: go
-    working_directory: /mnt/ramdisk
+    working_directory: /home/circleci/project
     steps:
       - restore_cache:
           key: code-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
@@ -292,23 +298,23 @@ jobs:
       - run:
           name: Compile ledger-unit binary
           command: |
-            /mnt/ramdisk/dev/lifecycle/package \
+            /home/circleci/project/dev/lifecycle/package \
               --arch linux/amd64 \
-              --source /mnt/ramdisk/services/ledger-unit \
-              --output /mnt/ramdisk/packaging/bin
+              --source /home/circleci/project/services/ledger-unit \
+              --output /home/circleci/project/packaging/bin
           no_output_timeout: 5m
       - run:
           name: Compile ledger-rest binary
           command: |
-            /mnt/ramdisk/dev/lifecycle/package \
+            /home/circleci/project/dev/lifecycle/package \
               --arch linux/amd64 \
-              --source /mnt/ramdisk/services/ledger-rest \
-              --output /mnt/ramdisk/packaging/bin
+              --source /home/circleci/project/services/ledger-rest \
+              --output /home/circleci/project/packaging/bin
           no_output_timeout: 5m
       - save_cache:
           key: binaries-amd64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
-            - /mnt/ramdisk/packaging/bin
+            - /home/circleci/project/packaging/bin
 
   # -------------------------------------------------------------------------- #
 
@@ -323,29 +329,29 @@ jobs:
       - run:
           name: Compile ledger-unit binary
           command: |
-            /mnt/ramdisk/dev/lifecycle/package \
+            /home/circleci/project/dev/lifecycle/package \
               --arch linux/arm64 \
-              --source /mnt/ramdisk/services/ledger-unit \
-              --output /mnt/ramdisk/packaging/bin
+              --source /home/circleci/project/services/ledger-unit \
+              --output /home/circleci/project/packaging/bin
           no_output_timeout: 5m
       - run:
           name: Compile ledger-rest binary
           command: |
-            /mnt/ramdisk/dev/lifecycle/package \
+            /home/circleci/project/dev/lifecycle/package \
               --arch linux/arm64 \
-              --source /mnt/ramdisk/services/ledger-rest \
-              --output /mnt/ramdisk/packaging/bin
+              --source /home/circleci/project/services/ledger-rest \
+              --output /home/circleci/project/packaging/bin
           no_output_timeout: 5m
       - save_cache:
           key: binaries-arm64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
-            - /mnt/ramdisk/packaging/bin
+            - /home/circleci/project/packaging/bin
 
   # -------------------------------------------------------------------------- #
 
   package-debian-amd64:
     executor: debian
-    working_directory: /mnt/ramdisk
+    working_directory: /home/circleci/project
     steps:
       - restore_cache:
           key: code-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
@@ -356,23 +362,23 @@ jobs:
       - run:
           name: Package for debian
           command: |
-            VERSION=$(cat /mnt/ramdisk/VERSION)
-            /mnt/ramdisk/dev/lifecycle/debian \
+            VERSION=$(cat /home/circleci/project/VERSION)
+            /home/circleci/project/dev/lifecycle/debian \
               --arch amd64 \
               --pkg ledger \
               --version ${VERSION} \
-              --source /mnt/ramdisk/packaging
+              --source /home/circleci/project/packaging
           no_output_timeout: 5m
       - save_cache:
           key: debian-amd64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
-            - /mnt/ramdisk/packaging/bin
+            - /home/circleci/project/packaging/bin
 
   # -------------------------------------------------------------------------- #
 
   package-debian-arm64:
     executor: debian
-    working_directory: /mnt/ramdisk
+    working_directory: /home/circleci/project
     steps:
       - restore_cache:
           key: code-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
@@ -383,24 +389,26 @@ jobs:
       - run:
           name: Package for debian
           command: |
-            VERSION=$(cat /mnt/ramdisk/VERSION)
-            /mnt/ramdisk/dev/lifecycle/debian \
+            VERSION=$(cat /home/circleci/project/VERSION)
+            /home/circleci/project/dev/lifecycle/debian \
               --arch arm64 \
               --pkg ledger \
               --version ${VERSION} \
-              --source /mnt/ramdisk/packaging
+              --source /home/circleci/project/packaging
           no_output_timeout: 5m
       - save_cache:
           key: debian-arm64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
-            - /mnt/ramdisk/packaging/bin
+            - /home/circleci/project/packaging/bin
 
   # -------------------------------------------------------------------------- #
 
   package-docker:
-    docker:
-      - image: docker.io/docker:18.06.0-ce-git
-    working_directory: /mnt/ramdisk
+    parameters:
+      arch:
+        type: string
+    executor: machine-<< parameters.arch >>
+    working_directory: /home/circleci/project
     steps:
       - restore_cache:
           key: code-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
@@ -414,41 +422,37 @@ jobs:
           key: debian-arm64-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
       - restore_cache:
           key: versions-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
-      - setup_remote_docker:
-          version: 18.06.0-ce
       - run:
-          name: Package for docker
+          name: Publish << parameters.arch >> to docker.io
           command: |
-            META=$(cat /mnt/ramdisk/META)
-            VERSION=$(cat /mnt/ramdisk/VERSION)
+            export VERSION=$(cat /home/circleci/project/VERSION)
+            export META=$(cat /home/circleci/project/META)
+            export ARCH=<< parameters.arch >>
 
             docker build \
-              -t docker.io/openbank/ledger:v${VERSION}-${META} \
-              -f packaging/docker/Dockerfile \
-              .
+              -t docker.io/openbank/ledger:${ARCH}-${VERSION}.${META} \
+              -f ./packaging/docker/${ARCH}/Dockerfile .
+
+            echo ${DOCKER_PASSWORD} | docker login docker.io -u ${DOCKER_USER} --password-stdin
+
+            docker push docker.io/openbank/ledger:${ARCH}-${VERSION}.${META}
+
+            rm -f /home/circleci/.docker/config.json
+      - run:
+          name: Publish << parameters.arch >> to docker.pkg.github.com
+          command: |
+            export VERSION=$(cat /home/circleci/project/VERSION)
+            export ARCH=<< parameters.arch >>
+
             docker build \
-              -t docker.pkg.github.com/jancajthaml-openbank/ledger/ledger:${VERSION} \
-              -f packaging/docker/Dockerfile \
-              .
-      - run:
-          name: Publish to docker.io
-          command: |
-            echo ${DOCKER_PASSWORD} \
-              | docker login -u ${DOCKER_USER} --password-stdin
-            META=$(cat /mnt/ramdisk/META)
-            VERSION=$(cat /mnt/ramdisk/VERSION)
-            docker push \
-              docker.io/openbank/ledger:v${VERSION}-${META}
-            rm -f /root/.docker/config.json
-      - run:
-          name: Publish to docker.pkg.github.com
-          command: |
-            echo ${GITHUB_RELEASE_TOKEN} \
-              | docker login docker.pkg.github.com -u jancajthaml --password-stdin
-            VERSION=$(cat /mnt/ramdisk/VERSION)
-            docker push \
-              docker.pkg.github.com/jancajthaml-openbank/ledger/ledger:${VERSION}
-            rm -f /root/.docker/config.json
+              -t docker.pkg.github.com/jancajthaml-openbank/ledger/ledger:${ARCH}-${VERSION} \
+              -f ./packaging/docker/${ARCH}/Dockerfile .
+
+            echo ${GITHUB_RELEASE_TOKEN} | docker login docker.pkg.github.com -u ${DOCKER_USER} --password-stdin
+
+            docker push docker.pkg.github.com/jancajthaml-openbank/ledger/ledger:${ARCH}-${VERSION}
+
+            rm -f /home/circleci/.docker/config.json
 
   # -------------------------------------------------------------------------- #
 
@@ -481,7 +485,7 @@ jobs:
       - run:
           name: Run blackbox tests
           command: |
-            export VERSION=v$(cat /home/circleci/project/VERSION)
+            export VERSION=$(cat /home/circleci/project/VERSION)
             export META=$(cat /home/circleci/project/META)
             export ARCH=<< parameters.arch >>
 
@@ -499,7 +503,7 @@ jobs:
 
   release:
     executor: debian
-    working_directory: /mnt/ramdisk
+    working_directory: /home/circleci/project
     steps:
       - restore_cache:
           key: code-{{ .Environment.CIRCLE_TAG }}-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
@@ -514,7 +518,7 @@ jobs:
       - deploy:
           name: Release artifacts to github
           command: |
-            /mnt/ramdisk/dev/lifecycle/release \
+            /home/circleci/project/dev/lifecycle/release \
               --version ${CIRCLE_TAG} \
               --token ${GITHUB_RELEASE_TOKEN}
 

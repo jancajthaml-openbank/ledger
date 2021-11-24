@@ -90,8 +90,8 @@ services:
   bbtest:
     image: jancajthaml/bbtest:${ARCH}
     environment:
-      IMAGE_VERSION: ${VERSION:-latest}-${META:-main}
-      UNIT_VERSION: ${VERSION:-latest}
+      IMAGE_VERSION: ${ARCH}-${VERSION}.${META}
+      UNIT_VERSION: ${VERSION}
       CI: ${CI:-false}
     tmpfs:
       - /tmp
@@ -99,7 +99,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:rw
       - /var/lib/docker/containers:/var/lib/docker/containers:rw
       - /sys/fs/cgroup:/sys/fs/cgroup:ro
-      - .:/opt/app
+      - .:/opt/app:delegated
     working_dir: /opt/app
 
 # ---------------------------------------------------------------------------- #
