@@ -227,8 +227,8 @@ func ProcessMessage(s *System) system.ProcessMessage {
 
 // NewTransactionActor creates new transaction actor
 func NewTransactionActor(s *System, name string) (*system.Actor, error) {
-	envelope := system.NewActor(name, NewTransactionState())
-	err := s.RegisterActor(envelope, InitialTransaction(s))
+	envelope := system.NewActor(name, InitialTransaction(s, NewTransactionState()))
+	err := s.RegisterActor(envelope)
 	if err != nil {
 		log.Warn().Err(err).Msgf("Unable to register %s actor", name)
 		return nil, err

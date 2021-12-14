@@ -21,16 +21,22 @@ import (
 	"time"
 )
 
+func receive(sys *System, channel chan<- interface{}) system.ReceiverFunction {
+	return func(context system.Context) system.ReceiverFunction {
+		channel <- context.Data
+		return receive(sys, channel)
+	}
+}
+
+
 // CreateTransaction creates new transaction
 func CreateTransaction(sys *System, tenant string, transaction model.Transaction) interface{} {
 	ch := make(chan interface{})
 
-	envelope := system.NewActor("transaction/"+xid.New().String(), nil)
+	envelope := system.NewActor("transaction/"+xid.New().String(), receive(sys, ch))
 	defer sys.UnregisterActor(envelope.Name)
 
-	sys.RegisterActor(envelope, func(state interface{}, context system.Context) {
-		ch <- context.Data
-	})
+	sys.RegisterActor(envelope)
 
 	sys.SendMessage(
 		CreateTransactionMessage(transaction),
