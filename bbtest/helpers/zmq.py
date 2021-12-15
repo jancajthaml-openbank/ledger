@@ -20,6 +20,9 @@ class ZMQHelper(threading.Thread):
 
   def clear(self):
     self.working = True
+    self.__mutex.acquire()
+    self.backlog = []
+    self.__mutex.release()
 
   def silence(self):
     self.working = False
