@@ -7,13 +7,13 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/godbus/dbus/v5 v5.0.4/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
-github.com/jancajthaml-openbank/actor-system v1.4.7 h1:sqO/7BTm47y/NQ29ZuWxgPU7d2CmIEH1pCrcKyN/7ck=
-github.com/jancajthaml-openbank/actor-system v1.4.7/go.mod h1:KzC0k0aZLZyj+eKAyEByXqM2eKCCKmBlMcjo2TXLtYU=
+github.com/jancajthaml-openbank/actor-system v1.5.1 h1:T1Zn9HLA3NCHi4hunCF5bHMGAigSnInGRgrsMvb9dz8=
+github.com/jancajthaml-openbank/actor-system v1.5.1/go.mod h1:nIHD5as3cIrWQKj/YH1qJcEoGDJ9bLspb/rEfRwCv4U=
 github.com/jancajthaml-openbank/local-fs v1.2.2 h1:zBhEDRh2zY7VI1KHTMwp8uqxTP7XR9dB9cK0NYGnzmw=
 github.com/jancajthaml-openbank/local-fs v1.2.2/go.mod h1:aeF1ybqH3QQsFvqGdvk/0+5TXnHk1T7R1l+ZQ5d8SkY=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
-github.com/pebbe/zmq4 v1.2.3 h1:SwOjTnXrtwyq4Hs4AXghkrNNEMuMnpvCZfEGTkDgrgI=
-github.com/pebbe/zmq4 v1.2.3/go.mod h1:7N4y5R18zBiu3l0vajMUWQgZyjv464prE8RCyBcmnZM=
+github.com/pebbe/zmq4 v1.2.7 h1:6EaX83hdFSRUEhgzSW1E/SPoTS3JeYZgYkBvwdcrA9A=
+github.com/pebbe/zmq4 v1.2.7/go.mod h1:nqnPueOapVhE2wItZ0uOErngczsJdLOGkebMxaO8r48=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
