@@ -31,7 +31,7 @@ def step_impl(context, unit):
   def impl():
     (code, result, error) = execute(['journalctl', '-o', 'cat', '-u', unit, '--no-pager'])
     result = ansi_escape.sub('', result)
-    assert code == 'OK', str(result) + ' ' + str(error)
+    assert code == 'OK', str(code) + ' ' + str(result) + ' ' + str(error)
 
     if description:
       idx = result.rfind("Stopped {}.".format(description))

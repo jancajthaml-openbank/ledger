@@ -17,18 +17,18 @@ class Deadline(threading.Thread):
     self.__callback = callback
     self.__cancelled = threading.Event()
 
-  def run(self) -> None:
+  def run(self):
     deadline = time.monotonic() + self.__timeout
     while not self.__cancelled.wait(deadline - time.monotonic()):
       if not self.__cancelled.is_set() and deadline <= time.monotonic():
         return self.__callback()
 
-  def cancel(self) -> None:
+  def cancel(self):
     self.__cancelled.set()
     self.join()
 
 
-def execute(command, timeout=60) -> None:
+def execute(command, timeout=60):
   ansi_escape = re.compile(r'(\x9B|\x1B\[)[0-?]*[ -/]*[@-~]', flags=re.IGNORECASE)
   try:
     p = subprocess.Popen(
@@ -40,7 +40,7 @@ def execute(command, timeout=60) -> None:
       close_fds=True
     )
 
-    def kill() -> None:
+    def kill():
       for sig in [signal.SIGTERM, signal.SIGQUIT, signal.SIGKILL, signal.SIGKILL]:
         if p.poll():
           break
