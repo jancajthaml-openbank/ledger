@@ -49,3 +49,17 @@ def check_transaction_state(context, tenant, transaction):
   for row in context.table:
     assert row['key'] in actual, 'key {} not found in {}'.format(row['key'], actual)
     assert actual[row['key']] == row['value'], 'extected {} got {} instead'.format(row['key'], actual)
+
+
+@then('transaction of tenant {tenant} should not exist')
+def transaction_should_not_exist(context, tenant):
+  if context.last_transaction_id:
+    path = '/data/t_{}/transaction/{}'.format(tenant, context.last_transaction_id)
+    assert os.path.isfile(path) is False, "{} exists but should not".format(path)
+
+
+@then('transaction of tenant {tenant} should exist')
+def transaction_should_exist(context, tenant):
+  assert context.last_transaction_id, 'missing last_transaction_id from context'
+  path = '/data/t_{}/transaction/{}'.format(tenant, context.last_transaction_id)
+  assert os.path.isfile(path) is True, "{} does not exists but should".format(path)
