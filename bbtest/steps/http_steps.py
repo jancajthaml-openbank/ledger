@@ -5,7 +5,6 @@ from behave import *
 import json
 import time
 import decimal
-import os
 from helpers.http import Request
 
 
@@ -19,6 +18,9 @@ def create_transfer(context, tenant):
   request.data = context.http_request_body
 
   response = request.do()
+  if response.status == 504:
+    response = request.do()
+
   assert response.status in [200, 201, 417], str(response.status)
 
   if response.status in [200, 201]:
@@ -26,19 +28,6 @@ def create_transfer(context, tenant):
   else:
     context.last_transaction_id = None
 
-
-@then('transaction of tenant {tenant} should not exist')
-def transaction_should_not_exist(context, tenant):
-  if context.last_transaction_id:
-    path = '/data/t_{}/transaction/{}'.format(tenant, context.last_transaction_id)
-    assert os.path.isfile(path) is False, "{} exists but should not".format(path)
-
-
-@then('transaction of tenant {tenant} should exist')
-def transaction_should_exist(context, tenant):
-  assert context.last_transaction_id, 'missing last_transaction_id from context'
-  path = '/data/t_{}/transaction/{}'.format(tenant, context.last_transaction_id)
-  assert os.path.isfile(path) is True, "{} does not exists but should".format(path)
 
 
 @when('following transaction is created from tenant {tenant}')
