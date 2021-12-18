@@ -20,16 +20,14 @@ jobs:
       with:
         fetch-depth: 2
 
-    - run: git checkout HEAD^2
-      if: ${{ github.event_name == 'pull_request' }}
-
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
       with:
         languages: go
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v1
+    - name: Unlink makefile
+      run: |
+        rm -f Makefile
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
