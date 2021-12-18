@@ -28,6 +28,9 @@ lifecycle::go::sec() {
   if [ -z ${dir} -o ! -d ${dir} ] ; then
     return
   fi
+
+  dir=$(realpath ${dir})
+
   cd ${dir} && gosec -exclude=G104,G302,G402,G103 ./...
 }
 

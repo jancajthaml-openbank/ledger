@@ -29,6 +29,8 @@ lifecycle::go::sync() {
     return
   fi
 
+  dir=$(realpath ${dir})
+
   if [ -d ${dir}/vendor ] ; then
     rm -rf ${dir}/vendor
   fi
