@@ -14,12 +14,12 @@ def step_impl(context, package, operation):
   if operation == 'installed':
     (code, result, error) = execute(["apt-get", "install", "-f", "-qq", "-o=Dpkg::Use-Pty=0", "-o=Dpkg::Options::=--force-confold", context.unit.binary])
     assert code == 'OK', "unable to install with code {} and {} {}".format(code, result, error)
-    assert os.path.isfile('/etc/ledger/conf.d/init.conf') is True
+    assert os.path.isfile('/etc/ledger/conf.d/init.conf') is True, 'config file does not exists'
     execute(['systemctl', 'start', package])
   elif operation == 'uninstalled':
-    (code, result, error) = execute(["apt-get", "-y", "remove", package])
+    (code, result, error) = execute(["apt-get", "-f", "-qq", "remove", package])
     assert code == 'OK', "unable to uninstall with code {} and {} {}".format(code, result, error)
-    (code, result, error) = execute(["apt-get", "-y", "purge", package])
+    (code, result, error) = execute(["apt-get", "-f", "-qq", "purge", package])
     assert code == 'OK', "unable to purge with code {} and {} {}".format(code, result, error)
     assert os.path.isfile('/etc/ledger/conf.d/init.conf') is False, 'config file still exists'
   else:
