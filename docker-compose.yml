@@ -89,6 +89,7 @@ services:
 
   bbtest:
     image: jancajthaml/bbtest:${ARCH}
+    tty: true
     environment:
       IMAGE_VERSION: ${ARCH}-${VERSION}.${META}
       UNIT_VERSION: ${VERSION}
@@ -98,7 +99,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:rw
       - /var/lib/docker/containers:/var/lib/docker/containers:rw
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
       - .:/opt/app:delegated
     working_dir: /opt/app
 
