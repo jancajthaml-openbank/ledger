@@ -5,8 +5,8 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/godbus/dbus/v5 v5.0.4 h1:9349emZab16e7zQvpmsbtjc18ykshndd8y2PG3sgJbA=
 github.com/godbus/dbus/v5 v5.0.4/go.mod h1:xhWf0FNVPg57R7Z0UbKHbJfkEywrmjJnf7w5xrFpKfA=
 github.com/golang-jwt/jwt v3.2.2+incompatible/go.mod h1:8pz2t5EyA70fFQQSrl6XZXzqecmYZeUEB8OUGHkxJ+I=
-github.com/jancajthaml-openbank/actor-system v1.5.1 h1:T1Zn9HLA3NCHi4hunCF5bHMGAigSnInGRgrsMvb9dz8=
-github.com/jancajthaml-openbank/actor-system v1.5.1/go.mod h1:nIHD5as3cIrWQKj/YH1qJcEoGDJ9bLspb/rEfRwCv4U=
+github.com/jancajthaml-openbank/actor-system v1.5.4 h1:1Eqn4A62uBPkEPW/0k9VxwSqdCdWKUWGlRQEQG9oPtU=
+github.com/jancajthaml-openbank/actor-system v1.5.4/go.mod h1:nIHD5as3cIrWQKj/YH1qJcEoGDJ9bLspb/rEfRwCv4U=
 github.com/jancajthaml-openbank/local-fs v1.2.3 h1:etzg+o9ptS1/AyDju5HYwkarV7LuV7IM8nEDOJ0gHLw=
 github.com/jancajthaml-openbank/local-fs v1.2.3/go.mod h1:W19XcWPceSnj+ZE8UOZapMlinVIxq8xJsGogTfv80XM=
 github.com/labstack/echo/v4 v4.6.1 h1:OMVsrnNFzYlGSdaiYGHbgWQnr+JM7NG+B9suCPie14M=

@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/coreos/go-systemd/v22 v22.3.2
-	github.com/jancajthaml-openbank/actor-system v1.5.1
+	github.com/jancajthaml-openbank/actor-system v1.5.4
 	github.com/jancajthaml-openbank/local-fs v1.2.3
 	github.com/labstack/echo/v4 v4.6.1
 	github.com/rs/xid v1.3.0
