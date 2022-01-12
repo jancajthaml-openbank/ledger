@@ -209,14 +209,15 @@ jobs:
   versions:
     executor: git
     working_directory: /home/circleci/project
-    environment:
-      BUILD_TAG: << pipeline.git.tag >>
     steps:
       - checkout
       - run:
           name: Update VERSION + META
           command: |
-            if [ -z "${BUILD_TAG}" ] ; then
+            echo "A"
+            echo "<< pipeline.git.tag >>"
+            echo "B"
+            if [ -z "<< pipeline.git.tag >>" ] ; then
               tags=$(git tag --sort=-v:refname | head -1)
               if [ -z ${tags} ] ; then
                 VERSION=v0.0.0
@@ -227,6 +228,7 @@ jobs:
               echo -e "${VERSION#v}" > /home/circleci/project/VERSION
               echo -e "${META}" > /home/circleci/project/META
             else
+              BUILD_TAG="<< pipeline.git.tag >>"
               echo -e "${BUILD_TAG#v}" > /home/circleci/project/VERSION
               echo -e "main" > /home/circleci/project/META
             fi
