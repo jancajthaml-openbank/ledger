@@ -63,6 +63,8 @@ class UnitHelper(object):
       self.units = result
 
   def download(self):
+    failure = None
+
     self.image_version = os.environ.get('IMAGE_VERSION', '')
     self.debian_version = os.environ.get('UNIT_VERSION', '')
 
@@ -82,18 +84,19 @@ class UnitHelper(object):
 
     os.makedirs(os.path.dirname(self.binary), exist_ok=True)
 
-    failure = None
-    image = 'openbank/ledger:{}'.format(self.image_version)
+    image = 'docker.io/openbank/ledger:{}'.format(self.image_version)
     package = '/opt/artifacts/ledger_{}_{}.deb'.format(self.debian_version, self.arch)
+
+    scratch_docker_cmd = ['FROM alpine']
+
+    scratch_docker_cmd.append('COPY --from={} {} {}'.format(image, package, self.binary))
+
     temp = tempfile.NamedTemporaryFile(delete=True)
     try:
       with open(temp.name, 'w') as fd:
-        fd.write(str(os.linesep).join([
-          'FROM alpine',
-          'COPY --from={} {} {}'.format(image, package, self.binary)
-        ]))
+        fd.write(str(os.linesep).join(scratch_docker_cmd))
 
-      image, stream = self.docker.images.build(fileobj=temp, rm=True, pull=False, tag='bbtest_artifacts-scratch')
+      image, stream = self.docker.images.build(fileobj=temp, rm=True, pull=True, tag='bbtest_artifacts-scratch')
       for chunk in stream:
         if not 'stream' in chunk:
           continue
