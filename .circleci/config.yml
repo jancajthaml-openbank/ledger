@@ -462,18 +462,16 @@ jobs:
       - run:
           name: Update VERSION + META
           command: |
-            if [ -z ${CIRCLE_TAG} ] ; then
+            if [ -z "<< pipeline.git.tag >>" ] ; then
               tags=$(git tag --sort=-v:refname | head -1)
               if [ -z ${tags} ] ; then
-                VERSION=v0.0.0
+                echo -e "0.0.0" > /home/circleci/project/VERSION
               else
-                VERSION=${tags}
+                echo -e "${tags#v}" > /home/circleci/project/VERSION
               fi
-              META=$(echo -e ${CIRCLE_BRANCH} | sed 's:.*/::')
-              echo -e "${VERSION#v}" > /home/circleci/project/VERSION
-              echo -e "${META}" > /home/circleci/project/META
+              echo -e "<< pipeline.git.branch >>" | sed 's:.*/::' > /home/circleci/project/META
             else
-              echo -e "${CIRCLE_TAG#v}" > /home/circleci/project/VERSION
+              echo -e "<< pipeline.git.tag >>" | sed -e "s/^v//" > /home/circleci/project/VERSION
               echo -e "main" > /home/circleci/project/META
             fi
       - run:
