@@ -214,9 +214,6 @@ jobs:
       - run:
           name: Update VERSION + META
           command: |
-            echo "A"
-            echo "<< pipeline.git.tag >>"
-            echo "B"
             if [ -z "<< pipeline.git.tag >>" ] ; then
               tags=$(git tag --sort=-v:refname | head -1)
               if [ -z ${tags} ] ; then
@@ -228,16 +225,9 @@ jobs:
               echo -e "${VERSION#v}" > /home/circleci/project/VERSION
               echo -e "${META}" > /home/circleci/project/META
             else
-              BUILD_TAG="<< pipeline.git.tag >>"
-              echo -e "${BUILD_TAG#v}" > /home/circleci/project/VERSION
+              echo -e "<< pipeline.git.tag >>" | sed -e "s/^v//" > /home/circleci/project/VERSION
               echo -e "main" > /home/circleci/project/META
             fi
-
-            echo "C"
-            cat /home/circleci/project/VERSION
-            cat /home/circleci/project/META
-            echo "D"
-
       - save_cache:
           key: versions-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
