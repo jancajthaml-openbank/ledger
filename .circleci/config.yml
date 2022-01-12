@@ -232,6 +232,12 @@ jobs:
               echo -e "${BUILD_TAG#v}" > /home/circleci/project/VERSION
               echo -e "main" > /home/circleci/project/META
             fi
+
+            echo "C"
+            cat /home/circleci/project/VERSION
+            cat /home/circleci/project/META
+            echo "D"
+
       - save_cache:
           key: versions-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
           paths:
