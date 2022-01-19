@@ -5,7 +5,7 @@ import os
 import sys
 import json
 import behave2cucumber
-from helpers.shell import execute
+from openbank_testkit import Shell
 
 
 if __name__ == "__main__":
@@ -43,6 +43,8 @@ if __name__ == "__main__":
 
   from behave import __main__ as behave_executable
 
+  print('\nStarting tests')
+
   exit_code = behave_executable.main(args=' '.join(args))
 
   with open('{}/../reports/blackbox-tests/behave/results.json'.format(cwd), 'r') as fd_behave:
@@ -52,7 +54,7 @@ if __name__ == "__main__":
       cucumber_data = json.dumps(behave2cucumber.convert(behave_data))
       fd_cucumber.write(cucumber_data)
 
-  execute([
+  Shell.run([
     'json_to_junit',
     '{}/../reports/blackbox-tests/cucumber/results.json'.format(cwd),
     '{}/../reports/blackbox-tests/junit/results.xml'.format(cwd)

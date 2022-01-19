@@ -5,7 +5,7 @@ from behave import *
 import json
 import time
 import decimal
-from helpers.http import Request
+from openbank_testkit import Request
 
 
 def create_transfer(context, tenant):
@@ -27,7 +27,6 @@ def create_transfer(context, tenant):
     context.last_transaction_id = response.read().decode('utf-8')
   else:
     context.last_transaction_id = None
-
 
 
 @when('following transaction is created from tenant {tenant}')
@@ -103,7 +102,7 @@ def perform_http_request(context, uri):
   context.http_response = {
     'status': str(response.status),
     'body': response.read().decode('utf-8'),
-    'content-type': response.info().get_content_type()
+    'content-type': response.content_type
   }
 
 
