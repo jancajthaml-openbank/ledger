@@ -4,7 +4,7 @@
 import re
 import os
 from behave import *
-from helpers.shell import execute
+from openbank_testkit import Shell
 from helpers.eventually import eventually
 
 
@@ -14,7 +14,7 @@ def step_impl(context, unit):
   ansi_escape = re.compile(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]')
 
   def get_unit_description():
-    (code, result, error) = execute(["systemctl", "status", unit])
+    (code, result, error) = Shell.run(["systemctl", "status", unit])
     result = ansi_escape.sub('', result)
     assert len(result), str(result) + ' ' + str(error)
     result = result.split(os.linesep)[0]
@@ -29,7 +29,7 @@ def step_impl(context, unit):
 
   @eventually(5)
   def impl():
-    (code, result, error) = execute(['journalctl', '-o', 'cat', '-u', unit, '--no-pager'])
+    (code, result, error) = Shell.run(['journalctl', '-o', 'cat', '-u', unit, '--no-pager'])
     result = ansi_escape.sub('', result)
     assert code == 'OK', str(code) + ' ' + str(result) + ' ' + str(error)
 

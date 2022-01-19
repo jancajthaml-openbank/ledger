@@ -4,22 +4,21 @@
 import time
 import os
 from behave import *
-from helpers.shell import execute
+from openbank_testkit import Shell, Request
 from helpers.eventually import eventually
-from helpers.http import Request
 
 
 @given('package {package} is {operation}')
 def step_impl(context, package, operation):
   if operation == 'installed':
-    (code, result, error) = execute(["apt-get", "install", "-f", "-qq", "-o=Dpkg::Use-Pty=0", "-o=Dpkg::Options::=--force-confold", context.unit.binary])
+    (code, result, error) = Shell.run(["apt-get", "install", "-f", "-qq", "-o=Dpkg::Use-Pty=0", "-o=Dpkg::Options::=--force-confold", context.unit.binary])
     assert code == 'OK', "unable to install with code {} and {} {}".format(code, result, error)
     assert os.path.isfile('/etc/ledger/conf.d/init.conf') is True, 'config file does not exists'
-    execute(['systemctl', 'start', package])
+    Shell.run(['systemctl', 'start', package])
   elif operation == 'uninstalled':
-    (code, result, error) = execute(["apt-get", "-f", "-qq", "remove", package])
+    (code, result, error) = Shell.run(["apt-get", "-f", "-qq", "remove", package])
     assert code == 'OK', "unable to uninstall with code {} and {} {}".format(code, result, error)
-    (code, result, error) = execute(["apt-get", "-f", "-qq", "purge", package])
+    (code, result, error) = Shell.run(["apt-get", "-f", "-qq", "purge", package])
     assert code == 'OK', "unable to purge with code {} and {} {}".format(code, result, error)
     assert os.path.isfile('/etc/ledger/conf.d/init.conf') is False, 'config file still exists'
   else:
@@ -29,7 +28,7 @@ def step_impl(context, package, operation):
 @given('systemctl contains following active units')
 @then('systemctl contains following active units')
 def step_impl(context):
-  (code, result, error) = execute(["systemctl", "list-units", "--all", "--no-legend", "--state=active"])
+  (code, result, error) = Shell.run(["systemctl", "list-units", "--all", "--no-legend", "--state=active"])
   assert code == 'OK', str(code) + ' ' + str(result) + ' ' + str(error)
   items = []
   for row in context.table:
@@ -42,7 +41,7 @@ def step_impl(context):
 @given('systemctl does not contain following active units')
 @then('systemctl does not contain following active units')
 def step_impl(context):
-  (code, result, error) = execute(["systemctl", "list-units", "--all", "--no-legend", "--state=active"])
+  (code, result, error) = Shell.run(["systemctl", "list-units", "--all", "--no-legend", "--state=active"])
   assert code == 'OK', str(code) + ' ' + str(result) + ' ' + str(error)
   items = []
   for row in context.table:
@@ -57,7 +56,7 @@ def step_impl(context):
 def unit_running(context, unit):
   @eventually(10)
   def wait_for_unit_state_change():
-    (code, result, error) = execute(["systemctl", "show", "-p", "SubState", unit])
+    (code, result, error) = Shell.run(["systemctl", "show", "-p", "SubState", unit])
     assert code == 'OK', str(code) + ' ' + str(result) + ' ' + str(error)
     assert 'SubState=running' in result, result
 
@@ -79,17 +78,16 @@ def unit_running(context, unit):
 def unit_not_running(context, unit):
   @eventually(10)
   def wait_for_unit_state_change():
-    (code, result, error) = execute(["systemctl", "show", "-p", "SubState", unit])
+    (code, result, error) = Shell.run(["systemctl", "show", "-p", "SubState", unit])
     assert code == 'OK', str(code) + ' ' + str(result) + ' ' + str(error)
     assert 'SubState=dead' in result, result
-
   wait_for_unit_state_change()
 
 
 @given('{operation} unit "{unit}"')
 @when('{operation} unit "{unit}"')
 def operation_unit(context, operation, unit):
-  (code, result, error) = execute(["systemctl", operation, unit])
+  (code, result, error) = Shell.run(["systemctl", operation, unit])
   assert code == 'OK', str(code) + ' ' + str(result) + ' ' + str(error)
 
 
@@ -105,23 +103,23 @@ def unit_is_configured(context, unit):
 @given('tenant {tenant} is offboarded')
 def offboard_unit(context, tenant):
   logfile = os.path.realpath('{}/../../reports/blackbox-tests/logs/ledger-unit.{}.log'.format(os.path.dirname(__file__), tenant))
-  (code, result, error) = execute(['journalctl', '-o', 'cat', '-u', 'ledger-unit@{}.service'.format(tenant), '--no-pager'])
+  (code, result, error) = Shell.run(['journalctl', '-o', 'cat', '-u', 'ledger-unit@{}.service'.format(tenant), '--no-pager'])
   if code == 'OK' and result:
     with open(logfile, 'w') as f:
       f.write(result)
-  execute(['systemctl', 'stop', 'ledger-unit@{}.service'.format(tenant)])
-  (code, result, error) = execute(['journalctl', '-o', 'cat', '-u', 'ledger-unit@{}.service'.format(tenant), '--no-pager'])
+  Shell.run(['systemctl', 'stop', 'ledger-unit@{}.service'.format(tenant)])
+  (code, result, error) = Shell.run(['journalctl', '-o', 'cat', '-u', 'ledger-unit@{}.service'.format(tenant), '--no-pager'])
   if code == 'OK' and result:
     with open(logfile, 'w') as fd:
       fd.write(result)
-  execute(['systemctl', 'disable', 'ledger-unit@{}.service'.format(tenant)])
+  Shell.run(['systemctl', 'disable', 'ledger-unit@{}.service'.format(tenant)])
   unit_not_running(context, 'ledger-unit@{}'.format(tenant))
 
 
 @given('tenant {tenant} is onboarded')
 def onboard_unit(context, tenant):
-  (code, result, error) = execute(["systemctl", 'enable', 'ledger-unit@{}'.format(tenant)])
+  (code, result, error) = Shell.run(["systemctl", 'enable', 'ledger-unit@{}'.format(tenant)])
   assert code == 'OK', str(code) + ' ' + str(result) + ' ' + str(error)
-  (code, result, error) = execute(["systemctl", 'start', 'ledger-unit@{}'.format(tenant)])
+  (code, result, error) = Shell.run(["systemctl", 'start', 'ledger-unit@{}'.format(tenant)])
   assert code == 'OK', str(code) + ' ' + str(result) + ' ' + str(error)
   unit_running(context, 'ledger-unit@{}'.format(tenant))

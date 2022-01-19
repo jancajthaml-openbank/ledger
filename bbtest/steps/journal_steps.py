@@ -2,12 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from behave import *
-import ssl
-import urllib.request
-import json
 import os
-import glob
-from datetime import datetime
 
 
 @then('transaction {transaction} of tenant {tenant} should be')

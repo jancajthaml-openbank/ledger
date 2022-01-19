@@ -91,8 +91,8 @@ services:
     image: jancajthaml/bbtest:${ARCH}
     tty: true
     environment:
-      IMAGE_VERSION: ${ARCH}-${VERSION}.${META}
-      UNIT_VERSION: ${VERSION}
+      VERSION: ${VERSION}
+      META: ${META}
       CI: ${CI:-false}
     tmpfs:
       - /tmp

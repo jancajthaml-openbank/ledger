@@ -242,8 +242,8 @@ pipeline {
                         returnStdout: true
                     ).trim()
                     options = """
-                        |-e IMAGE_VERSION=amd64-${env.VERSION}
-                        |-e UNIT_VERSION=${env.VERSION}
+                        |-e VERSION=${env.VERSION}
+                        |-e META=jenkins
                         |-e CI=true
                         |--volumes-from=${cid}
                         |-v /var/run/docker.sock:/var/run/docker.sock:rw
@@ -261,7 +261,7 @@ pipeline {
         stage('Package Docker') {
             steps {
                 script {
-                    DOCKER_IMAGE = docker.build("${env.ARTIFACTORY_DOCKER_REGISTRY}/docker-local/openbank/ledger:amd64-${env.VERSION}", dockerOptions())
+                    DOCKER_IMAGE = docker.build("${env.ARTIFACTORY_DOCKER_REGISTRY}/docker-local/openbank/ledger:amd64-${env.VERSION}.jenkins", dockerOptions())
                 }
             }
         }
