@@ -3,6 +3,7 @@
 
 import re
 import os
+from systemd import journal
 from behave import *
 from openbank_testkit import Shell
 from helpers.eventually import eventually
@@ -12,36 +13,18 @@ from helpers.eventually import eventually
 def step_impl(context, unit):
   expected_lines = [item.strip() for item in context.text.split('\n') if len(item.strip())]
   ansi_escape = re.compile(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]')
+  
+  actual_lines = []
 
-  def get_unit_description():
-    (code, result, error) = Shell.run(["systemctl", "status", unit])
-    result = ansi_escape.sub('', result)
-    assert len(result), str(result) + ' ' + str(error)
-    result = result.split(os.linesep)[0]
-    pivot = "{} - ".format(unit)
-    idx = result.rfind(pivot)
-    if idx >= 0:
-      return result[idx+len(pivot):]
-    else:
-      return None
-
-  description = get_unit_description()
+  reader = journal.Reader()
+  reader.this_boot()
+  reader.log_level(journal.LOG_DEBUG)
+  reader.add_match(_SYSTEMD_UNIT=unit)
 
   @eventually(5)
   def impl():
-    (code, result, error) = Shell.run(['journalctl', '-o', 'cat', '-u', unit, '--no-pager'])
-    result = ansi_escape.sub('', result)
-    assert code == 'OK', str(code) + ' ' + str(result) + ' ' + str(error)
-
-    if description:
-      idx = result.rfind("Stopped {}.".format(description))
-    else:
-      idx = -1
-
-    if idx > 0:
-      result = result[idx:]
-
-    actual_lines = [item.strip() for item in result.split('\n') if len(item.strip())]
+    for entry in reader:
+      actual_lines.append(entry['MESSAGE'])
 
     for expected in expected_lines:
       found = False
