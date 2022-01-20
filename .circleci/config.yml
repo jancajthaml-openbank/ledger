@@ -484,7 +484,7 @@ jobs:
             docker-compose up -d bbtest
             docker exec -t $(docker-compose ps -q bbtest) python3 /opt/app/bbtest/main.py
             docker-compose down -v
-          no_output_timeout: 5m
+          no_output_timeout: 30m
       - store_test_results:
           path: /home/circleci/project/reports/blackbox-tests/junit
       - store_artifacts:
