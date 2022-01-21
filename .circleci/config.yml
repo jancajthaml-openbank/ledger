@@ -219,8 +219,6 @@ jobs:
     steps:
       - restore_cache:
           key: code-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
-      - restore_cache:
-          key: dependencies-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - run:
           name: Unit test ledger-unit
           command: |
@@ -249,8 +247,6 @@ jobs:
     steps:
       - restore_cache:
           key: code-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
-      - restore_cache:
-          key: dependencies-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - run:
           name: Compile ledger-unit binary
           command: |
