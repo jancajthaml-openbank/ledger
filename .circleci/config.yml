@@ -14,23 +14,9 @@ workflows:
               ignore: /.*/
             tags:
               only: /^v[0-9]+(\.[0-9]+)*$/
-      - versions:
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*$/
-      - deps:
-          requires:
-            - checkout
-          filters:
-            branches:
-              only: main
-            tags:
-              only: /^v[0-9]+(\.[0-9]+)*$/
       - unit-test:
           requires:
-            - deps
+            - checkout
           filters:
             branches:
               ignore: /.*/
@@ -41,7 +27,7 @@ workflows:
             parameters:
               arch: [amd64, arm64]
           requires:
-            - deps
+            - checkout
           filters:
             branches:
               ignore: /.*/
@@ -53,7 +39,6 @@ workflows:
               arch: [amd64, arm64]
           requires:
             - compile-<< matrix.arch >>
-            - versions
           filters:
             branches:
               ignore: /.*/
@@ -65,7 +50,6 @@ workflows:
               arch: [amd64, arm64]
           requires:
             - package-debian-<< matrix.arch >>
-            - versions
           filters:
             branches:
               ignore: /.*/
@@ -104,33 +88,27 @@ workflows:
   commit:
     jobs:
       - checkout
-      - versions
-      - deps:
-          requires:
-            - checkout
       - unit-test:
           requires:
-            - deps
+            - checkout
       - compile:
           matrix:
             parameters:
               arch: [amd64, arm64]
           requires:
-            - deps
+            - checkout
       - package-debian:
           matrix:
             parameters:
               arch: [amd64, arm64]
           requires:
             - compile-<< matrix.arch >>
-            - versions
       - package-docker:
           matrix:
             parameters:
               arch: [amd64, arm64]
           requires:
             - package-debian-<< matrix.arch >>
-            - versions
       - blackbox-test:
           matrix:
             parameters:
@@ -164,30 +142,34 @@ executors:
   git:
     docker:
       - image: docker.io/alpine/git
+    resource_class: small
 
   docker:
     docker:
       - image: docker.io/amd64/docker
+    resource_class: small
 
   go:
     docker:
       - image: docker.io/jancajthaml/go
+    resource_class: small
 
   debian:
     docker:
       - image: docker.io/jancajthaml/debian-packager
+    resource_class: small
 
   machine-arm64:
     machine:
       image: ubuntu-2004:202111-01
       docker_layer_caching: false
-      resource_class: arm.medium
+    resource_class: arm.medium
 
   machine-amd64:
     machine:
       image: ubuntu-2004:202111-01
       docker_layer_caching: false
-      resource_class: medium
+    resource_class: medium
 
 # ---------------------------------------------------------------------------- #
 
@@ -196,22 +178,6 @@ jobs:
   # -------------------------------------------------------------------------- #
 
   checkout:
-    executor: git
-    working_directory: /home/circleci/project
-    steps:
-      - checkout
-      - save_cache:
-          key: code-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
-          paths:
-            - /home/circleci/project/.git
-            - /home/circleci/project/dev
-            - /home/circleci/project/services
-            - /home/circleci/project/packaging
-            - /home/circleci/project/Dockerfile
-
-  # -------------------------------------------------------------------------- #
-
-  versions:
     executor: git
     working_directory: /home/circleci/project
     steps:
@@ -232,34 +198,18 @@ jobs:
               echo -e "main" > /home/circleci/project/META
             fi
       - save_cache:
-          key: versions-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: code-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
+          paths:
+            - /home/circleci/project/.git
+            - /home/circleci/project/dev
+            - /home/circleci/project/services
+            - /home/circleci/project/packaging
+            - /home/circleci/project/Dockerfile
+      - save_cache:
+          key: versions-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
           paths:
             - /home/circleci/project/VERSION
             - /home/circleci/project/META
-
-  # -------------------------------------------------------------------------- #
-
-  deps:
-    executor: go
-    working_directory: /home/circleci/project
-    steps:
-      - restore_cache:
-          key: code-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
-      - run:
-          name: Sync ledger-unit dependencies
-          command: |
-            /home/circleci/project/dev/lifecycle/sync \
-              --source /home/circleci/project/services/ledger-unit
-      - run:
-          name: Sync ledger-rest dependencies
-          command: |
-            /home/circleci/project/dev/lifecycle/sync \
-              --source /home/circleci/project/services/ledger-rest
-      - save_cache:
-          key: dependencies-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
-          paths:
-            - /home/circleci/project/services/ledger-unit/vendor
-            - /home/circleci/project/services/ledger-rest/vendor
 
   # -------------------------------------------------------------------------- #
 
@@ -268,9 +218,9 @@ jobs:
     working_directory: /home/circleci/project
     steps:
       - restore_cache:
-          key: code-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: code-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - restore_cache:
-          key: dependencies-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: dependencies-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - run:
           name: Unit test ledger-unit
           command: |
@@ -298,9 +248,9 @@ jobs:
     working_directory: /home/circleci/project
     steps:
       - restore_cache:
-          key: code-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: code-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - restore_cache:
-          key: dependencies-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: dependencies-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - run:
           name: Compile ledger-unit binary
           command: |
@@ -318,7 +268,7 @@ jobs:
               --output /home/circleci/project/packaging/bin
           no_output_timeout: 5m
       - save_cache:
-          key: binaries-<< parameters.arch >>-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: binaries-<< parameters.arch >>-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
           paths:
             - /home/circleci/project/packaging/bin
 
@@ -332,11 +282,11 @@ jobs:
     working_directory: /home/circleci/project
     steps:
       - restore_cache:
-          key: code-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: code-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - restore_cache:
-          key: binaries-<< parameters.arch >>-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: binaries-<< parameters.arch >>-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - restore_cache:
-          key: versions-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: versions-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - run:
           name: Package for debian
           command: |
@@ -348,7 +298,7 @@ jobs:
               --source /home/circleci/project/packaging
           no_output_timeout: 5m
       - save_cache:
-          key: debian-<< parameters.arch >>-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: debian-<< parameters.arch >>-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
           paths:
             - /home/circleci/project/packaging/bin
 
@@ -362,13 +312,13 @@ jobs:
     working_directory: /home/circleci/project
     steps:
       - restore_cache:
-          key: code-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: code-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - restore_cache:
-          key: binaries-<< parameters.arch >>-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: binaries-<< parameters.arch >>-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - restore_cache:
-          key: debian-<< parameters.arch >>-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: debian-<< parameters.arch >>-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - restore_cache:
-          key: versions-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: versions-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - run:
           name: Package for docker << parameters.arch >>
           command: |
@@ -382,7 +332,7 @@ jobs:
               ledger:<< parameters.arch >>-<< pipeline.git.revision >> \
               > tmp/docker-ledger-<< parameters.arch >>-<< pipeline.git.revision >>.tar
       - save_cache:
-          key: docker-<< parameters.arch >>-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: docker-<< parameters.arch >>-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
           paths:
             - /home/circleci/project/tmp
 
@@ -393,11 +343,11 @@ jobs:
     working_directory: /home/circleci/project
     steps:
       - restore_cache:
-          key: versions-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: versions-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - restore_cache:
-          key: docker-arm64-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: docker-arm64-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - restore_cache:
-          key: docker-amd64-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: docker-amd64-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - setup_remote_docker:
           version: 19.03.13
       - run:
@@ -446,7 +396,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: debian-<< parameters.arch >>-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: debian-<< parameters.arch >>-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - run: docker pull docker.io/jancajthaml/bbtest:<< parameters.arch >>
       - run:
           name: Update VERSION + META
@@ -487,15 +437,15 @@ jobs:
     working_directory: /home/circleci/project
     steps:
       - restore_cache:
-          key: code-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: code-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - restore_cache:
-          key: binaries-amd64-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: binaries-amd64-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - restore_cache:
-          key: binaries-arm64-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: binaries-arm64-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - restore_cache:
-          key: debian-amd64-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: debian-amd64-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - restore_cache:
-          key: debian-arm64-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-{{ .Environment.CIRCLE_SHA1 }}
+          key: debian-arm64-<< pipeline.git.tag >>-{{ .Environment.CIRCLE_PROJECT_REPONAME }}-<< pipeline.git.revision >>
       - deploy:
           name: Release artifacts to github
           command: |
