@@ -446,7 +446,7 @@ jobs:
           name: Release artifacts to github
           command: |
             /home/circleci/project/dev/lifecycle/release \
-              --version ${CIRCLE_TAG} \
+              --version << pipeline.git.tag >> \
               --token ${GITHUB_RELEASE_TOKEN}
 
 # ---------------------------------------------------------------------------- #
