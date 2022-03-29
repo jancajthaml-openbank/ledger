@@ -8,7 +8,7 @@ require (
 	github.com/jancajthaml-openbank/local-fs v1.2.8
 	github.com/rs/xid v1.3.0
 	github.com/rs/zerolog v1.26.1
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 )
 
 require (
