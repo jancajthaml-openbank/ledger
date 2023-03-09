@@ -3,7 +3,7 @@ module github.com/jancajthaml-openbank/ledger-rest
 go 1.17
 
 require (
-	github.com/coreos/go-systemd/v22 v22.3.3-0.20220203105225-a9a7ef127534
+	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/jancajthaml-openbank/actor-system v1.5.6
 	github.com/jancajthaml-openbank/local-fs v1.2.8
 	github.com/labstack/echo/v4 v4.8.0
