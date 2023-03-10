@@ -1,6 +1,6 @@
 module github.com/jancajthaml-openbank/ledger-rest
 
-go 1.17
+go 1.20
 
 require (
 	github.com/coreos/go-systemd/v22 v22.5.0

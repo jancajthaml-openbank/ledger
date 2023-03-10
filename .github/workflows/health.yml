@@ -20,7 +20,7 @@ jobs:
     - name: Prepare
       uses: actions/setup-go@v2
       with:
-        go-version: 1.17
+        go-version: 1.20
       id: go
 
     - name: Checkout
@@ -33,25 +33,29 @@ jobs:
         cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DENABLE_CURVE=ON .. && make && sudo make install
 
     - name: Install static dependencies (unit)
+      env:
+        GO111MODULE: on
+      working-directory: services/ledger-unit
       run: |
-        cd services/ledger-unit
-        GO111MODULE=on go mod verify
-        GO111MODULE=on go mod tidy
-        GO111MODULE=on go mod vendor
+        go mod verify
+        go mod tidy
+        go mod vendor
 
     - name: Install static dependencies (rest)
+      env:
+        GO111MODULE: on
+      working-directory: services/ledger-rest
       run: |
-        cd services/ledger-rest
-        GO111MODULE=on go mod verify
-        GO111MODULE=on go mod tidy
-        GO111MODULE=on go mod vendor
+        go mod verify
+        go mod tidy
+        go mod vendor
 
     - name: Unit Test (unit)
+      working-directory: services/ledger-unit
       run:  |
-        cd services/ledger-unit
         go test -v ./... -timeout=10s
 
     - name: Unit Test (rest)
+      working-directory: services/ledger-rest
       run:  |
-        cd services/ledger-rest
         go test -v ./... -timeout=10s
