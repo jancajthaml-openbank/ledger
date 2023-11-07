@@ -6,7 +6,7 @@ require (
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/jancajthaml-openbank/actor-system v1.5.6
 	github.com/jancajthaml-openbank/local-fs v1.2.8
-	github.com/labstack/echo/v4 v4.11.2
+	github.com/labstack/echo/v4 v4.11.3
 	github.com/rs/xid v1.5.0
 	github.com/rs/zerolog v1.31.0
 	github.com/stretchr/testify v1.8.4
